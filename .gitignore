@@ -1,0 +1,42 @@
+# dependencies
+node_modules
+.pnp
+.pnp.js
+
+# next.js
+.next/
+out/
+build/
+
+# env files - NEVER commit these
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+~/.detectai/
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# misc
+.DS_Store
+*.pem
+.idea/
+.vscode/
+
+# ML
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+*.egg-info/
+dist/
+*.h5
+*.pkl
+*.pt
+*.bin
+ml-training/data/raw/
+ml-training/data/processed/
