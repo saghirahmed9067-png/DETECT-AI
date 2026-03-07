@@ -7,9 +7,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Image, Video, Music, FileText, Globe,
   Layers, Clock, User, Settings, Shield, ChevronLeft,
-  ChevronRight, Menu, X, LogOut, Brain
+  ChevronRight, Menu, X, LogOut, Brain, Zap
 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { useUser } from '@auth0/nextjs-auth0/client'
 
 const navGroups = [
   {
@@ -28,6 +28,7 @@ const navGroups = [
       { href: '/scraper', icon: Globe, label: 'Web Scraper' },
       { href: '/batch', icon: Layers, label: 'Batch' },
       { href: '/history', icon: Clock, label: 'History' },
+      { href: '/pipeline', icon: Brain, label: 'HF Pipeline' },
     ]
   },
   {
@@ -42,21 +43,12 @@ const navGroups = [
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [user, setUser] = useState<{ email: string } | null>(null)
+  const { user, isLoading } = useUser()
   const pathname = usePathname()
   const router = useRouter()
-  const supabase = createClient()
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) { router.push('/login'); return }
-      setUser({ email: data.user.email! })
-    })
-  }, [])
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/')
+  const handleLogout = () => {
+    window.location.href = '/api/auth/logout'
   }
 
   const SidebarContent = () => (
@@ -107,10 +99,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {!collapsed ? (
           <div className="flex items-center gap-3 px-2 py-2">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-              {user?.email?.[0]?.toUpperCase() || 'U'}
+              {user?.email || user?.name?.[0]?.toUpperCase() || 'U'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-text-secondary truncate">{user?.email}</p>
+              <p className="text-xs text-text-secondary truncate">{user?.email || user?.name}</p>
               <p className="text-xs text-primary font-medium">Free Plan</p>
             </div>
             <button onClick={handleLogout} className="text-text-muted hover:text-rose transition-colors">
@@ -179,7 +171,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-xs font-bold text-white">
-              {user?.email?.[0]?.toUpperCase() || 'U'}
+              {user?.email || user?.name?.[0]?.toUpperCase() || 'U'}
             </div>
           </div>
         </header>

@@ -1,111 +1,93 @@
 'use client'
 export const dynamic = 'force-dynamic'
-import { useState } from 'react'
+import { useEffect } from 'react'
+import { useUser } from '@auth0/nextjs-auth0/client'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Shield, Mail, Lock, Loader2, Eye, EyeOff, User } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { Shield, Sparkles, ArrowRight, Check, Loader2 } from 'lucide-react'
+import Link from 'next/link'
+
+const perks = [
+  '50 free scans per month',
+  'Image, audio, video & text detection',
+  'Scan history & analytics',
+  'Web scraper access',
+]
 
 export default function SignupPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [name, setName] = useState('')
-  const [showPw, setShowPw] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
+  const { user, isLoading } = useUser()
   const router = useRouter()
-  const supabase = createClient()
 
-  const pwStrength = password.length === 0 ? 0 : password.length < 6 ? 1 : password.length < 10 ? 2 : 3
+  useEffect(() => {
+    if (user) router.push('/dashboard')
+  }, [user, router])
 
-  const handleSignup = async () => {
-    if (!email || !password || !name) { setError('Please fill in all fields'); return }
-    if (password.length < 8) { setError('Password must be at least 8 characters'); return }
-    setLoading(true); setError(null)
-
-    const { error: err } = await supabase.auth.signUp({
-      email, password,
-      options: { data: { display_name: name } }
-    })
-    if (err) { setError(err.message); setLoading(false); return }
-    setSuccess(true)
-    setTimeout(() => router.push('/dashboard'), 2000)
-  }
-
-  if (success) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-center">
-          <div className="w-20 h-20 rounded-full bg-emerald/10 border-2 border-emerald flex items-center justify-center mx-auto mb-4">
-            <Shield className="w-10 h-10 text-emerald" />
-          </div>
-          <h2 className="text-2xl font-bold text-text-primary mb-2">Account Created!</h2>
-          <p className="text-text-muted">Redirecting to dashboard...</p>
-        </motion.div>
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6 relative">
-      <div className="absolute inset-0 bg-cyber-grid bg-grid opacity-30" />
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative w-full max-w-md">
+    <div className="min-h-screen bg-background flex items-center justify-center p-6">
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-md"
+      >
+        {/* Logo */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center mx-auto mb-4 animate-glow-pulse">
             <Shield className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-black gradient-text">Create Account</h1>
-          <p className="text-text-muted mt-2">Start detecting AI content for free</p>
+          <h1 className="text-3xl font-black gradient-text">DETECTAI</h1>
+          <p className="text-text-muted mt-1 text-sm">Join thousands detecting AI content</p>
         </div>
 
-        <div className="card">
-          {error && <div className="mb-4 p-3 rounded-lg bg-rose/10 border border-rose/30 text-rose text-sm">{error}</div>}
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm text-text-secondary mb-2">Name</label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-                <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Your name" className="input-field pl-10" />
-              </div>
+        <div className="card space-y-6">
+          <div className="text-center">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold mb-3">
+              <Sparkles className="w-3 h-3" /> Free forever plan
             </div>
-            <div>
-              <label className="block text-sm text-text-secondary mb-2">Email</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" className="input-field pl-10" />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm text-text-secondary mb-2">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-                <input type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" className="input-field pl-10 pr-10" />
-                <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary">
-                  {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              {password && (
-                <div className="flex gap-1 mt-2">
-                  {[1,2,3].map(l => (
-                    <div key={l} className={`h-1 flex-1 rounded-full transition-colors ${pwStrength >= l ? (l === 1 ? 'bg-rose' : l === 2 ? 'bg-amber' : 'bg-emerald') : 'bg-border'}`} />
-                  ))}
-                </div>
-              )}
-            </div>
+            <h2 className="text-2xl font-bold text-text-primary">Create your account</h2>
+            <p className="text-text-muted mt-1 text-sm">Email verification included via Auth0</p>
           </div>
 
-          <button onClick={handleSignup} disabled={loading} className="btn-primary w-full mt-6 py-3 flex items-center justify-center gap-2 disabled:opacity-50">
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-            {loading ? 'Creating account...' : 'Create Free Account'}
-          </button>
+          {/* Perks */}
+          <div className="space-y-2.5">
+            {perks.map(p => (
+              <div key={p} className="flex items-center gap-3 text-sm text-text-secondary">
+                <div className="w-5 h-5 rounded-full bg-emerald/10 border border-emerald/30 flex items-center justify-center flex-shrink-0">
+                  <Check className="w-3 h-3 text-emerald" />
+                </div>
+                {p}
+              </div>
+            ))}
+          </div>
 
-          <p className="text-center text-sm text-text-muted mt-4">
+          <a
+            href="/api/auth/signup"
+            className="btn-primary w-full py-3.5 flex items-center justify-center gap-3 text-base font-semibold rounded-xl no-underline"
+          >
+            <Shield className="w-5 h-5" />
+            Sign up with Auth0
+            <ArrowRight className="w-4 h-4" />
+          </a>
+
+          <p className="text-center text-sm text-text-muted">
             Already have an account?{' '}
-            <Link href="/login" className="text-primary hover:underline font-medium">Sign in</Link>
+            <Link href="/login" className="text-primary hover:underline font-medium">
+              Sign in
+            </Link>
           </p>
+
+          <div className="flex items-center justify-center gap-4 text-xs text-text-disabled">
+            <span>🔒 Secured by Auth0</span>
+            <span>•</span>
+            <span>✉️ Email verified</span>
+          </div>
         </div>
       </motion.div>
     </div>
