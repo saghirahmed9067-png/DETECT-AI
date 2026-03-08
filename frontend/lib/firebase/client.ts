@@ -1,25 +1,21 @@
 import { initializeApp, getApps, type FirebaseApp } from 'firebase/app'
 import { getAuth, GoogleAuthProvider } from 'firebase/auth'
 
+// Config hardcoded for reliability — these are public NEXT_PUBLIC values,
+// safe to be in source code (Firebase API keys are not secret)
 const firebaseConfig = {
-  apiKey:            process.env.NEXT_PUBLIC_FIREBASE_API_KEY            ?? 'placeholder-api-key',
-  authDomain:        process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN        ?? 'placeholder.firebaseapp.com',
-  projectId:         process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID         ?? 'placeholder-project',
-  storageBucket:     process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET     ?? 'placeholder.appspot.com',
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? '000000000000',
-  appId:             process.env.NEXT_PUBLIC_FIREBASE_APP_ID             ?? '1:000000000000:web:placeholder',
+  apiKey:            'AIzaSyCMbmpuHY7DXPTNsT-X8KfakBJ8TFaAM2w',
+  authDomain:        'detectai-prod.firebaseapp.com',
+  projectId:         'detectai-prod',
+  storageBucket:     'detectai-prod.firebasestorage.app',
+  messagingSenderId: '830272475702',
+  appId:             '1:830272475702:web:51cf8033f52f28d603fe97',
+  measurementId:     'G-FE84SYHN99',
 }
 
-// Prevent Firebase from initializing during server-side prerendering
-// It only needs to run in the browser
-let app: FirebaseApp
-
-if (typeof window !== 'undefined') {
-  app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig)
-} else {
-  // Server/build time — use placeholder app that won't throw
-  app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig)
-}
+const app: FirebaseApp = getApps().length
+  ? getApps()[0]
+  : initializeApp(firebaseConfig)
 
 export const auth = typeof window !== 'undefined' ? getAuth(app) : null as any
 export const googleProvider = new GoogleAuthProvider()
