@@ -45,7 +45,8 @@ function Avatar({ user, size = 8 }: { user: any; size?: number }) {
   if (user?.photoURL) {
     return (
       <img src={user.photoURL} alt="avatar"
-        className={`w-${size} h-${size} rounded-full object-cover ring-2 ring-primary/30`} />
+        className={`w-${size} h-${size} rounded-full object-cover ring-2 ring-primary/30`}
+        onError={e => { (e.target as HTMLImageElement).style.display='none' }} />
     )
   }
   return (

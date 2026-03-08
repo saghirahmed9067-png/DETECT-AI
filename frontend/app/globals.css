@@ -102,6 +102,7 @@
 }
 
 @layer utilities {
+  .surface-hover { background-color: rgba(255,255,255,0.03); }
   .text-rose    { color: #f43f5e; }
   .text-emerald { color: #10b981; }
   .text-amber   { color: #f59e0b; }
