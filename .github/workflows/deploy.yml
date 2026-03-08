@@ -3,14 +3,17 @@ name: 🚀 Deploy to Netlify
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
@@ -22,22 +25,27 @@ jobs:
       - name: Build
         run: cd frontend && npm run build
         env:
-          NEXT_PUBLIC_SUPABASE_URL:      ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          NEXT_PUBLIC_FIREBASE_API_KEY:  ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
           NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: detectai-prod.firebaseapp.com
-          NEXT_PUBLIC_FIREBASE_PROJECT_ID:  detectai-prod
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: detectai-prod
           NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: detectai-prod.firebasestorage.app
           NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "830272475702"
-          NEXT_PUBLIC_FIREBASE_APP_ID:  ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
-          HUGGINGFACE_API_TOKEN:        ${{ secrets.HUGGINGFACE_API_TOKEN }}
+          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
+          HUGGINGFACE_API_TOKEN: ${{ secrets.HUGGINGFACE_API_TOKEN }}
 
       - name: Deploy to Netlify
-        run: |
-          cd frontend
-          npx netlify-cli deploy \
-            --dir .next \
-            --site ${{ secrets.NETLIFY_SITE_ID }} \
-            --auth ${{ secrets.NETLIFY_AUTH_TOKEN }} \
-            --prod \
-            --message "Deploy $(git rev-parse --short HEAD)"
+        uses: nwtgck/actions-netlify@v3.0
+        with:
+          publish-dir: './frontend/.next'
+          site-id: ${{ secrets.NETLIFY_SITE_ID }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: "Deploy ${{ github.sha }}"
+          production-deploy: true
+          enable-pull-request-comment: false
+          enable-commit-comment: false
+          netlify-config-path: ./netlify.toml
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        timeout-minutes: 15
