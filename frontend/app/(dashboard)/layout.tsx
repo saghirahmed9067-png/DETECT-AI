@@ -9,7 +9,7 @@ import {
   Layers, Clock, User, Settings, Shield, ChevronLeft,
   ChevronRight, Menu, X, LogOut, Brain, Zap
 } from 'lucide-react'
-import { useUser } from '@auth0/nextjs-auth0/client'
+import { useAuth } from '@/components/auth-provider'
 
 const navGroups = [
   {
@@ -43,13 +43,11 @@ const navGroups = [
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const { user, isLoading } = useUser()
+  const { user, loading: isLoading, signOut } = useAuth()
   const pathname = usePathname()
   const router = useRouter()
 
-  const handleLogout = () => {
-    window.location.href = '/api/auth/logout'
-  }
+  const handleLogout = signOut
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
@@ -99,10 +97,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {!collapsed ? (
           <div className="flex items-center gap-3 px-2 py-2">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-              {user?.email || user?.name?.[0]?.toUpperCase() || 'U'}
+              {user?.email || user?.displayName?.[0]?.toUpperCase() || 'U'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-text-secondary truncate">{user?.email || user?.name}</p>
+              <p className="text-xs text-text-secondary truncate">{user?.email || user?.displayName}</p>
               <p className="text-xs text-primary font-medium">Free Plan</p>
             </div>
             <button onClick={handleLogout} className="text-text-muted hover:text-rose transition-colors">
@@ -171,7 +169,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-xs font-bold text-white">
-              {user?.email || user?.name?.[0]?.toUpperCase() || 'U'}
+              {user?.email || user?.displayName?.[0]?.toUpperCase() || 'U'}
             </div>
           </div>
         </header>

@@ -1,23 +1,24 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { auth0 } from '@/lib/auth0'
 
 const PROTECTED = ['/dashboard', '/detect', '/scraper', '/batch', '/history', '/profile', '/settings', '/pipeline']
 
 export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname
 
-  // Let Auth0 handle its own routes
-  if (path.startsWith('/api/auth')) {
-    return auth0.middleware(req)
+  if (
+    path.startsWith('/_next') ||
+    path.startsWith('/icons') ||
+    path === '/favicon.ico' ||
+    path.startsWith('/api/auth/')
+  ) {
+    return NextResponse.next()
   }
 
-  // Protect dashboard routes - check for session
   if (PROTECTED.some(p => path.startsWith(p))) {
-    const session = await auth0.getSession()
-    if (!session) {
-      const loginUrl = new URL('/api/auth/login', req.url)
-      loginUrl.searchParams.set('returnTo', path)
+    const token = req.cookies.get('__session')?.value
+    if (!token) {
+      const loginUrl = new URL(`/login?returnTo=${encodeURIComponent(path)}`, req.url)
       return NextResponse.redirect(loginUrl)
     }
   }

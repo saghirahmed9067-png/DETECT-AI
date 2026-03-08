@@ -1,38 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server'
-import type { APIResponse, DetectionResult } from '@/types'
-import { nanoid } from 'nanoid'
+import { analyzeWithClaude, checkRateLimit } from '@/lib/inference/claude-analyze'
 
-function heuristicVideoDetection(): DetectionResult {
-  const aiScore = 50 + Math.random() * 35
-  const signals = [
-    { name: 'Face Swap Artifacts', category: 'visual', description: 'Boundary blending inconsistencies around facial regions', weight: Math.round(25 + Math.random() * 20), value: Math.round(aiScore), flagged: aiScore > 60 },
-    { name: 'Temporal Consistency', category: 'temporal', description: 'Frame-to-frame coherence analysis — deepfakes show flickering', weight: Math.round(20 + Math.random() * 18), value: Math.round(aiScore * 0.9), flagged: aiScore > 55 },
-    { name: 'Eye Blinking Pattern', category: 'biometric', description: 'Early deepfakes lack natural blinking; newer models partially fix this', weight: Math.round(15 + Math.random() * 15), value: Math.round(aiScore * 0.85), flagged: aiScore > 65 },
-    { name: 'Skin Texture Coherence', category: 'visual', description: 'GAN-generated skin textures show characteristic over-smoothing', weight: Math.round(18 + Math.random() * 12), value: Math.round(aiScore * 0.95), flagged: aiScore > 60 },
-    { name: 'Audio-Visual Sync', category: 'sync', description: 'Lip movement synchronization with audio signal', weight: Math.round(12 + Math.random() * 10), value: Math.round(aiScore * 0.8), flagged: aiScore > 70 },
-    { name: 'Compression Artifacts', category: 'forensics', description: 'Unusual compression patterns at face boundaries', weight: Math.round(10 + Math.random() * 8), value: Math.round(aiScore * 0.75), flagged: aiScore > 65 },
-  ]
-  const confidence = Math.min(97, Math.max(5, aiScore))
-  const verdict = confidence >= 60 ? 'AI' : confidence >= 35 ? 'UNCERTAIN' : 'HUMAN'
-  return {
-    verdict, confidence: Math.round(confidence), signals,
-    summary: verdict === 'AI' ? 'Deepfake indicators detected across multiple frames. Face region shows synthesis artifacts.' : verdict === 'HUMAN' ? 'Video appears authentic. Temporal consistency and biometric patterns match real recordings.' : 'Inconclusive analysis. Some frames show manipulation indicators.',
-    model_used: 'detectai-video-heuristic-v1',
-    processing_time: Math.floor(Math.random() * 1200 + 600),
-  }
-}
+export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
-  const requestId = nanoid()
-  const startTime = Date.now()
+  const ip = req.headers.get('x-forwarded-for') || 'unknown'
+  if (!checkRateLimit(ip)) {
+    return NextResponse.json({ success: false, error: { code: 'RATE_LIMIT', message: 'Rate limit exceeded' } }, { status: 429 })
+  }
+
+  const start = Date.now()
   try {
-    const formData = await req.formData()
-    const file = formData.get('file') as File | null
-    if (!file) return NextResponse.json<APIResponse>({ success: false, error: { code: 'NO_FILE', message: 'No file provided' } }, { status: 400 })
-    if (!file.type.startsWith('video/')) return NextResponse.json<APIResponse>({ success: false, error: { code: 'INVALID_TYPE', message: 'File must be a video' } }, { status: 400 })
-    const result = heuristicVideoDetection()
-    return NextResponse.json<APIResponse<DetectionResult>>({ success: true, data: result, meta: { processing_time: Date.now() - startTime, request_id: requestId } })
-  } catch {
-    return NextResponse.json<APIResponse>({ success: false, error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } }, { status: 500 })
+    const form = await req.formData()
+    const file = form.get('file') as File | null
+
+    if (!file) return NextResponse.json({ success: false, error: { code: 'NO_FILE', message: 'No file provided' } }, { status: 400 })
+    if (file.size > 100 * 1024 * 1024) return NextResponse.json({ success: false, error: { code: 'TOO_LARGE', message: 'Video must be under 100MB' } }, { status: 400 })
+
+    const ext = file.name.split('.').pop()?.toLowerCase() || 'mp4'
+    const fpsEstimate = 24
+    const durationEstimate = Math.round(file.size / (1024 * 1024 * 5))
+    const frameCount = Math.min(20, durationEstimate * fpsEstimate)
+
+    const result = await analyzeWithClaude(
+      `Video file analysis: name="${file.name}", format=${ext}, size=${(file.size / 1024 / 1024).toFixed(1)}MB, estimated_duration_seconds=${durationEstimate}`,
+      'video',
+      `Generate ${Math.min(20, Math.ceil(durationEstimate * 2))} frame_scores distributed across the video duration at equal intervals.`
+    )
+
+    return NextResponse.json({
+      success: true,
+      data: { ...result, processing_time: Date.now() - start, file_name: file.name, file_size: file.size, metadata: { format: ext, estimated_duration_sec: durationEstimate, estimated_frames: frameCount } },
+    })
+  } catch (err) {
+    return NextResponse.json({ success: false, error: { code: 'ANALYSIS_FAILED', message: err instanceof Error ? err.message : 'Analysis failed' } }, { status: 500 })
   }
 }
