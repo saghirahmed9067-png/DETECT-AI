@@ -1,6 +1,6 @@
 'use client'
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { onAuthStateChanged, User, signOut as firebaseSignOut } from 'firebase/auth'
+import { onAuthStateChanged, User, signOut as firebaseSignOut, setPersistence, browserLocalPersistence } from 'firebase/auth'
 import { auth } from '@/lib/firebase/client'
 
 interface AuthContextValue {
@@ -20,12 +20,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Set LOCAL persistence — user stays logged in until they explicitly sign out
+    if (auth) {
+      setPersistence(auth, browserLocalPersistence).catch(console.error)
+    }
+
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u)
       setLoading(false)
 
       if (u) {
-        // Set session cookie
         try {
           const idToken = await u.getIdToken()
           await fetch('/api/auth/session', {
@@ -37,10 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.error('Session sync error:', e)
         }
       } else {
-        // Clear session cookie
-        try {
-          await fetch('/api/auth/session', { method: 'DELETE' })
-        } catch {}
+        try { await fetch('/api/auth/session', { method: 'DELETE' }) } catch {}
       }
     })
     return unsub
