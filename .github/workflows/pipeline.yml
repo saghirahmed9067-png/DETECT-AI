@@ -1,38 +1,45 @@
-name: 🤖 Pipeline Runner
+name: 🤖 DETECTAI Pipeline
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 */6 * * *'
+    - cron: '0 */6 * * *'   # every 6h as backup to pg_cron
 
 jobs:
   run-pipeline:
-    name: 🔄 Execute via Edge Function
+    name: Run orchestrator + HF push
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - name: Trigger Supabase Orchestrator
+      - name: 🔄 Trigger Orchestrator
         run: |
-          echo "Triggering orchestrator..."
-          RESP=$(curl -s -w "\n%{http_code}" -X POST \
+          echo "=== Triggering pipeline orchestrator ==="
+          RESP=$(curl -sf -X POST \
             "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}/functions/v1/pipeline-orchestrator" \
             -H "Authorization: Bearer ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
             -H "Content-Type: application/json" \
-            -d '{"source":"github_actions"}' --max-time 300)
-          HTTP=$(echo "$RESP" | tail -1)
-          BODY=$(echo "$RESP" | head -n -1)
-          echo "HTTP: $HTTP"
-          echo "$BODY" | python3 -c "
+            -d '{"source":"github_actions"}' \
+            --max-time 120) || { echo "Orchestrator call failed"; exit 1; }
+          echo "$RESP" | python3 -c "
 import json,sys
 d=json.load(sys.stdin)
-print('Jobs:', len(d.get('results',{})))
-for l in d.get('log',[])[-15:]: print(' ',l)
-" 2>/dev/null || echo "$BODY"
+print(f'OK={d.get(\"ok\")} Jobs={d.get(\"jobs\")} Time={d.get(\"ms\")}ms')
+for l in (d.get('log') or [])[-20:]: print(' ', l)
+" 2>/dev/null || echo "$RESP" | head -c 500
 
-      - name: Trigger HF Push
+      - name: 📤 Trigger HF Push
         run: |
-          curl -s -X POST \
+          echo "=== Pushing to HuggingFace ==="
+          RESP=$(curl -sf -X POST \
             "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}/functions/v1/hf-push" \
             -H "Authorization: Bearer ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
             -H "Content-Type: application/json" \
-            -d '{"source":"github_actions"}' --max-time 120 | \
-            python3 -c "import json,sys; d=json.load(sys.stdin); print(f'HF pushed: {d.get(\"pushed\",0)} items')" 2>/dev/null
+            -d '{"source":"github_actions"}' \
+            --max-time 120) || { echo "HF push call failed"; exit 1; }
+          echo "$RESP" | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+print(f'Pushed={d.get(\"pushed\")} CommitID={d.get(\"commitId\")}')
+print(f'Dataset URL: {d.get(\"url\")}')
+for l in (d.get('log') or [])[-10:]: print(' ', l)
+" 2>/dev/null || echo "$RESP" | head -c 500
