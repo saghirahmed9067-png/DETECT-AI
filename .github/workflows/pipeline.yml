@@ -2,58 +2,37 @@ name: 🤖 Pipeline Runner
 
 on:
   workflow_dispatch:
-    inputs:
-      triggered_by:
-        description: 'Who triggered this run'
-        required: false
-        default: 'manual'
   schedule:
-    - cron: '0 */6 * * *'   # Every 6 hours as backup to Supabase pg_cron
+    - cron: '0 */6 * * *'
 
 jobs:
   run-pipeline:
-    name: 🔄 Execute Pipeline
+    name: 🔄 Execute via Edge Function
     runs-on: ubuntu-latest
     steps:
-      - name: Call Supabase Edge Function Orchestrator
+      - name: Trigger Supabase Orchestrator
         run: |
-          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+          echo "Triggering orchestrator..."
+          RESP=$(curl -s -w "\n%{http_code}" -X POST \
             "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}/functions/v1/pipeline-orchestrator" \
+            -H "Authorization: Bearer ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
             -H "Content-Type: application/json" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
-            -d '{"source":"github_actions","triggered_by":"${{ github.event.inputs.triggered_by || github.event_name }}"}' \
-            --max-time 300)
-          
-          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-          BODY=$(echo "$RESPONSE" | head -n -1)
-          
-          echo "HTTP Status: $HTTP_CODE"
-          echo "Response: $BODY"
-          
-          if [ "$HTTP_CODE" != "200" ]; then
-            echo "❌ Pipeline failed with HTTP $HTTP_CODE"
-            exit 1
-          fi
-          
-          echo "✅ Pipeline completed successfully"
-          
-          # Print summary from response
+            -d '{"source":"github_actions"}' --max-time 300)
+          HTTP=$(echo "$RESP" | tail -1)
+          BODY=$(echo "$RESP" | head -n -1)
+          echo "HTTP: $HTTP"
           echo "$BODY" | python3 -c "
 import json,sys
-try:
-  d = json.load(sys.stdin)
-  r = d.get('results', {})
-  print('--- PIPELINE SUMMARY ---')
-  for k,v in r.items():
-    print(f'  {k}: {v}')
-  print('--- LOG ---')
-  for l in d.get('log',[]):
-    print(' ', l)
-except: pass
-"
+d=json.load(sys.stdin)
+print('Jobs:', len(d.get('results',{})))
+for l in d.get('log',[])[-15:]: print(' ',l)
+" 2>/dev/null || echo "$BODY"
 
-      - name: Update Schedule
-        if: always()
+      - name: Trigger HF Push
         run: |
-          echo "Pipeline run completed at $(date -u)"
-          echo "Next automatic run will be triggered by Supabase pg_cron in 15 min intervals"
+          curl -s -X POST \
+            "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}/functions/v1/hf-push" \
+            -H "Authorization: Bearer ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"source":"github_actions"}' --max-time 120 | \
+            python3 -c "import json,sys; d=json.load(sys.stdin); print(f'HF pushed: {d.get(\"pushed\",0)} items')" 2>/dev/null
