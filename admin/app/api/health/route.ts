@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server'
-import { getDB } from '@/lib/db'
+import { db } from '@/lib/db'
 
 export async function GET() {
   try {
-    const db = getDB()
     const [runsRes, beatsRes, alertsRes, overviewRes] = await Promise.all([
       db.from('pipeline_runs').select('*').order('started_at', { ascending: false }).limit(30),
       db.from('pipeline_heartbeat').select('*').order('beat_at', { ascending: false }).limit(50),
