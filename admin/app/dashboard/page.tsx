@@ -113,22 +113,61 @@ export default function Dashboard() {
   const logsRef = useRef<HTMLDivElement>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval>|null>(null)
 
+  // Direct Supabase — bypasses Vercel API routes entirely
+  const SB_URL = 'https://xtdrwspsbranhunvlbfa.supabase.co'
+  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0ZHJ3c3BzYnJhbmh1bnZsYmZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3MDgwMjEsImV4cCI6MjA4ODI4NDAyMX0.2xKiY0unR1Joq2W5M2YnzluSyjS2eXFZH8NUTm3qfnE'
+  const sbH = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' }
+
+  const sbGet = useCallback(async (table: string, qs = '') => {
+    try {
+      const r = await fetch(`${SB_URL}/rest/v1/${table}?${qs}`, { headers: sbH })
+      return r.ok ? r.json() : []
+    } catch { return [] }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const callEdge = useCallback(async (fn: string, body?: any) => {
+    try {
+      const r = await fetch(`${SB_URL}/functions/v1/${fn}`, {
+        method: 'POST', headers: sbH,
+        body: body ? JSON.stringify(body) : '{}',
+      })
+      return r.json()
+    } catch (e: any) { return { error: e.message } }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const fetchData = useCallback(async (silent = false) => {
     if (!silent) setRefreshing(true)
     try {
-      const [pipelineRes, logsRes, healthRes] = await Promise.all([
-        fetch('/api/pipeline'),
-        fetch('/api/logs'),
-        fetch('/api/health'),
+      const [jobs, runs, schedule, metrics, dsRows] = await Promise.all([
+        sbGet('pipeline_jobs', 'select=id,job_type,status,priority,result,error_message,started_at,completed_at,created_at&order=created_at.desc&limit=50'),
+        sbGet('pipeline_runs', 'select=id,triggered_by,status,jobs_total,jobs_done,jobs_failed,items_scraped,items_cleaned,items_uploaded,started_at,completed_at&order=started_at.desc&limit=10'),
+        sbGet('pipeline_schedule', 'select=*&limit=1'),
+        sbGet('pipeline_metrics', 'select=metric_name,metric_value,tags,recorded_at&order=recorded_at.desc&limit=50'),
+        sbGet('dataset_items', 'select=label,is_deduplicated,split&limit=100000'),
       ])
-      if (pipelineRes.ok) setData(await pipelineRes.json())
-      if (logsRes.ok)     setLogs((await logsRes.json()).logs || [])
-      if (healthRes.ok)   setHealthData(await healthRes.json())
+      const rows: any[] = Array.isArray(dsRows) ? dsRows : []
+      const dsStats = {
+        total: rows.length,
+        ai: rows.filter(r => r.label === 'ai').length,
+        human: rows.filter(r => r.label === 'human').length,
+        deduplicated: rows.filter(r => r.is_deduplicated).length,
+        train: rows.filter(r => r.split === 'train').length,
+        val: rows.filter(r => r.split === 'val').length,
+        test: rows.filter(r => r.split === 'test').length,
+      }
+      setData({ jobs: Array.isArray(jobs) ? jobs : [], runs: Array.isArray(runs) ? runs : [], dataset: dsStats, schedule: Array.isArray(schedule) ? schedule[0] : null, metrics: Array.isArray(metrics) ? metrics : [] })
+      setHealthData({ runs: Array.isArray(runs) ? runs : [], beats: [], alerts: [], overview: {
+        total_items: dsStats.total, clean_items: dsStats.deduplicated, items_24h: 0,
+        health: { status: Array.isArray(jobs) && jobs.some((j: any) => j.status === 'done') ? 'healthy' : 'unknown' }
+      }})
       setLastRefresh(new Date())
-    } catch {}
+    } catch(e) { console.error('fetchData:', e) }
     setLoading(false)
     setRefreshing(false)
-  }, [])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sbGet])
 
   useEffect(() => { fetchData() }, [fetchData])
 
@@ -152,23 +191,23 @@ export default function Dashboard() {
   const triggerPipeline = async () => {
     setTriggering(true)
     try {
-      await fetch('/api/pipeline', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ trigger: 'run' }),
+      // 1. Schedule a new run directly via DB
+      await fetch(`${SB_URL}/rest/v1/rpc/schedule_pipeline_run`, {
+        method: 'POST', headers: sbH,
+        body: JSON.stringify({ p_triggered_by: 'admin-manual' }),
       })
-      setTimeout(() => fetchData(true), 2000)
-    } catch {}
+      // 2. Call orchestrator to process jobs immediately
+      const result = await callEdge('pipeline-orchestrator', { source: 'admin-manual' })
+      console.log('Pipeline trigger result:', result)
+      setTimeout(() => fetchData(true), 1500)
+      setTimeout(() => fetchData(true), 5000)
+    } catch(e) { console.error('trigger error:', e) }
     setTriggering(false)
   }
 
   const triggerJob = async (job_type: string) => {
     try {
-      await fetch('/api/pipeline', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'trigger', job_type }),
-      })
+      await callEdge('pipeline-orchestrator', { source: 'admin-job', job_type })
       fetchData(true)
     } catch {}
   }
@@ -179,7 +218,7 @@ export default function Dashboard() {
   }
 
   const jobs     = data?.jobs    || []
-  const dataset  = data?.dataset || []
+  const dataset  = data?.dataset || { total: 0, ai: 0, human: 0, deduplicated: 0, train: 0, val: 0, test: 0 }
   const scans    = data?.scans   || []
   const profiles = data?.profiles|| []
 
