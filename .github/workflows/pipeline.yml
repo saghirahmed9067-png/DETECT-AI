@@ -1,42 +1,59 @@
-name: 🤖 Run Pipeline
+name: 🤖 Pipeline Runner
 
 on:
   workflow_dispatch:
     inputs:
-      job_types:
-        description: 'Job types to run (comma separated: scrape,clean,augment,upload)'
+      triggered_by:
+        description: 'Who triggered this run'
         required: false
-        default: 'scrape,clean,augment,upload'
+        default: 'manual'
   schedule:
-    - cron: '0 2 * * *'  # Run daily at 2am UTC
+    - cron: '0 */6 * * *'   # Every 6 hours as backup to Supabase pg_cron
 
 jobs:
   run-pipeline:
-    name: 🔄 Execute Pipeline Workers
+    name: 🔄 Execute Pipeline
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: pipeline
     steps:
-      - uses: actions/checkout@v4
+      - name: Call Supabase Edge Function Orchestrator
+        run: |
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}/functions/v1/pipeline-orchestrator" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -d '{"source":"github_actions","triggered_by":"${{ github.event.inputs.triggered_by || github.event_name }}"}' \
+            --max-time 300)
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+          
+          echo "HTTP Status: $HTTP_CODE"
+          echo "Response: $BODY"
+          
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "❌ Pipeline failed with HTTP $HTTP_CODE"
+            exit 1
+          fi
+          
+          echo "✅ Pipeline completed successfully"
+          
+          # Print summary from response
+          echo "$BODY" | python3 -c "
+import json,sys
+try:
+  d = json.load(sys.stdin)
+  r = d.get('results', {})
+  print('--- PIPELINE SUMMARY ---')
+  for k,v in r.items():
+    print(f'  {k}: {v}')
+  print('--- LOG ---')
+  for l in d.get('log',[]):
+    print(' ', l)
+except: pass
+"
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: npm
-          cache-dependency-path: pipeline/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run Pipeline
-        env:
-          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          HUGGINGFACE_API_TOKEN: ${{ secrets.HUGGINGFACE_API_TOKEN }}
-          JOB_TYPES: ${{ github.event.inputs.job_types || 'scrape,clean,augment,upload' }}
-        run: node src/index.js
-
-      - name: Summary
-        run: echo "✅ Pipeline completed at $(date)"
+      - name: Update Schedule
+        if: always()
+        run: |
+          echo "Pipeline run completed at $(date -u)"
+          echo "Next automatic run will be triggered by Supabase pg_cron in 15 min intervals"
