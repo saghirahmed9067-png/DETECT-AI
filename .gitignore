@@ -42,3 +42,4 @@ ml-training/data/raw/
 ml-training/data/processed/
 .netlify/
 setup-secrets.sh
+.vercel/
