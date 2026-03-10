@@ -16,3 +16,4 @@ crons = [
 
 [vars]
 HF_REPO = "saghi776/detectai-dataset"
+
