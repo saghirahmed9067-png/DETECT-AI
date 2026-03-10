@@ -4,7 +4,7 @@ let _client: SupabaseClient | null = null
 
 function getClient(): SupabaseClient {
   if (_client) return _client
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL    || 'https://xtdrwspsbranhunvlbfa.supabase.co'
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL    || 'https://lpgzmruxaeikxxayjmze.supabase.co'
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
            || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
            || 'placeholder-key'

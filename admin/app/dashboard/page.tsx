@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation'
 import { Shield, Database, Activity, Upload, RefreshCw, LogOut, BarChart3, CheckCircle, XCircle, Clock, Loader2, Play, Zap, Radio, GitBranch, Server, TrendingUp, ChevronRight, AlertTriangle, Eye, Users, Terminal, Heart, Cpu, Globe } from 'lucide-react'
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts'
 
-const SB_URL = 'https://xtdrwspsbranhunvlbfa.supabase.co'
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0ZHJ3c3BzYnJhbmh1bnZsYmZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3MDgwMjEsImV4cCI6MjA4ODI4NDAyMX0.2xKiY0unR1Joq2W5M2YnzluSyjS2eXFZH8NUTm3qfnE'
+const SB_URL = 'https://lpgzmruxaeikxxayjmze.supabase.co'
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxwZ3ptcnV4YWVpa3h4YXlqbXplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNjE4OTIsImV4cCI6MjA4ODczNzg5Mn0.grbICfJk6vvJjLtcHecuA6X10kDwbaSFAejNHkvv2w0'
 const HF_REPO = 'saghi776/detectai-dataset'
 const sbH: Record<string,string> = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' }
 
