@@ -5,6 +5,7 @@ import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/auth-provider'
+import { SiteFooter } from '@/components/site-footer'
 import {
   Shield, Brain, Eye, Mic, FileText, Globe, Zap, BarChart3,
   ArrowRight, CheckCircle, XCircle, HelpCircle,
@@ -629,26 +630,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── FOOTER ── */}
-      <footer className="border-t border-border py-8 px-4">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-primary" />
-            <span className="font-black gradient-text">DETECTAI</span>
-            <span className="text-text-disabled text-sm">— Unmask the Machine</span>
-          </div>
-          <div className="flex items-center gap-6 text-sm text-text-muted">
-            <a href="https://github.com/saghirahmed9067-png/DETECT-AI" target="_blank" rel="noopener"
-              className="hover:text-text-primary transition-colors flex items-center gap-1.5">
-              <Github className="w-4 h-4" />GitHub
-            </a>
-            <a href="https://huggingface.co/datasets/saghi776/detectai-dataset" target="_blank" rel="noopener"
-              className="hover:text-text-primary transition-colors">HuggingFace</a>
-            <Link href="/chat" className="hover:text-text-primary transition-colors">AI Chat</Link>
-          </div>
-          <p className="text-xs text-text-disabled">© 2025 DETECTAI · Open Source · MIT License</p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }

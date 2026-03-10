@@ -128,3 +128,39 @@
 .scan-line {
   animation: scan-line 2s linear infinite;
 }
+
+/* ── Mobile responsiveness ─────────────────────────────────────────────── */
+@layer utilities {
+  /* Prose styles for legal pages */
+  .prose-detectai ul { list-style: disc; padding-left: 1.5rem; }
+  .prose-detectai ul li { margin-bottom: 0.35rem; }
+  .prose-detectai strong { color: #f1f5f9; }
+  .prose-detectai a { color: #7c3aed; }
+  .prose-detectai a:hover { text-decoration: underline; }
+
+  /* Mobile safe paddings */
+  .mobile-safe { padding-left: max(1rem, env(safe-area-inset-left)); padding-right: max(1rem, env(safe-area-inset-right)); }
+}
+
+/* Prevent horizontal scroll on mobile */
+@media (max-width: 640px) {
+  body { overflow-x: hidden; }
+
+  /* Make tables scroll horizontally on mobile */
+  table { display: block; overflow-x: auto; white-space: nowrap; }
+
+  /* Ensure code blocks don't overflow */
+  pre, code { max-width: 100%; overflow-x: auto; }
+
+  /* Fix hero text on mobile */
+  .hero-title { font-size: clamp(2rem, 8vw, 4rem); }
+
+  /* Dashboard sidebar - always collapse on mobile */
+  .sidebar-mobile-hidden { display: none; }
+}
+
+/* Dashboard layout mobile fix */
+@media (max-width: 768px) {
+  .dashboard-grid { grid-template-columns: 1fr !important; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
