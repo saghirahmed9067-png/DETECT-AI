@@ -34,11 +34,12 @@ interface Chat       { id: string; title: string; messages: Message[]; createdAt
 
 // ── Tool meta ──────────────────────────────────────────────────────────────
 const TOOL_META: Record<string,{label:string;color:string;Icon:()=>JSX.Element}> = {
-  detect_text:  { label:'Text Analysis',  color:'#7c3aed', Icon:FileTextIcon },
-  detect_image: { label:'Image Analysis', color:'#2563eb', Icon:ImageIcon    },
-  detect_audio: { label:'Audio Analysis', color:'#0891b2', Icon:MusicIcon    },
-  detect_video: { label:'Video Analysis', color:'#059669', Icon:VideoIcon    },
-  analyze_url:  { label:'URL Analysis',   color:'#d97706', Icon:GlobeIcon    },
+  detect_image_with_vila: { label:'NVIDIA VILA Analysis', color:'#76b900', Icon:ImageIcon    },
+  detect_text:            { label:'Text Analysis',        color:'#7c3aed', Icon:FileTextIcon },
+  detect_image:           { label:'Image Analysis',       color:'#2563eb', Icon:ImageIcon    },
+  detect_audio:           { label:'Audio Analysis',       color:'#0891b2', Icon:MusicIcon    },
+  detect_video:           { label:'Video Analysis',       color:'#059669', Icon:VideoIcon    },
+  analyze_url:            { label:'URL Analysis',         color:'#d97706', Icon:GlobeIcon    },
 }
 
 // ── Markdown ───────────────────────────────────────────────────────────────
@@ -106,6 +107,13 @@ function ToolCard({ tool, result }: { tool: string; result: any }) {
               if (['verdict','result','confidence_pct','confidence'].includes(k)) return null
               if (v === null || v === undefined) return null
               const label = k.replace(/_/g, ' ')
+              if (k === 'vila_analysis' && typeof v === 'string') return (
+                <div key={k}>
+                  <div className='text-xs font-semibold uppercase tracking-wider mb-2' style={{color:`${meta.color}cc`}}>NVIDIA VILA Visual Analysis</div>
+                  <div className='text-xs text-gray-300 leading-relaxed p-3 rounded-lg border whitespace-pre-wrap' style={{background:`${meta.color}08`,borderColor:`${meta.color}20`}}>{String(v)}</div>
+                </div>
+              )
+              if (k === 'nvidia_powered' || k === 'analysis_model' || k === 'analysis_focus') return null
               if (typeof v === 'object' && !Array.isArray(v)) return (
                 <div key={k}>
                   <div className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">{label}</div>
