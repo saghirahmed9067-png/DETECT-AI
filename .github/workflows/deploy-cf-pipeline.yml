@@ -32,8 +32,13 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
-      - name: Set HF_TOKEN secret
-        run: |
-          echo "${{ secrets.HUGGINGFACE_API_TOKEN }}" | npx wrangler secret put HF_TOKEN
+      - name: Set HF_TOKEN secret on worker
+        run: echo "$HF_TOKEN_VAL" | npx wrangler secret put HF_TOKEN
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          HF_TOKEN_VAL: ${{ secrets.HUGGINGFACE_API_TOKEN }}
+
+      - name: Verify deployment
+        run: npx wrangler deployments list 2>/dev/null | head -5 || true
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
