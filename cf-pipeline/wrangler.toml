@@ -1,0 +1,18 @@
+name = "detectai-pipeline"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "detectai-pipeline"
+database_id = "50f5e26a-c794-4cfa-b2b7-2bbd1d7c045c"
+
+[triggers]
+crons = [
+  "*/2 * * * *",
+  "*/15 * * * *"
+]
+
+[vars]
+HF_REPO = "saghi776/detectai-dataset"

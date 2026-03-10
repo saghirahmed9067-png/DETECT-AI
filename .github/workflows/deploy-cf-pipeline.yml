@@ -1,0 +1,39 @@
+name: Deploy Cloudflare Pipeline
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'cf-pipeline/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy CF Worker
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cf-pipeline
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: cf-pipeline/package-lock.json
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Deploy Worker
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Set HF_TOKEN secret
+        run: |
+          echo "${{ secrets.HUGGINGFACE_API_TOKEN }}" | npx wrangler secret put HF_TOKEN
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
