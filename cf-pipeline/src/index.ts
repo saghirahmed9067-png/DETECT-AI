@@ -128,8 +128,8 @@ async function runScraper(env: Env, shardIdx: number): Promise<{ inserted: numbe
     }
   }
 
-  // D1 batch insert - split into chunks of 100 to avoid statement limits
-  const CHUNK = 100
+  // D1 batch insert - 50 items × 11 cols = 550 bind params (SQLite hard limit is 999)
+  const CHUNK = 50
   let totalInserted = 0
   for (let i = 0; i < items.length; i += CHUNK) {
     const chunk = items.slice(i, i + CHUNK)
@@ -137,13 +137,17 @@ async function runScraper(env: Env, shardIdx: number): Promise<{ inserted: numbe
       '(?,?,?,?,?,?,?,?,?,?,?,datetime(\'now\'))'
     ).join(',')
     const values = chunk.flat()
-    await env.DB.prepare(
-      `INSERT OR IGNORE INTO dataset_items
-       (id,media_type,source_name,hf_dataset_id,label,confidence,
-        is_synthetic,is_deduplicated,split,content_hash,metadata,created_at)
-       VALUES ${placeholders}`
-    ).bind(...values).run()
-    totalInserted += chunk.length
+    try {
+      const result = await env.DB.prepare(
+        `INSERT OR IGNORE INTO dataset_items
+         (id,media_type,source_name,hf_dataset_id,label,confidence,
+          is_synthetic,is_deduplicated,split,content_hash,metadata,created_at)
+         VALUES ${placeholders}`
+      ).bind(...values).run()
+      totalInserted += (result.meta?.changes ?? chunk.length)
+    } catch (err: any) {
+      console.error(`[INSERT ERROR] shard=${shardIdx} chunk=${i}: ${err?.message}`)
+    }
   }
 
   // Update state
