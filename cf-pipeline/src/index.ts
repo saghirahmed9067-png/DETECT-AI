@@ -85,7 +85,7 @@ const SOURCES = [
 
 const TOTAL_SHARDS = 24
 const SHARDS_PER_RUN = 4
-const ITEMS_PER_SHARD = 600
+const ITEMS_PER_SHARD = 90 // 90items / 9chunk = 10 INSERT queries per shard
 
 function getShardSources(idx: number) {
   return SOURCES.filter((_, i) => i % TOTAL_SHARDS === idx)
@@ -129,7 +129,7 @@ async function runScraper(env: Env, shardIdx: number): Promise<{ inserted: numbe
   }
 
   // D1 batch insert - 50 items × 11 cols = 550 bind params (SQLite hard limit is 999)
-  const CHUNK = 50
+  const CHUNK = 9 // D1/DO max bound params=100; 9×11cols=99✓
   let totalInserted = 0
   for (let i = 0; i < items.length; i += CHUNK) {
     const chunk = items.slice(i, i + CHUNK)
@@ -246,7 +246,7 @@ async function runHFPush(env: Env): Promise<{ pushed: number; commitId: string; 
   // Mark pushed - D1 batch updates
   const ids = items.map(i => (i as any).id as string)
   const pushTime = new Date().toISOString()
-  const UPDATE_CHUNK = 500
+  const UPDATE_CHUNK = 99 // D1 max 100 params per query
   for (let i = 0; i < ids.length; i += UPDATE_CHUNK) {
     const chunk = ids.slice(i, i + UPDATE_CHUNK)
     const placeholders = chunk.map(() => '?').join(',')
