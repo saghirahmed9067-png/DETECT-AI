@@ -246,7 +246,7 @@ async function runHFPush(env: Env): Promise<{ pushed: number; commitId: string; 
   // Mark pushed - D1 batch updates
   const ids = items.map(i => (i as any).id as string)
   const pushTime = new Date().toISOString()
-  const UPDATE_CHUNK = 99 // D1 max 100 params per query
+  const UPDATE_CHUNK = 97 // D1 max 100 params per query; 97 IDs + 2 (pushTime, commitId) = 99 ✓
   for (let i = 0; i < ids.length; i += UPDATE_CHUNK) {
     const chunk = ids.slice(i, i + UPDATE_CHUNK)
     const placeholders = chunk.map(() => '?').join(',')
