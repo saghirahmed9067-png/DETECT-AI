@@ -6,16 +6,17 @@ import {
   signInWithPopup
 } from 'firebase/auth'
 
+// Firebase config — env vars preferred, hardcoded values as fallback
+// Note: Firebase client API keys are NOT secrets (by Firebase's design).
+// Security is enforced via Firebase Security Rules + authorized domains.
 const firebaseConfig = {
-  apiKey:            'AIzaSyCMbmpuHY7DXPTNsT-X8KfakBJ8TFaAM2w',
-  // Keep authDomain as Firebase's own domain — this is what authorizes Google OAuth.
-  // The Vercel domain does NOT need to be authorized here; Firebase handles the redirect.
-  authDomain:        'detectai-prod.firebaseapp.com',
-  projectId:         'detectai-prod',
-  storageBucket:     'detectai-prod.firebasestorage.app',
-  messagingSenderId: '830272475702',
-  appId:             '1:830272475702:web:51cf8033f52f28d603fe97',
-  measurementId:     'G-FE84SYHN99',
+  apiKey:            process.env.NEXT_PUBLIC_FIREBASE_API_KEY            || 'AIzaSyCMbmpuHY7DXPTNsT-X8KfakBJ8TFaAM2w',
+  authDomain:        process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN        || 'detectai-prod.firebaseapp.com',
+  projectId:         process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID         || 'detectai-prod',
+  storageBucket:     process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET     || 'detectai-prod.firebasestorage.app',
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '830272475702',
+  appId:             process.env.NEXT_PUBLIC_FIREBASE_APP_ID             || '1:830272475702:web:51cf8033f52f28d603fe97',
+  measurementId:     process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID     || 'G-FE84SYHN99',
 }
 
 const app: FirebaseApp = getApps().length ? getApps()[0] : initializeApp(firebaseConfig)
