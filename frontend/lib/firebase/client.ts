@@ -1,9 +1,16 @@
 import { initializeApp, getApps, type FirebaseApp } from 'firebase/app'
-import { getAuth, GoogleAuthProvider, browserLocalPersistence, setPersistence } from 'firebase/auth'
+import {
+  getAuth, GoogleAuthProvider,
+  browserLocalPersistence, setPersistence,
+  signInWithRedirect, getRedirectResult,
+  signInWithPopup
+} from 'firebase/auth'
 
 const firebaseConfig = {
   apiKey:            'AIzaSyCMbmpuHY7DXPTNsT-X8KfakBJ8TFaAM2w',
-  authDomain:        'detect-ai-nu.vercel.app',   // ← custom domain (add this to Firebase authorized domains)
+  // Keep authDomain as Firebase's own domain — this is what authorizes Google OAuth.
+  // The Vercel domain does NOT need to be authorized here; Firebase handles the redirect.
+  authDomain:        'detectai-prod.firebaseapp.com',
   projectId:         'detectai-prod',
   storageBucket:     'detectai-prod.firebasestorage.app',
   messagingSenderId: '830272475702',
@@ -32,10 +39,13 @@ provider.addScope('profile')
 provider.setCustomParameters({ prompt: 'select_account' })
 export const googleProvider = provider
 
+// Re-export for convenience in pages
+export { signInWithRedirect, getRedirectResult, signInWithPopup }
+
 export function parseFirebaseError(err: unknown): string {
   const msg = err instanceof Error ? err.message : String(err)
   if (msg.includes('auth/unauthorized-domain')) {
-    return 'Google sign-in requires domain authorization. Use email/password or contact support at contact@detectai.io'
+    return 'Domain not authorized. Please contact support@detectai.io'
   }
   if (msg.includes('auth/user-not-found') || msg.includes('auth/wrong-password') || msg.includes('auth/invalid-credential')) {
     return 'Incorrect email or password. Please try again.'
@@ -45,7 +55,7 @@ export function parseFirebaseError(err: unknown): string {
   if (msg.includes('auth/too-many-requests')) return 'Too many attempts. Please wait a moment and try again.'
   if (msg.includes('auth/network-request-failed')) return 'Network error. Check your connection.'
   if (msg.includes('auth/popup-closed-by-user') || msg.includes('popup-closed')) return ''
-  if (msg.includes('auth/popup-blocked')) return 'Popup blocked. Please allow popups for this site and try again.'
+  if (msg.includes('auth/popup-blocked')) return 'Popup blocked — please allow popups and try again.'
   return msg.replace('Firebase: ', '').replace(/\(auth\/.*?\)\.?/, '').trim()
 }
 

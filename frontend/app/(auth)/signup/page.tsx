@@ -1,10 +1,10 @@
 'use client'
 export const dynamic = 'force-dynamic'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { createUserWithEmailAndPassword, updateProfile, signInWithPopup } from 'firebase/auth'
+import { createUserWithEmailAndPassword, updateProfile, signInWithPopup, signInWithRedirect, getRedirectResult } from 'firebase/auth'
 import { auth, googleProvider } from '@/lib/firebase/client'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -73,6 +73,21 @@ export default function SignupPage() {
       toast.error(msg.includes('email-already-in-use') ? 'An account with this email already exists' : msg)
     }
   }
+
+  // Handle Google redirect result on mount
+  useEffect(() => {
+    if (!auth) return
+    setGoogle(true)
+    getRedirectResult(auth).then(async result => {
+      if (result?.user) {
+        await createProfile(result.user.uid, result.user.email || '', result.user.displayName || '')
+        await setSessionCookie(result.user)
+        setRedirecting(true)
+        toast.success('Account created! Welcome to DETECTAI')
+        setTimeout(() => router.push('/dashboard'), 900)
+      }
+    }).catch(() => {}).finally(() => setGoogle(false))
+  }, [router])
 
   const signUpWithGoogle = async () => {
     setGoogle(true)
