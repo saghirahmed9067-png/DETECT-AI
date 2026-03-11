@@ -5,17 +5,18 @@ import { useRouter } from 'next/navigation'
 import { Shield, Database, Activity, Upload, RefreshCw, LogOut, BarChart3, CheckCircle, XCircle, Clock, Loader2, Play, Zap, Radio, GitBranch, Server, TrendingUp, ChevronRight, AlertTriangle, Eye, Users, Terminal, Heart, Cpu, Globe } from 'lucide-react'
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts'
 
-const SB_URL = 'https://lpgzmruxaeikxxayjmze.supabase.co'
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxwZ3ptcnV4YWVpa3h4YXlqbXplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNjE4OTIsImV4cCI6MjA4ODczNzg5Mn0.grbICfJk6vvJjLtcHecuA6X10kDwbaSFAejNHkvv2w0'
-const HF_REPO = 'saghi776/detectai-dataset'
-const sbH: Record<string,string> = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' }
-
-async function sbGet(table: string, qs = '') {
-  try { const r = await fetch(`${SB_URL}/rest/v1/${table}?${qs}`, { headers: sbH }); return r.ok ? r.json() : [] } catch { return [] }
+// All Supabase calls go through internal API routes (no hardcoded keys)
+async function sbGet(endpoint: string, qs = '') {
+  try { const r = await fetch(`/api/admin/${endpoint}?${qs}`); return r.ok ? r.json() : [] } catch { return [] }
 }
-async function callEdge(fn: string, body?: any) {
-  try { const r = await fetch(`${SB_URL}/functions/v1/${fn}`, { method: 'POST', headers: sbH, body: JSON.stringify(body || {}) }); return r.json() } catch (e: any) { return { error: e.message } }
+async function callAdmin(action: string, body?: any) {
+  try {
+    const r = await fetch(`/api/admin/${action}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) })
+    return r.json()
+  } catch (e: any) { return { error: e.message } }
 }
+// Legacy wrapper for compatibility
+const callEdge = callAdmin
 
 const STAGES = [
   { id: 'scrape',  label: 'Scrape',  icon: '🌐', color: '#22d3ee', desc: '8 shards · 33 sources' },

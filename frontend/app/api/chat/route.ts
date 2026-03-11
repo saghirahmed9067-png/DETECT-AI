@@ -195,7 +195,7 @@ export async function POST(req: NextRequest) {
     if (!messages?.length) return new Response('Missing messages', { status: 400 })
 
     const apiKey   = process.env.NVIDIA_API_KEY || ''
-    const cfToken  = process.env.CLOUDFLARE_API_TOKEN || 'TmVtoquyN7WPbQuo02fgrNbleAMKxn-6wa3jWKa3'
+    const cfToken  = process.env.CLOUDFLARE_API_TOKEN ?? ''
     const baseUrl  = req.nextUrl.origin
 
     if (!apiKey) {

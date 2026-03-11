@@ -1,9 +1,7 @@
 /**
- * HuggingFace Inference — FREE tier, no credit card required
- * Uses the HF_TOKEN environment variable (set in Netlify env vars)
- *
- * WHAT THIS REPLACES: The Anthropic Claude API ($$ per call)
- * WHY IT'S FREE: HuggingFace Inference API has a free tier (rate-limited but usable)
+ * DETECTAI — Multi-Modal AI Detection Inference Engine
+ * Proprietary multi-model pipeline covering text, image, audio, and video.
+ * Models: RoBERTa (text), SDXL-Detector (image), Wav2Vec2 (audio), frame-analysis (video)
  */
 
 export interface DetectionSignal {
@@ -267,14 +265,37 @@ function heuristicTextScore(text: string): number {
   return Math.min(0.9, 0.3 + aiIndicators.reduce((a, b) => a + b, 0))
 }
 
-// ── RATE LIMITER ──────────────────────────────────────────────────────────────
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
+// ── DISTRIBUTED RATE LIMITER (Supabase-backed) ───────────────────────────────
+// Falls back to in-memory if Supabase is unavailable (cold start safety)
+const _fallback = new Map<string, { count: number; resetAt: number }>()
 
-export function checkRateLimit(ip: string, limit = 10, windowMs = 600000): boolean {
-  const now   = Date.now()
-  const entry = rateLimitMap.get(ip)
-  if (!entry || now > entry.resetAt) { rateLimitMap.set(ip, { count: 1, resetAt: now + windowMs }); return true }
-  if (entry.count >= limit) return false
-  entry.count++
-  return true
+export async function checkRateLimitAsync(ip: string, limit = 20, windowMinutes = 1): Promise<boolean> {
+  try {
+    const { createClient } = await import('@supabase/supabase-js')
+    const sb = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { persistSession: false } }
+    )
+    const { data } = await sb.rpc('check_and_increment_rate_limit', {
+      p_ip: ip, p_max: limit, p_window_minutes: windowMinutes
+    })
+    return data === true
+  } catch {
+    // Fallback to in-memory if DB unreachable
+    const now = Date.now(); const windowMs = windowMinutes * 60_000
+    const e = _fallback.get(ip)
+    if (!e || now > e.resetAt) { _fallback.set(ip, { count: 1, resetAt: now + windowMs }); return true }
+    if (e.count >= limit) return false
+    e.count++; return true
+  }
+}
+
+// Sync wrapper for backwards compatibility (uses fallback only)
+export function checkRateLimit(ip: string, limit = 20, windowMs = 60000): boolean {
+  const now = Date.now()
+  const e = _fallback.get(ip)
+  if (!e || now > e.resetAt) { _fallback.set(ip, { count: 1, resetAt: now + windowMs }); return true }
+  if (e.count >= limit) return false
+  e.count++; return true
 }

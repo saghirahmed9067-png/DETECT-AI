@@ -18,7 +18,7 @@ async function d1(sql: string, token: string) {
 }
 
 export async function GET() {
-  const token = process.env.CLOUDFLARE_API_TOKEN || 'TmVtoquyN7WPbQuo02fgrNbleAMKxn-6wa3jWKa3'
+  const token = process.env.CLOUDFLARE_API_TOKEN ?? ''
   try {
     const [overview, byType, recent] = await Promise.all([
       d1('SELECT total_scraped, total_pushed, last_scrape_at, last_push_at FROM pipeline_state WHERE id=1', token),

@@ -1,19 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { analyzeAudio, checkRateLimit } from '@/lib/inference/hf-analyze'
+import { creditGuard, httpErrorResponse, HTTPError } from '@/lib/middleware/credit-guard'
 import { createClient } from '@supabase/supabase-js'
 
 export const dynamic = 'force-dynamic'
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'https://placeholder.supabase.co', (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) ?? 'placeholder-anon-key')
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  { auth: { persistSession: false } }
+)
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for') || 'unknown'
   if (!checkRateLimit(ip)) return NextResponse.json({ success: false, error: { code: 'RATE_LIMIT', message: 'Too many requests' } }, { status: 429 })
 
+  // Require authentication + deduct credit before inference
+  let userId: string
+  try {
+    const guard = await creditGuard(req, 'audio')
+    userId = guard.userId
+  } catch (err) {
+    if (err instanceof HTTPError) return httpErrorResponse(err)
+    return NextResponse.json({ success: false, error: { code: 'AUTH_ERROR', message: 'Authentication failed' } }, { status: 401 })
+  }
+
+
   const start = Date.now()
   try {
     const form   = await req.formData()
     const file   = form.get('file') as File | null
-    const userId = form.get('user_id') as string | null
 
     if (!file) return NextResponse.json({ success: false, error: { code: 'NO_FILE', message: 'No file provided' } }, { status: 400 })
     if (file.size > 25 * 1024 * 1024) return NextResponse.json({ success: false, error: { code: 'TOO_LARGE', message: 'Audio must be under 25MB' } }, { status: 400 })

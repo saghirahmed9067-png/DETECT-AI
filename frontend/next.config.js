@@ -1,32 +1,39 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // New Supabase project (lpgzmruxaeikxxayjmze) — migrated 2026-03-11
-  // Old project (xtdrwspsbranhunvlbfa) was stuck in PAUSING state
   env: {
-    NEXT_PUBLIC_SUPABASE_URL: 'https://lpgzmruxaeikxxayjmze.supabase.co',
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxwZ3ptcnV4YWVpa3h4YXlqbXplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNjE4OTIsImV4cCI6MjA4ODczNzg5Mn0.grbICfJk6vvJjLtcHecuA6X10kDwbaSFAejNHkvv2w0',
-    // Cloudflare — for pipeline stats API route (server-side only)
-    CLOUDFLARE_API_TOKEN:  'TmVtoquyN7WPbQuo02fgrNbleAMKxn-6wa3jWKa3',
-    CLOUDFLARE_ACCOUNT_ID: '34400e6e147e83e95c942135f54aeba7',
+    // Supabase — moved to Vercel env vars; fallback for local dev via .env.local
+    NEXT_PUBLIC_SUPABASE_URL:      process.env.NEXT_PUBLIC_SUPABASE_URL      || 'https://lpgzmruxaeikxxayjmze.supabase.co',
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
   },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '*.supabase.co' },
-      { protocol: 'https', hostname: 'huggingface.co' },
       { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
     ],
   },
   headers: async () => [
     {
-      source: '/api/:path*',
-      headers: [{ key: 'X-Content-Type-Options', value: 'nosniff' }],
-    },
-    {
       source: '/:path*',
       headers: [
-        { key: 'X-Frame-Options',        value: 'DENY' },
-        { key: 'X-XSS-Protection',       value: '1; mode=block' },
-        { key: 'Referrer-Policy',         value: 'strict-origin-when-cross-origin' },
+        { key: 'X-Frame-Options',           value: 'DENY' },
+        { key: 'X-Content-Type-Options',    value: 'nosniff' },
+        { key: 'X-XSS-Protection',          value: '1; mode=block' },
+        { key: 'Referrer-Policy',            value: 'strict-origin-when-cross-origin' },
+        { key: 'Permissions-Policy',         value: 'camera=(), microphone=(), geolocation=()' },
+        { key: 'Strict-Transport-Security',  value: 'max-age=31536000; includeSubDomains' },
+        {
+          key: 'Content-Security-Policy',
+          value: [
+            "default-src 'self'",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://accounts.google.com",
+            "style-src 'self' 'unsafe-inline'",
+            "font-src 'self' data:",
+            "img-src 'self' data: blob: https: lh3.googleusercontent.com *.supabase.co",
+            "connect-src 'self' https://*.supabase.co https://api-inference.huggingface.co https://integrate.api.nvidia.com https://accounts.google.com https://securetoken.googleapis.com https://identitytoolkit.googleapis.com https://api.cloudflare.com",
+            "frame-src https://accounts.google.com",
+            "object-src 'none'",
+          ].join('; '),
+        },
       ],
     },
   ],
