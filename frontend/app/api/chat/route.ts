@@ -225,7 +225,7 @@ Describe EXACTLY what you observe. No vague statements.`,
     if (!text) return JSON.stringify({ error: 'No text provided' })
 
     const aiMarkers = (text.match(/\b(furthermore|additionally|moreover|delve|tapestry|intricate|navigate|realm|utilize|leverage|innovative|seamless|boundaries|comprehensive|robust|facilitate|paradigm|nuanced|multifaceted|groundbreaking|transformative|synergy|holistic|actionable|streamline|empower|pivotal|harness)\b/gi) || []).length
-    const avgSentLen = text.split(/[.!?]+/).filter(Boolean).map(s => s.trim().split(/\s+/).length)
+    const avgSentLen = text.split(/[.!?]+/).filter(Boolean).map((s: string) => s.trim().split(/\s+/).length)
     const sentVariance = avgSentLen.length > 1 ? Math.max(...avgSentLen) - Math.min(...avgSentLen) : 0
     const lowVariance = sentVariance < 8
 
