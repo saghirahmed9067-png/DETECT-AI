@@ -5,6 +5,9 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_SUPABASE_URL: 'https://lpgzmruxaeikxxayjmze.supabase.co',
     NEXT_PUBLIC_SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxwZ3ptcnV4YWVpa3h4YXlqbXplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNjE4OTIsImV4cCI6MjA4ODczNzg5Mn0.grbICfJk6vvJjLtcHecuA6X10kDwbaSFAejNHkvv2w0',
+    // Cloudflare — for pipeline stats API route (server-side only)
+    CLOUDFLARE_API_TOKEN:  'TmVtoquyN7WPbQuo02fgrNbleAMKxn-6wa3jWKa3',
+    CLOUDFLARE_ACCOUNT_ID: '34400e6e147e83e95c942135f54aeba7',
   },
   images: {
     remotePatterns: [

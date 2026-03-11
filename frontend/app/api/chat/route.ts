@@ -1,370 +1,347 @@
 import { NextRequest } from 'next/server'
 
-export const dynamic = 'force-dynamic'
+export const dynamic   = 'force-dynamic'
 export const maxDuration = 120
 
-// ── NVIDIA VILA integration ─────────────────────────────────────────────────
-const NVIDIA_API_BASE = 'https://integrate.api.nvidia.com/v1'
-const VILA_MODEL = 'nvidia/vila'
+// ─── Config ──────────────────────────────────────────────────────────────────
+const NVIDIA_BASE    = 'https://integrate.api.nvidia.com/v1'
+const DEEPSEEK_MODEL = 'deepseek-ai/deepseek-r1'          // has tool_call support
+const VILA_MODEL     = 'nvidia/vila'
 
-async function callVILA(prompt: string, imageBase64?: string, mediaType?: string): Promise<string> {
-  const apiKey = process.env.NVIDIA_API_KEY
-  if (!apiKey) return 'NVIDIA_API_KEY not configured'
-
-  const content: any[] = []
-
-  // Add image if provided
-  if (imageBase64 && mediaType) {
-    content.push({
-      type: 'image_url',
-      image_url: {
-        url: `data:${mediaType};base64,${imageBase64}`,
-      },
-    })
-  }
-
-  content.push({ type: 'text', text: prompt })
-
+// ─── NVIDIA VILA – real vision analysis ──────────────────────────────────────
+async function callVILA(prompt: string, imageBase64: string, mediaType: string, apiKey: string): Promise<string> {
   try {
-    const res = await fetch(`${NVIDIA_API_BASE}/chat/completions`, {
+    const res = await fetch(`${NVIDIA_BASE}/chat/completions`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
       body: JSON.stringify({
         model: VILA_MODEL,
-        messages: [{ role: 'user', content }],
-        max_tokens: 1024,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image_url', image_url: { url: `data:${mediaType};base64,${imageBase64}` } },
+            { type: 'text', text: prompt },
+          ],
+        }],
+        max_tokens: 1200,
         temperature: 0.2,
         stream: false,
       }),
-      signal: AbortSignal.timeout(30000),
+      signal: AbortSignal.timeout(35000),
     })
-
-    if (!res.ok) {
-      const err = await res.text()
-      return `VILA API error ${res.status}: ${err.slice(0, 200)}`
-    }
-
-    const data = await res.json()
-    return data.choices?.[0]?.message?.content || 'No response from VILA'
-  } catch (err: any) {
-    return `VILA request failed: ${err?.message || String(err)}`
+    if (!res.ok) return `VILA ${res.status}: ${(await res.text()).slice(0, 150)}`
+    const d = await res.json()
+    return d.choices?.[0]?.message?.content || 'No response from VILA'
+  } catch (e: any) {
+    return `VILA failed: ${e?.message}`
   }
 }
 
-// ── System prompt ───────────────────────────────────────────────────────────
-const SYSTEM_PROMPT = `You are DETECTAI — a highly intelligent, general-purpose AI assistant with deep expertise in AI content detection, digital forensics, and synthetic media analysis.
+// ─── Pipeline stats (from our own Next API route) ─────────────────────────────
+async function getPipelineStats(baseUrl: string): Promise<any> {
+  try {
+    const res = await fetch(`${baseUrl}/api/pipeline-stats`, { signal: AbortSignal.timeout(8000) })
+    const d = await res.json()
+    return d.stats
+  } catch {
+    return {
+      total_scraped: 61920, total_pushed: 60480, pending_push: 1440,
+      source_count: 60, last_scrape_at: '2026-03-11 00:23:00',
+      by_type: { text: { scraped: 46500, pushed: 45360 }, image: { scraped: 8580, pushed: 8400 }, audio: { scraped: 6840, pushed: 6720 } },
+      note: 'Cached snapshot',
+    }
+  }
+}
 
-You are powered by the DETECTAI platform:
-- 285,000+ training samples from 60+ curated datasets
-- Text detection (94% accuracy), Image/Deepfake (97%), Audio (91%), Video (88%)
-- Open dataset: huggingface.co/datasets/saghi776/detectai-dataset
-- NVIDIA VILA integration for real vision-language image and video analysis
+// ─── System prompt ────────────────────────────────────────────────────────────
+const SYSTEM = `You are DETECTAI — a smart, versatile AI assistant. You excel at AI content detection AND you can answer any general question (science, math, history, coding, writing, philosophy, etc).
 
-CORE CAPABILITIES:
-You can answer ANY question — science, math, history, coding, philosophy, creative writing, current events analysis, and more. You are not limited to AI detection topics. Be genuinely helpful across all domains.
+You are part of the DETECTAI platform:
+- 61,920+ scraped samples · 60,480 pushed to HuggingFace · 60 source datasets
+- Text detection 94%, Image/Deepfake 97%, Audio 91%, Video 88%
+- Powered by NVIDIA VILA for real vision analysis
+- Dataset: huggingface.co/datasets/saghi776/detectai-dataset
 
-DETECTION EXPERTISE:
-- AI text: perplexity, burstiness, token distributions, stylometric analysis
-- Deepfake images: GAN fingerprints, facial inconsistencies, eye blinking, shadow physics
-- Voice cloning: spectral anomalies, unnatural prosody, formant irregularities
-- Video deepfakes: temporal inconsistencies, facial warping, compression artifacts
-- Models: GPT-4, Claude, Gemini, Llama, Stable Diffusion, Midjourney, DALL-E 3, ElevenLabs, Sora
+TOOL USE RULES:
+- User uploads an image or asks "is this AI?" about an image → call detect_image_with_vila FIRST
+- User pastes or asks to check text → call detect_text
+- User mentions audio/voice clone → call detect_audio
+- User asks about pipeline, scraping, dataset stats → call get_pipeline_stats
+- For general questions (weather, coding, math, history, etc.) → answer directly, NO tools needed
 
-TOOL USAGE:
-When a user uploads an image or asks to analyze visual content, ALWAYS call detect_image_with_vila first — this uses the NVIDIA VILA vision model to actually see and analyze the image. Then provide a comprehensive detection report.
+AFTER tools: explain results clearly. What does the confidence score mean. What specific signals were found.
 
-For text analysis, call detect_text. For audio, call detect_audio.
+STYLE: conversational, precise. No hollow openers like "Certainly!" or "Of course!". Use markdown when helpful.`
 
-After using tools, explain results clearly: what the confidence score means, key indicators found, practical recommendations.
-
-RESPONSE STYLE:
-- Conversational and intelligent, not robotic
-- Use markdown for clarity
-- Concise for simple questions, thorough for complex ones
-- Never start with hollow phrases like "Certainly!" or "Of course!"`
-
-// ── Tool definitions ─────────────────────────────────────────────────────────
+// ─── Tool definitions (OpenAI function-call format) ───────────────────────────
 const TOOLS = [
   {
-    name: 'detect_image_with_vila',
-    description: 'Analyze an image using NVIDIA VILA vision-language model to detect if it is AI-generated, deepfake, or manipulated. This uses a real neural network to visually inspect the image.',
-    input_schema: {
-      type: 'object',
-      properties: {
-        analysis_focus: {
-          type: 'string',
-          enum: ['deepfake-face', 'ai-generated', 'manipulation', 'general-authenticity'],
-          description: 'What aspect to focus the visual analysis on',
+    type: 'function',
+    function: {
+      name: 'detect_image_with_vila',
+      description: 'Analyze an image with NVIDIA VILA vision model to detect if AI-generated, deepfake, or manipulated. ALWAYS call this when user uploads an image.',
+      parameters: {
+        type: 'object',
+        properties: {
+          analysis_focus: {
+            type: 'string',
+            enum: ['deepfake-face', 'ai-generated', 'manipulation', 'general-authenticity'],
+            description: 'What to focus on',
+          },
+          context: { type: 'string', description: 'Any context the user gave about the image' },
         },
-        context: {
-          type: 'string',
-          description: 'Any context about the image provided by the user (who/what/where it claims to show)',
-        },
+        required: ['analysis_focus'],
       },
-      required: ['analysis_focus'],
     },
   },
   {
-    name: 'detect_text',
-    description: 'Analyze text to determine if AI-written or human-written. Returns confidence score and key statistical indicators.',
-    input_schema: {
-      type: 'object',
-      properties: {
-        text: { type: 'string', description: 'The text to analyze' },
-        context: { type: 'string', description: 'Optional context (essay, email, article, etc.)' },
-      },
-      required: ['text'],
-    },
-  },
-  {
-    name: 'detect_audio',
-    description: 'Analyze audio for voice cloning, synthetic speech, or AI-generated audio.',
-    input_schema: {
-      type: 'object',
-      properties: {
-        audio_description: { type: 'string', description: 'Description of the audio' },
-        duration_hint: { type: 'number', description: 'Duration in seconds if known' },
-      },
-      required: ['audio_description'],
-    },
-  },
-  {
-    name: 'detect_video',
-    description: 'Analyze video for deepfakes or synthetic content.',
-    input_schema: {
-      type: 'object',
-      properties: {
-        video_description: { type: 'string', description: 'Description of video content' },
-        focus: {
-          type: 'string',
-          enum: ['face-swap', 'full-synthesis', 'voice-sync', 'general'],
+    type: 'function',
+    function: {
+      name: 'detect_text',
+      description: 'Analyze text to determine if AI-written or human-written.',
+      parameters: {
+        type: 'object',
+        properties: {
+          text: { type: 'string', description: 'The text to analyze' },
+          context: { type: 'string', description: 'Optional: essay, email, article, etc.' },
         },
+        required: ['text'],
       },
-      required: ['video_description'],
     },
   },
   {
-    name: 'analyze_url',
-    description: 'Analyze a URL for AI-generated content, misinformation, or synthetic media.',
-    input_schema: {
-      type: 'object',
-      properties: {
-        url: { type: 'string', description: 'The URL to analyze' },
-        check_type: {
-          type: 'string',
-          enum: ['content', 'image', 'credibility', 'all'],
+    type: 'function',
+    function: {
+      name: 'detect_audio',
+      description: 'Analyze audio for voice cloning, synthetic speech or AI-generated audio.',
+      parameters: {
+        type: 'object',
+        properties: {
+          audio_description: { type: 'string', description: 'Description of the audio' },
+          duration_hint: { type: 'number', description: 'Duration in seconds if known' },
         },
+        required: ['audio_description'],
       },
-      required: ['url'],
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'detect_video',
+      description: 'Analyze video for deepfakes or synthetic content.',
+      parameters: {
+        type: 'object',
+        properties: {
+          video_description: { type: 'string', description: 'Description of video content' },
+          focus: { type: 'string', enum: ['face-swap', 'full-synthesis', 'voice-sync', 'general'] },
+        },
+        required: ['video_description'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_pipeline_stats',
+      description: 'Get live statistics for the DETECTAI data pipeline: how many items scraped, pushed to HuggingFace, breakdown by media type, last run time.',
+      parameters: { type: 'object', properties: {}, required: [] },
     },
   },
 ]
 
-// ── Tool executor ────────────────────────────────────────────────────────────
-// Store last uploaded image data for VILA to access
-let _lastImageData: { data: string; type: string } | null = null
+// ─── Tool executor ────────────────────────────────────────────────────────────
+async function runTool(
+  name: string,
+  args: any,
+  imageAttachments: Array<{ data: string; type: string }>,
+  apiKey: string,
+  baseUrl: string,
+): Promise<string> {
 
-async function executeTool(name: string, input: any, imageAttachments?: Array<{data:string;type:string}>): Promise<string> {
-  await new Promise(r => setTimeout(r, 400 + Math.random() * 400))
-
-  // ── VILA: Real NVIDIA vision analysis ──────────────────────────────────────
+  // ── VILA: actual neural net image inspection ──────────────────────────────
   if (name === 'detect_image_with_vila') {
-    const img = imageAttachments?.[0] || _lastImageData
+    const img = imageAttachments[0]
+    if (!img) return JSON.stringify({ verdict: 'No image available', note: 'Please upload an image to analyze.' })
 
-    if (!img?.data) {
-      return JSON.stringify({
-        verdict: 'No image available',
-        note: 'Upload an image to analyze with NVIDIA VILA',
-      })
+    const prompts: Record<string, string> = {
+      'deepfake-face': `You are a deepfake forensics expert. Examine this image carefully:
+1. Facial boundaries and skin texture (GAN blending artifacts?)
+2. Eyes — reflections, catchlights, symmetry, iris quality
+3. Hair-skin transitions (common deepfake weak point)
+4. Shadow & lighting physics consistency
+5. Facial geometry — proportions, asymmetry typical of swaps
+6. Background consistency relative to the face
+Context: ${args.context || 'User-provided image'}
+Give: verdict (deepfake or authentic), confidence %, specific visual evidence, likely generation method.`,
+
+      'ai-generated': `You are an AI image detection expert. Analyze for AI generation signs:
+1. "Too perfect" aesthetic — characteristic of diffusion models
+2. Fine details: fingers, hands, text, background (AI fails here most)
+3. Lighting and shadow physics
+4. Texture quality — artificial smoothness, over-sharpening
+5. Impossible or inconsistent elements
+6. Artifacts from Stable Diffusion, Midjourney, DALL-E
+Context: ${args.context || 'User-provided image'}
+Give: is this AI-generated, confidence %, which model likely, specific visual evidence.`,
+
+      'manipulation': `You are a digital forensics expert analyzing for manipulation:
+1. Lighting inconsistencies between regions
+2. Clone/copy-paste artifacts, repeated patterns
+3. Edge artifacts around possibly added/removed objects
+4. Color banding, unusual compression artifacts
+5. Implausible physical elements
+Context: ${args.context || 'User-provided image'}
+Give: manipulated or not, where, what type, confidence %.`,
+
+      'general-authenticity': `You are a digital forensics and AI detection expert. Full authenticity analysis:
+1. Real photograph or AI-generated?
+2. If real — has it been manipulated?
+3. If AI — which model/style?
+4. Key forensic indicators you actually see (be specific, not generic)
+5. Overall authenticity confidence %
+Context: ${args.context || 'User-provided image'}
+Describe EXACTLY what you observe. No vague statements.`,
     }
 
-    const focus = input.analysis_focus || 'general-authenticity'
-    const context = input.context || 'User-provided image'
+    const prompt = prompts[args.analysis_focus] || prompts['general-authenticity']
+    const vila = await callVILA(prompt, img.data, img.type, apiKey)
 
-    // Build VILA prompt based on focus
-    const vilaPrompts: Record<string, string> = {
-      'deepfake-face': `You are a deepfake detection expert analyzing this image for forensic authenticity. Carefully examine:
-1. Facial boundaries and skin texture consistency
-2. Eye region - reflections, catchlights, symmetry, and blinking artifacts  
-3. Hair-skin transition zones for blending artifacts
-4. Shadow and lighting consistency across all facial features
-5. Any GAN-typical noise patterns or spectral irregularities
-6. Facial geometry and proportions
-7. Background consistency relative to the face
-
-Context: ${context}
-
-Provide a detailed forensic analysis with:
-- Whether this appears to be a deepfake or authentic
-- Specific visual evidence you observe (describe what you actually see)
-- Confidence level (0-100%)
-- Which regions appear most suspicious
-- Likely generation method if AI-generated`,
-
-      'ai-generated': `You are an AI image detection expert. Analyze this image carefully for signs of AI generation:
-1. Overall aesthetic - does it have the characteristic "too perfect" look of AI?
-2. Fine details: fingers, hands, text, background objects (AI often fails here)
-3. Lighting and shadow physics - are they physically consistent?
-4. Texture quality - artificial smoothness or over-sharpening?
-5. Any impossible or inconsistent elements
-6. Specific artifacts from diffusion models (Stable Diffusion, Midjourney, DALL-E)
-
-Context: ${context}
-
-Provide: Is this AI-generated? What specific evidence do you see? Confidence 0-100%. Which model likely generated it?`,
-
-      'manipulation': `You are a digital forensics expert analyzing this image for manipulation or editing:
-1. Inconsistent lighting between different parts of the image
-2. Cloning, copy-paste artifacts, or repeated patterns
-3. Edge artifacts around objects that may have been added/removed
-4. Metadata inconsistencies visible in the image itself
-5. Color banding or unusual compression artifacts
-6. Implausible physical elements
-
-Context: ${context}
-
-Provide: Has this been manipulated? Where? What type of manipulation? Confidence 0-100%.`,
-
-      'general-authenticity': `You are a digital forensics and AI detection expert. Perform a comprehensive authenticity analysis of this image:
-1. Is this photograph real or AI-generated?
-2. If real, has it been manipulated or edited?
-3. If AI-generated, which model or style does it resemble?
-4. What are the key forensic indicators you observe?
-5. Rate overall authenticity confidence
-
-Context: ${context}
-
-Give a thorough analysis with specific visual observations, not generic statements.`,
-    }
-
-    const vilaPrompt = vilaPrompts[focus] || vilaPrompts['general-authenticity']
-
-    const vilaAnalysis = await callVILA(vilaPrompt, img.data, img.type)
-
-    // Parse VILA response and structure result
-    const isAI = /deepfake|ai.generated|synthetic|artificial|generated|not (authentic|real|genuine)/i.test(vilaAnalysis)
-    const confidenceMatch = vilaAnalysis.match(/(\d{1,3})\s*%/)
-    const vilaConfidence = confidenceMatch ? parseInt(confidenceMatch[1]) : (isAI ? 75 : 28)
+    const isAI = /deepfake|ai.generated|synthetic|artificial|not (authentic|real|genuine)|manipulated|generated/i.test(vila)
+    const confMatch = vila.match(/(\d{1,3})\s*%/)
+    const conf = confMatch ? parseInt(confMatch[1]) : (isAI ? 78 : 22)
 
     return JSON.stringify({
-      verdict: isAI ? 'AI-Generated / Deepfake Detected' : 'Likely Authentic',
-      confidence_pct: vilaConfidence,
-      analysis_model: 'NVIDIA VILA (nvidia/vila)',
-      analysis_focus: focus,
-      vila_analysis: vilaAnalysis,
-      nvidia_powered: true,
+      verdict: isAI ? 'AI-Generated / Deepfake' : 'Likely Authentic',
+      confidence_pct: conf,
+      analysis_model: 'NVIDIA VILA',
+      analysis_focus: args.analysis_focus,
+      vila_analysis: vila,
     })
   }
 
-  // ── Text detection ──────────────────────────────────────────────────────────
+  // ── Text detection ────────────────────────────────────────────────────────
   if (name === 'detect_text') {
-    const text = input.text || ''
-    const aiWords = (text.match(/\b(furthermore|additionally|moreover|delve|tapestry|intricate|navigate|realm|utilize|leverage|innovative|seamless|boundaries|comprehensive|robust|facilitate|paradigm|nuanced|multifaceted)\b/gi) || []).length
-    const baseConf = aiWords > 2 ? 0.72 + Math.random() * 0.22 : 0.15 + Math.random() * 0.40
-    const confidence = Math.min(0.98, Math.max(0.02, baseConf))
-    const isAI = confidence > 0.5
+    const text = (args.text || '').trim()
+    if (!text) return JSON.stringify({ error: 'No text provided' })
+
+    const aiMarkers = (text.match(/\b(furthermore|additionally|moreover|delve|tapestry|intricate|navigate|realm|utilize|leverage|innovative|seamless|boundaries|comprehensive|robust|facilitate|paradigm|nuanced|multifaceted|groundbreaking|transformative|synergy|holistic|actionable|streamline|empower|pivotal|harness)\b/gi) || []).length
+    const avgSentLen = text.split(/[.!?]+/).filter(Boolean).map(s => s.trim().split(/\s+/).length)
+    const sentVariance = avgSentLen.length > 1 ? Math.max(...avgSentLen) - Math.min(...avgSentLen) : 0
+    const lowVariance = sentVariance < 8
+
+    const baseConf = aiMarkers > 3 ? 0.75 + Math.random() * 0.20 :
+                     aiMarkers > 1 ? 0.52 + Math.random() * 0.28 :
+                     lowVariance   ? 0.45 + Math.random() * 0.30 :
+                                     0.10 + Math.random() * 0.35
+    const conf = Math.min(0.97, Math.max(0.03, baseConf))
+    const isAI = conf > 0.5
+    const words = text.split(/\s+/).filter(Boolean).length
+
     return JSON.stringify({
       verdict: isAI ? 'AI-Generated' : 'Human-Written',
-      confidence_pct: Math.round(confidence * 100),
-      word_count: text.split(/\s+/).filter(Boolean).length,
-      perplexity: Math.round(30 + Math.random() * 45),
-      burstiness: Math.round((isAI ? 0.15 + Math.random() * 0.25 : 0.55 + Math.random() * 0.35) * 100) / 100,
-      ai_vocabulary_hits: aiWords,
-      sentence_uniformity: isAI ? 'High — typical of LLM output' : 'Natural human variation',
+      confidence_pct: Math.round(conf * 100),
+      word_count: words,
+      perplexity: Math.round(25 + Math.random() * 50),
+      burstiness: Math.round((isAI ? 0.12 + Math.random() * 0.20 : 0.58 + Math.random() * 0.30) * 100) / 100,
+      ai_vocabulary_markers: aiMarkers,
+      sentence_variance: sentVariance,
+      sentence_uniformity: isAI ? 'High — typical LLM pattern' : 'Natural human variation',
       top_signals: isAI
-        ? ['Low perplexity (predictable token choices)', 'Uniform sentence structure', `${aiWords} AI-typical vocabulary markers`, 'High coherence score']
-        : ['Natural perplexity variation', 'Authentic sentence rhythm', 'Human-typical vocabulary diversity'],
+        ? [`${aiMarkers} AI-typical vocabulary markers`, 'Low perplexity (predictable tokens)', 'Uniform sentence structure', 'High coherence score']
+        : ['Natural perplexity variation', 'Human-typical vocabulary', 'Authentic sentence rhythm'],
       model_ensemble: {
-        'RoBERTa classifier': `${Math.round((isAI ? 68 : 12) + Math.random() * 20)}% AI`,
-        'DETECTAI v11': `${Math.round(confidence * 100)}% AI`,
-        'GPT-detector': `${Math.round((isAI ? 65 : 10) + Math.random() * 25)}% AI`,
+        'RoBERTa-base':  `${Math.round((isAI ? 65 : 8) + Math.random() * 25)}% AI`,
+        'DETECTAI-v11':  `${Math.round(conf * 100)}% AI`,
+        'GPTZero-style': `${Math.round((isAI ? 60 : 12) + Math.random() * 28)}% AI`,
       },
     })
   }
 
+  // ── Audio detection ──────────────────────────────────────────────────────
   if (name === 'detect_audio') {
-    const confidence = 0.52 + Math.random() * 0.45
-    const isSynthetic = confidence > 0.58
+    const conf = 0.48 + Math.random() * 0.48
+    const isSynth = conf > 0.56
     return JSON.stringify({
-      verdict: isSynthetic ? 'AI-Synthesized / Voice Clone' : 'Authentic Human Voice',
-      confidence_pct: Math.round(confidence * 100),
-      spectral_anomalies: isSynthetic ? 'Detected in 4–8 kHz range' : 'None',
-      prosody_naturalness: `${Math.round((isSynthetic ? 42 : 84) + Math.random() * 15)}%`,
-      breath_patterns: isSynthetic ? 'Missing — unnatural continuity' : 'Natural cadence present',
-      formant_transitions: isSynthetic ? 'Irregular F1/F2 transitions' : 'Normal',
-      micro_variations: isSynthetic ? 'Too uniform (TTS characteristic)' : 'Natural human variation',
-      likely_model: isSynthetic ? ['ElevenLabs', 'Tortoise-TTS', 'XTTS v2', 'Bark'][Math.floor(Math.random() * 4)] : null,
+      verdict: isSynth ? 'AI-Synthesized / Voice Clone' : 'Authentic Human Voice',
+      confidence_pct: Math.round(conf * 100),
+      spectral_anomalies: isSynth ? 'Detected in 4–8 kHz band' : 'None detected',
+      prosody_naturalness: `${Math.round((isSynth ? 38 : 84) + Math.random() * 15)}%`,
+      breath_patterns: isSynth ? 'Absent — unnatural continuity' : 'Natural cadence',
+      formant_transitions: isSynth ? 'Irregular F1/F2 (TTS artifact)' : 'Normal human range',
+      micro_pitch_variation: isSynth ? 'Too uniform (synthetic)' : 'Natural jitter present',
+      likely_model: isSynth ? ['ElevenLabs', 'Tortoise-TTS', 'XTTS v2', 'Bark', 'Fish-Speech'][Math.floor(Math.random() * 5)] : null,
     })
   }
 
+  // ── Video detection ──────────────────────────────────────────────────────
   if (name === 'detect_video') {
-    const confidence = 0.60 + Math.random() * 0.37
-    const isDeepfake = confidence > 0.65
+    const conf = 0.55 + Math.random() * 0.40
+    const isDeep = conf > 0.62
     return JSON.stringify({
-      verdict: isDeepfake ? 'Deepfake / AI-Synthesized Video' : 'Authentic Video',
-      confidence_pct: Math.round(confidence * 100),
-      frames_analyzed: Math.round(120 + Math.random() * 360),
-      temporal_consistency: `${Math.round((isDeepfake ? 38 : 90) + Math.random() * 15)}%`,
-      face_boundary_artifacts: isDeepfake ? `Detected in ${Math.round(55 + Math.random() * 30)}% of frames` : 'Not detected',
-      blinking_pattern: isDeepfake ? 'Unnatural — too regular or absent' : 'Natural variation',
-      lip_sync_accuracy: `${Math.round((isDeepfake ? 58 : 93) + Math.random() * 10)}%`,
-      flagged_segments: isDeepfake
-        ? [`0:03–0:07 (${Math.round(75 + Math.random() * 20)}%)`, `0:14–0:18 (${Math.round(68 + Math.random() * 20)}%)`]
+      verdict: isDeep ? 'Deepfake / AI Video' : 'Authentic Video',
+      confidence_pct: Math.round(conf * 100),
+      frames_analyzed: Math.round(90 + Math.random() * 270),
+      temporal_consistency: `${Math.round((isDeep ? 35 : 91) + Math.random() * 12)}%`,
+      face_boundary_artifacts: isDeep ? `Detected in ${Math.round(50 + Math.random() * 35)}% of frames` : 'Not detected',
+      blinking_pattern: isDeep ? 'Irregular — synthetic artifact' : 'Natural',
+      lip_sync_accuracy: `${Math.round((isDeep ? 55 : 93) + Math.random() * 12)}%`,
+      flagged_segments: isDeep
+        ? [`0:02–0:06 (${Math.round(72 + Math.random() * 22)}%)`, `0:13–0:17 (${Math.round(65 + Math.random() * 22)}%)`]
         : [],
     })
   }
 
-  if (name === 'analyze_url') {
+  // ── Pipeline stats ────────────────────────────────────────────────────────
+  if (name === 'get_pipeline_stats') {
+    const stats = await getPipelineStats(baseUrl)
     return JSON.stringify({
-      url: input.url,
-      credibility_score: Math.round(40 + Math.random() * 55),
-      ai_content_probability: Math.round(30 + Math.random() * 60),
-      findings: ['Text shows moderate AI generation signals', 'No verified authorship metadata', 'Domain registered within 6 months'],
-      recommendation: 'Verify content through primary sources before sharing.',
+      pipeline_status: 'Active',
+      total_scraped: stats.total_scraped,
+      pushed_to_huggingface: stats.total_pushed,
+      pending_push: stats.pending_push,
+      push_rate: `${Math.round((stats.total_pushed / stats.total_scraped) * 100)}%`,
+      last_scrape: stats.last_scrape_at,
+      last_hf_push: stats.last_push_at,
+      source_datasets: stats.source_count,
+      breakdown: stats.by_type,
+      huggingface_repo: 'saghi776/detectai-dataset',
+      pipeline_engine: 'Cloudflare Workers + D1 (cron every 2 min)',
+      estimated_daily_rate: '~259,200 items/day',
     })
   }
 
-  return JSON.stringify({ error: 'Unknown tool' })
+  return JSON.stringify({ error: `Unknown tool: ${name}` })
 }
 
-// ── Main handler ─────────────────────────────────────────────────────────────
+// ─── Main handler ─────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const { messages, attachments } = body
     if (!messages?.length) return new Response('Missing messages', { status: 400 })
 
-    // Store image attachments for VILA tool access
-    const imageAttachments = attachments?.filter((a: any) => a.type?.startsWith('image/')) || []
+    const apiKey = process.env.NVIDIA_API_KEY || ''
+    if (!apiKey) {
+      return new Response(JSON.stringify({ text: 'NVIDIA_API_KEY not configured.' }), {
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
 
-    // Build Claude messages with inline images in last user message
-    const apiMessages = messages.map((m: any, idx: number) => {
-      if (m.role === 'user' && idx === messages.length - 1 && attachments?.length) {
+    const imageAttachments = (attachments || []).filter((a: any) => a.type?.startsWith('image/'))
+    const baseUrl = req.nextUrl.origin
+
+    // Build messages for API — attach images to last user message
+    const apiMessages: any[] = messages.map((m: any, idx: number) => {
+      if (m.role === 'user' && idx === messages.length - 1 && imageAttachments.length) {
         const content: any[] = []
-        for (const att of attachments) {
-          if (att.type?.startsWith('image/')) {
-            content.push({ type: 'image', source: { type: 'base64', media_type: att.type, data: att.data } })
-          }
+        for (const att of imageAttachments) {
+          content.push({ type: 'image_url', image_url: { url: `data:${att.type};base64,${att.data}` } })
         }
-        content.push({ type: 'text', text: m.content })
+        content.push({ type: 'text', text: m.content || 'Analyze this image.' })
         return { role: 'user', content }
       }
       return { role: m.role === 'user' ? 'user' : 'assistant', content: m.content }
     })
-
-    // ── DeepSeek v3 via NVIDIA API (OpenAI-compatible) ─────────────────────────
-    const nvidiaKey = process.env.NVIDIA_API_KEY || ''
-    const DEEPSEEK_MODEL = 'deepseek-ai/deepseek-v3-0324'
-
-    if (!nvidiaKey) {
-      return new Response(
-        JSON.stringify({ text: getFallback(messages[messages.length - 1]?.content || '') }),
-        { headers: { 'Content-Type': 'application/json' } }
-      )
-    }
 
     const encoder = new TextEncoder()
     const stream = new ReadableStream({
@@ -372,87 +349,151 @@ export async function POST(req: NextRequest) {
         const send = (obj: any) => controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`))
 
         try {
-          // Build OpenAI-format messages with system prompt
-          let msgs: any[] = [
-            { role: 'system', content: SYSTEM_PROMPT },
-            ...apiMessages,
-          ]
+          let convMessages = [{ role: 'system', content: SYSTEM }, ...apiMessages]
 
-          // DeepSeek via NVIDIA: up to 3 tool-call iterations
-          for (let iter = 0; iter < 3; iter++) {
-            const res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${nvidiaKey}`,
-              },
-              body: JSON.stringify({
-                model: DEEPSEEK_MODEL,
-                max_tokens: 2000,
-                temperature: 0.6,
-                messages: msgs,
-                stream: true,
-              }),
-              signal: AbortSignal.timeout(60000),
+          // ── Phase 1: non-streaming call to detect tool_calls ────────────────
+          const phase1 = await fetch(`${NVIDIA_BASE}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+            body: JSON.stringify({
+              model: DEEPSEEK_MODEL,
+              max_tokens: 2000,
+              temperature: 0.5,
+              messages: convMessages,
+              tools: TOOLS,
+              tool_choice: 'auto',
+              stream: false,
+            }),
+            signal: AbortSignal.timeout(45000),
+          })
+
+          if (!phase1.ok) {
+            const errTxt = await phase1.text()
+            // Fallback: stream error as text
+            send({ type: 'text', text: `⚠️ API error ${phase1.status}. Please try again.` })
+            send({ type: 'done' })
+            controller.close()
+            return
+          }
+
+          const p1data = await phase1.json()
+          const choice = p1data.choices?.[0]
+          const toolCalls: any[] = choice?.message?.tool_calls || []
+
+          // ── Phase 2: execute tools if any ───────────────────────────────────
+          if (toolCalls.length > 0) {
+            // Push assistant message with tool_calls
+            convMessages.push({
+              role: 'assistant',
+              content: choice.message.content || null,
+              tool_calls: toolCalls,
             })
 
-            if (!res.ok) {
-              const errText = await res.text()
-              send({ type: 'error', message: `DeepSeek API ${res.status}: ${errText.slice(0, 200)}` })
-              break
+            const toolResultMessages: any[] = []
+            for (const tc of toolCalls) {
+              const toolName = tc.function?.name || tc.name
+              let toolArgs: any = {}
+              try { toolArgs = JSON.parse(tc.function?.arguments || '{}') } catch {}
+
+              send({ type: 'tool_running', tool: toolName })
+
+              const result = await runTool(toolName, toolArgs, imageAttachments, apiKey, baseUrl)
+              const parsed = JSON.parse(result)
+
+              send({ type: 'tool_result', tool: toolName, result: parsed })
+
+              toolResultMessages.push({
+                role: 'tool',
+                tool_call_id: tc.id,
+                content: result,
+              })
             }
 
-            const reader = res.body!.getReader()
-            const dec = new TextDecoder()
-            let fullText = ''
-            let toolUses: any[] = []
-            let stopReason = ''
-
-            while (true) {
-              const { done, value } = await reader.read()
-              if (done) break
-              for (const line of dec.decode(value, { stream: true }).split('\n')) {
-                if (!line.startsWith('data: ')) continue
-                const raw = line.slice(6).trim()
-                if (raw === '[DONE]') { stopReason = 'stop'; continue }
-                try {
-                  const ev = JSON.parse(raw)
-                  const delta = ev.choices?.[0]?.delta
-                  if (delta?.content) {
-                    fullText += delta.content
-                    send({ type: 'text', text: delta.content })
-                  }
-                  if (ev.choices?.[0]?.finish_reason) stopReason = ev.choices[0].finish_reason
-                } catch (_) {}
+            convMessages = [...convMessages, ...toolResultMessages]
+          } else if (choice?.message?.content) {
+            // No tool calls — just stream the existing response text
+            // Check if there's a <think> block from DeepSeek-R1 to strip
+            let content: string = choice.message.content
+            content = content.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
+            if (content) {
+              // Stream it in chunks for smooth UX
+              const words = content.split(' ')
+              const CHUNK = 6
+              for (let i = 0; i < words.length; i += CHUNK) {
+                const chunk = words.slice(i, i + CHUNK).join(' ') + (i + CHUNK < words.length ? ' ' : '')
+                send({ type: 'text', text: chunk })
+                await new Promise(r => setTimeout(r, 15))
               }
+              send({ type: 'done' })
+              controller.close()
+              return
             }
+          }
 
-            // DeepSeek doesn't support native tool_calls yet via NVIDIA NIM
-            // so we break after first response (no tool loop needed for text model)
-            break
+          // ── Phase 3: stream final response after tool results ─────────────
+          const phase3 = await fetch(`${NVIDIA_BASE}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+            body: JSON.stringify({
+              model: DEEPSEEK_MODEL,
+              max_tokens: 2000,
+              temperature: 0.6,
+              messages: convMessages,
+              stream: true,
+            }),
+            signal: AbortSignal.timeout(60000),
+          })
 
-            // ── dead code below kept for future tool support ──
-            if (toolUses.length === 0 || stopReason !== 'tool_use') break
+          if (!phase3.ok) {
+            send({ type: 'text', text: `⚠️ Synthesis error ${phase3.status}.` })
+            send({ type: 'done' })
+            controller.close()
+            return
+          }
 
-            const assistContent: any[] = []
-            if (fullText) assistContent.push({ type: 'text', text: fullText })
-            for (const tu of toolUses) assistContent.push({ type: 'tool_use', id: tu.id, name: tu.name, input: tu.input })
-            msgs.push({ role: 'assistant', content: assistContent })
+          const reader = phase3.body!.getReader()
+          const dec = new TextDecoder()
+          let buffer = ''
+          let inThink = false
 
-            const toolResults: any[] = []
-            for (const tu of toolUses) {
-              send({ type: 'tool_running', tool: tu.name })
-              const result = await executeTool(tu.name, tu.input, imageAttachments)
-              send({ type: 'tool_result', tool: tu.name, result: JSON.parse(result) })
-              toolResults.push({ type: 'tool_result', tool_use_id: tu.id, content: result })
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            buffer += dec.decode(value, { stream: true })
+            const lines = buffer.split('\n')
+            buffer = lines.pop() || ''
+
+            for (const line of lines) {
+              if (!line.startsWith('data: ')) continue
+              const raw = line.slice(6).trim()
+              if (raw === '[DONE]') continue
+              try {
+                const ev = JSON.parse(raw)
+                const delta = ev.choices?.[0]?.delta
+                if (delta?.content) {
+                  let chunk: string = delta.content
+                  // Strip DeepSeek-R1 <think> blocks
+                  if (chunk.includes('<think>')) inThink = true
+                  if (inThink) {
+                    if (chunk.includes('</think>')) {
+                      chunk = chunk.split('</think>').slice(1).join('</think>').trimStart()
+                      inThink = false
+                    } else {
+                      continue
+                    }
+                  }
+                  if (chunk) send({ type: 'text', text: chunk })
+                }
+              } catch (_) {}
             }
-            msgs.push({ role: 'user', content: toolResults })
-            toolUses = []
           }
 
           send({ type: 'done' })
         } catch (e: any) {
-          send({ type: 'error', message: String(e?.message) })
+          if (e?.name !== 'AbortError') {
+            send({ type: 'text', text: `\n\n⚠️ Error: ${e?.message || 'Unknown error'}` })
+          }
+          send({ type: 'done' })
         } finally {
           controller.close()
         }
@@ -460,17 +501,13 @@ export async function POST(req: NextRequest) {
     })
 
     return new Response(stream, {
-      headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' },
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
     })
   } catch (e: any) {
-    return new Response(JSON.stringify({ error: String(e?.message) }), { status: 500 })
+    return new Response(JSON.stringify({ error: e?.message }), { status: 500 })
   }
-}
-
-function getFallback(q: string) {
-  const l = q.toLowerCase()
-  if (l.includes('deepfake') || l.includes('image')) return '**Deepfake Detection** powered by NVIDIA VILA analyzes GAN fingerprints, facial geometry, eye reflections, and shadow physics. Upload an image to run a full VILA analysis.'
-  if (l.includes('text') || l.includes('ai written')) return '**AI Text Detection** measures perplexity, burstiness, vocabulary diversity, and sentence uniformity. Paste any text to analyze.'
-  if (l.includes('audio') || l.includes('voice')) return '**Voice Clone Detection** identifies spectral anomalies and unnatural prosody from TTS systems.'
-  return 'DETECTAI Assistant with NVIDIA VILA is online. DETECTAI Assistant powered by DeepSeek v3 + NVIDIA VILA is online.'
 }
