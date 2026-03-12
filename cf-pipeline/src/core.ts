@@ -408,3 +408,51 @@ export async function getStatus(env: Env) {
     },
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CLEANUP — deletes rows already pushed to HF, keeping D1 under free 5GB limit
+// Only deletes rows where hf_pushed_at IS NOT NULL AND older than 24 hours
+// HuggingFace is the permanent store — D1 is just a staging buffer
+// ─────────────────────────────────────────────────────────────────────────────
+export async function runCleanup(env: Env): Promise<{ deleted: number }> {
+  // Count first so we can log
+  const { results: countRes } = await env.DB.prepare(
+    `SELECT COUNT(*) as cnt FROM dataset_items
+     WHERE hf_pushed_at IS NOT NULL
+     AND hf_pushed_at <= datetime('now', '-24 hours')`
+  ).all()
+  const toDelete = (countRes[0] as any)?.cnt ?? 0
+
+  if (toDelete === 0) return { deleted: 0 }
+
+  // Delete in chunks of 5000 to avoid D1 statement timeout
+  let totalDeleted = 0
+  while (true) {
+    const { meta } = await env.DB.prepare(
+      `DELETE FROM dataset_items
+       WHERE id IN (
+         SELECT id FROM dataset_items
+         WHERE hf_pushed_at IS NOT NULL
+         AND hf_pushed_at <= datetime('now', '-24 hours')
+         LIMIT 5000
+       )`
+    ).run()
+    const deleted = meta?.changes ?? 0
+    totalDeleted += deleted
+    if (deleted === 0) break
+  }
+
+  // Update pipeline state with cleanup count
+  await env.DB.prepare(
+    `UPDATE pipeline_state
+     SET metadata = json_set(COALESCE(metadata, '{}'),
+       '$.last_cleanup_at', datetime('now'),
+       '$.last_cleanup_deleted', ?
+     ),
+     updated_at = datetime('now')
+     WHERE id = 1`
+  ).bind(totalDeleted).run().catch(() => {})
+
+  console.log(`[CLEANUP] Deleted ${totalDeleted} pushed rows from D1`)
+  return { deleted: totalDeleted }
+}

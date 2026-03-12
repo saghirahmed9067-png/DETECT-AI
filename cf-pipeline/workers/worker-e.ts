@@ -3,7 +3,7 @@
  * Shards: 40–49  |  Scrape: every 1 min  |  HF Push: every 10 min
  * This worker is also responsible for pushing all pending items to HuggingFace.
  */
-import { runScraper, runHFPush, getStatus, Env } from '../src/core'
+import { runScraper, runHFPush, runCleanup, getStatus, Env } from '../src/core'
 
 const MY_SHARDS   = [40,41,42,43,44,45,46,47,48,49]
 const ITEMS_SHARD = 200
@@ -24,6 +24,10 @@ export default {
     }
     if (url.pathname === '/trigger/hf-push' && request.method === 'POST') {
       const result = await runHFPush(env)
+      return Response.json({ ok: true, result })
+    }
+    if (url.pathname === '/trigger/cleanup' && request.method === 'POST') {
+      const result = await runCleanup(env)
       return Response.json({ ok: true, result })
     }
     return Response.json({
@@ -54,13 +58,28 @@ export default {
       console.log(`[E-scrape] Done total=${total}`)
     }
 
-    // Every 10 minutes — push to HuggingFace
+    // Every 30 minutes — safety-net cleanup (catches any leftovers)
+    if (cron === '*/30 * * * *') {
+      try {
+        const cleanResult = await runCleanup(env)
+        console.log(`[E-cleanup-30] deleted=${cleanResult.deleted} pushed rows from D1`)
+      } catch (err: any) {
+        console.error(`[E-cleanup-30 ERROR] ${err?.message}`)
+      }
+    }
+
+    // Every 10 minutes — push to HuggingFace, then clean up pushed rows from D1
     if (cron === '*/10 * * * *') {
       try {
-        const result = await runHFPush(env)
-        console.log(`[E-hf-push] pushed=${result.pushed} commitId=${result.commitId}`)
+        const pushResult = await runHFPush(env)
+        console.log(`[E-hf-push] pushed=${pushResult.pushed} commitId=${pushResult.commitId}`)
+
+        // Cleanup immediately after push — delete rows now safely in HF
+        // Keeps D1 well under the 5GB free limit even at 5M items/day
+        const cleanResult = await runCleanup(env)
+        console.log(`[E-cleanup] deleted=${cleanResult.deleted} pushed rows from D1`)
       } catch (err: any) {
-        console.error(`[E-hf-push ERROR] ${err?.message}`)
+        console.error(`[E-hf-push/cleanup ERROR] ${err?.message}`)
       }
     }
   }
