@@ -4,11 +4,14 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useAuth } from '@/components/auth-provider'
 import Link from 'next/link'
 
-// ── Inline SVG Icons (no emoji, crisp HD) ──────────────────────────────────
+const STORAGE_KEY = 'detectai_chats_v2'
+
+// ── Icons ──────────────────────────────────────────────────────────────────
 const Ico = {
   Send: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>,
   Plus: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M12 5v14M5 12h14"/></svg>,
   Trash: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>,
+  TrashAll: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg>,
   Copy: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>,
   Check: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><path d="M20 6 9 17l-5-5"/></svg>,
   Menu: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M4 6h16M4 12h16M4 18h16"/></svg>,
@@ -28,24 +31,63 @@ const Ico = {
   DB: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>,
   Scan: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><rect width="7" height="5" x="7" y="7" rx="1"/><rect width="7" height="5" x="10" y="12" rx="1"/></svg>,
   Home: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+  Download: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>,
+  Search: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>,
 }
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface Attachment { name: string; type: string; data: string; preview?: string; size: number }
+interface AttachmentMeta { name: string; type: string; size: number } // stored without base64
 interface ToolEvent  { tool: string; status: 'running' | 'done'; result?: any }
-interface Message    { id: string; role: 'user'|'assistant'; content: string; timestamp: Date; attachments?: Attachment[]; toolEvents?: ToolEvent[]; isStreaming?: boolean }
-interface Chat       { id: string; title: string; messages: Message[]; createdAt: Date }
+interface Message    { id: string; role: 'user'|'assistant'; content: string; timestamp: string; attachments?: Attachment[]; toolEvents?: ToolEvent[]; isStreaming?: boolean }
+interface Chat       { id: string; title: string; messages: Message[]; createdAt: string; updatedAt: string }
 
 const TOOL_META: Record<string,{label:string;color:string;Ic:()=>JSX.Element}> = {
-  detect_image_with_vila: { label:'NVIDIA VILA Analysis', color:'#76b900', Ic: Ico.Image },
-  detect_text:            { label:'Text Analysis',        color:'#7c3aed', Ic: Ico.FileText },
-  detect_image:           { label:'Image Analysis',       color:'#2563eb', Ic: Ico.Image },
-  detect_audio:           { label:'Audio Analysis',       color:'#0891b2', Ic: Ico.Music },
-  detect_video:           { label:'Video Analysis',       color:'#059669', Ic: Ico.Video },
-  analyze_url:            { label:'URL Analysis',         color:'#d97706', Ic: Ico.Globe },
+  detect_image_with_vila: { label:'Vision Analysis',  color:'#7c3aed', Ic: Ico.Image },
+  detect_text:            { label:'Text Analysis',    color:'#7c3aed', Ic: Ico.FileText },
+  detect_image:           { label:'Image Analysis',   color:'#2563eb', Ic: Ico.Image },
+  detect_audio:           { label:'Audio Analysis',   color:'#0891b2', Ic: Ico.Music },
+  detect_video:           { label:'Video Analysis',   color:'#059669', Ic: Ico.Video },
+  get_pipeline_stats:     { label:'Pipeline Status',  color:'#d97706', Ic: Ico.DB },
+  analyze_url:            { label:'URL Analysis',     color:'#d97706', Ic: Ico.Globe },
 }
 
-// ── Markdown ───────────────────────────────────────────────────────────────
+// ── localStorage helpers ────────────────────────────────────────────────────
+function saveChats(chats: Chat[]) {
+  try {
+    // Strip large base64 data from attachments before saving
+    const slim = chats.map(c => ({
+      ...c,
+      messages: c.messages.map(m => ({
+        ...m,
+        isStreaming: false, // never persist streaming state
+        attachments: m.attachments?.map(a => ({ name: a.name, type: a.type, size: a.size })),
+      }))
+    }))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(slim))
+  } catch (e) {
+    // Quota exceeded — trim oldest chats and retry
+    try {
+      const trimmed = chats.slice(0, 20).map(c => ({
+        ...c,
+        messages: c.messages.slice(-30).map(m => ({ ...m, isStreaming: false, attachments: undefined }))
+      }))
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed))
+    } catch { /* silent */ }
+  }
+}
+
+function loadChats(): Chat[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter((c: any) => c?.id && c?.messages)
+  } catch { return [] }
+}
+
+// ── Markdown renderer ───────────────────────────────────────────────────────
 function Markdown({ content }: { content: string }) {
   const html = content
     .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre class="bg-black/40 border border-white/8 rounded-xl p-4 my-3 overflow-x-auto text-xs font-mono text-emerald-300 leading-relaxed whitespace-pre"><code>$2</code></pre>')
@@ -68,14 +110,23 @@ function Markdown({ content }: { content: string }) {
   )
 }
 
-// ── Tool result card ───────────────────────────────────────────────────────
+// ── Tool result card ─────────────────────────────────────────────────────
 function ToolCard({ tool, result }: { tool: string; result: any }) {
   const [open, setOpen] = useState(false)
+  const [copied, setCopied] = useState(false)
   const meta = TOOL_META[tool] || { label: tool, color: '#6b7280', Ic: Ico.Scan }
   const { Ic: TIc } = meta
   const verdict = result?.verdict || result?.result || 'Analysis complete'
   const conf = result?.confidence_pct ?? result?.confidence
   const bad = verdict?.toLowerCase().match(/ai-|deepfake|synthetic|clone/)
+
+  const copyResult = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    const text = `${meta.label}\nVerdict: ${verdict}${conf != null ? `\nConfidence: ${conf}%` : ''}\n${JSON.stringify(result, null, 2)}`
+    navigator.clipboard?.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1800)
+  }
 
   return (
     <div className="my-3 rounded-xl border overflow-hidden" style={{ borderColor:`${meta.color}28`, background:`${meta.color}07` }}>
@@ -102,21 +153,39 @@ function ToolCard({ tool, result }: { tool: string; result: any }) {
 
       {open && (
         <div className="px-3 sm:px-4 pb-4 border-t" style={{ borderColor:`${meta.color}18` }}>
-          <div className="mt-3 space-y-3">
+          {/* Key findings as tags */}
+          {result?.key_findings?.length > 0 && (
+            <div className="mt-3 mb-3">
+              <div className="text-xs font-semibold uppercase tracking-wider mb-2" style={{color:`${meta.color}cc`}}>Key Findings</div>
+              <div className="space-y-1.5">
+                {result.key_findings.map((f: string, i: number) => (
+                  <div key={i} className="flex items-start gap-2 text-xs text-gray-300">
+                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{background:meta.color}} />
+                    {f}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {result?.recommendation && (
+            <div className="mt-2 mb-3 px-3 py-2.5 rounded-lg text-xs text-gray-300 border" style={{background:`${meta.color}0a`,borderColor:`${meta.color}20`}}>
+              <span className="font-semibold" style={{color:meta.color}}>Recommendation: </span>{result.recommendation}
+            </div>
+          )}
+          <div className="mt-2 space-y-2">
             {Object.entries(result || {}).map(([k, v]) => {
-              if (['verdict','result','confidence_pct','confidence'].includes(k)) return null
-              if (v === null || v === undefined) return null
-              const label = k.replace(/_/g, ' ')
-              if (k === 'vila_analysis' && typeof v === 'string') return (
+              if (['verdict','result','confidence_pct','confidence','key_findings','recommendation'].includes(k)) return null
+              if (v === null || v === undefined || v === '') return null
+              if (k === 'vila_analysis' || k === 'raw') return (
                 <div key={k}>
-                  <div className='text-xs font-semibold uppercase tracking-wider mb-2' style={{color:`${meta.color}cc`}}>NVIDIA VILA Visual Analysis</div>
-                  <div className='text-xs text-gray-300 leading-relaxed p-3 rounded-lg border whitespace-pre-wrap' style={{background:`${meta.color}08`,borderColor:`${meta.color}20`}}>{String(v)}</div>
+                  <div className='text-xs font-semibold uppercase tracking-wider mb-2' style={{color:`${meta.color}cc`}}>Full Analysis</div>
+                  <div className='text-xs text-gray-300 leading-relaxed p-3 rounded-lg border whitespace-pre-wrap max-h-48 overflow-y-auto' style={{background:`${meta.color}08`,borderColor:`${meta.color}20`}}>{String(v)}</div>
                 </div>
               )
-              if (['nvidia_powered','analysis_model','analysis_focus'].includes(k)) return null
+              if (['engine','analysis_model','analysis_focus','nvidia_powered'].includes(k)) return null
               if (typeof v === 'object' && !Array.isArray(v)) return (
                 <div key={k}>
-                  <div className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">{label}</div>
+                  <div className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">{k.replace(/_/g,' ')}</div>
                   <div className="space-y-1 pl-2 border-l-2" style={{ borderColor:`${meta.color}30` }}>
                     {Object.entries(v as Record<string,any>).map(([kk,vv]) => (
                       <div key={kk} className="flex justify-between text-xs gap-4">
@@ -131,7 +200,7 @@ function ToolCard({ tool, result }: { tool: string; result: any }) {
                 if (!v.length) return null
                 return (
                   <div key={k}>
-                    <div className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">{label}</div>
+                    <div className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">{k.replace(/_/g,' ')}</div>
                     <div className="flex flex-wrap gap-1.5">
                       {v.map((item,i) => (
                         <span key={i} className="px-2 py-1 rounded-md text-xs font-medium" style={{ background:`${meta.color}15`, color:meta.color }}>{item}</span>
@@ -142,16 +211,27 @@ function ToolCard({ tool, result }: { tool: string; result: any }) {
               }
               return (
                 <div key={k} className="flex justify-between text-xs gap-4">
-                  <span className="text-gray-600 capitalize">{label}</span>
+                  <span className="text-gray-600 capitalize">{k.replace(/_/g,' ')}</span>
                   <span className="text-gray-300 font-medium text-right">{String(v)}</span>
                 </div>
               )
             })}
           </div>
+          <button onClick={copyResult} className="mt-3 flex items-center gap-1.5 text-xs text-gray-700 hover:text-gray-400 transition-colors px-2 py-1 rounded-lg hover:bg-white/5">
+            {copied ? <Ico.Check /> : <Ico.Copy />}
+            {copied ? 'Copied' : 'Copy result'}
+          </button>
         </div>
       )}
     </div>
   )
+}
+
+// ── Timestamp ───────────────────────────────────────────────────────────────
+function MsgTime({ ts }: { ts: string }) {
+  const d = new Date(ts)
+  const fmt = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  return <span className="text-[10px] text-gray-700 mt-1 px-1 select-none">{fmt}</span>
 }
 
 // ── Message bubble ─────────────────────────────────────────────────────────
@@ -168,18 +248,18 @@ function MessageBubble({ msg, onCopy }: { msg: Message; onCopy: (t:string)=>void
         </div>
       )}
 
-      <div className={`flex flex-col gap-1.5 max-w-[88%] sm:max-w-[82%] min-w-0 ${isUser ? 'items-end' : 'items-start'}`}>
+      <div className={`flex flex-col gap-1 max-w-[88%] sm:max-w-[82%] min-w-0 ${isUser ? 'items-end' : 'items-start'}`}>
         {/* Attachments */}
         {msg.attachments?.map((att,i) => (
           <div key={i} className="rounded-xl overflow-hidden border border-white/10 max-w-[240px] sm:max-w-[280px]">
-            {att.type.startsWith('image/') && att.preview
+            {att.type?.startsWith('image/') && att.preview
               ? <img src={att.preview} alt={att.name} className="max-h-40 sm:max-h-48 object-cover w-full" />
               : <div className="flex items-center gap-2 px-3 py-2 bg-white/5 text-xs text-gray-400"><Ico.Clip />{att.name}</div>
             }
           </div>
         ))}
 
-        {/* Tool events */}
+        {/* Tool running indicators */}
         {!isUser && msg.toolEvents?.filter(t=>t.status==='running').map((te,i) => {
           const m = TOOL_META[te.tool]
           return (
@@ -189,6 +269,7 @@ function MessageBubble({ msg, onCopy }: { msg: Message; onCopy: (t:string)=>void
             </div>
           )
         })}
+        {/* Tool results */}
         {!isUser && msg.toolEvents?.filter(t=>t.status==='done'&&t.result).map((te,i) => (
           <ToolCard key={i} tool={te.tool} result={te.result} />
         ))}
@@ -210,13 +291,16 @@ function MessageBubble({ msg, onCopy }: { msg: Message; onCopy: (t:string)=>void
           </div>
         )}
 
-        {/* Copy */}
-        {!isUser && !msg.isStreaming && msg.content && (
-          <button onClick={copy} className="opacity-0 group-hover:opacity-100 flex items-center gap-1.5 text-xs text-gray-700 hover:text-gray-400 transition-all px-2 py-1 rounded-lg hover:bg-white/5">
-            {copied ? <Ico.Check /> : <Ico.Copy />}
-            {copied ? 'Copied' : 'Copy'}
-          </button>
-        )}
+        {/* Timestamp + copy */}
+        <div className={`flex items-center gap-1 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+          <MsgTime ts={msg.timestamp} />
+          {!isUser && !msg.isStreaming && msg.content && (
+            <button onClick={copy} className="opacity-0 group-hover:opacity-100 flex items-center gap-1.5 text-xs text-gray-700 hover:text-gray-400 transition-all px-2 py-1 rounded-lg hover:bg-white/5">
+              {copied ? <Ico.Check /> : <Ico.Copy />}
+              {copied ? 'Copied' : 'Copy'}
+            </button>
+          )}
+        </div>
       </div>
 
       {isUser && (
@@ -230,12 +314,12 @@ function MessageBubble({ msg, onCopy }: { msg: Message; onCopy: (t:string)=>void
 
 // ── Welcome suggestions ────────────────────────────────────────────────────
 const SUGGESTIONS = [
-  { Ic: Ico.Image,    text: 'Upload an image — detect if it\'s AI-generated or a deepfake', cat: 'Image' },
-  { Ic: Ico.FileText, text: 'Paste text to check if it was written by AI',                  cat: 'Text'  },
-  { Ic: Ico.Music,    text: 'How do forensic tools detect voice cloning?',                   cat: 'Audio' },
-  { Ic: Ico.Brain,    text: 'Explain GAN fingerprinting and how it works',                   cat: 'Learn' },
-  { Ic: Ico.Shield,   text: 'What makes DETECTAI different from GPTZero?',                   cat: 'Compare'},
-  { Ic: Ico.DB,       text: 'Tell me about the 60-source training dataset',                  cat: 'Data'  },
+  { Ic: Ico.Image,    text: 'Upload an image to detect if it\'s AI-generated or a deepfake', cat: 'Image' },
+  { Ic: Ico.FileText, text: 'Paste text to check if it was written by AI',                   cat: 'Text'  },
+  { Ic: Ico.Music,    text: 'How do forensic tools detect voice cloning?',                    cat: 'Audio' },
+  { Ic: Ico.Brain,    text: 'Explain GAN fingerprinting and diffusion model artifacts',        cat: 'Learn' },
+  { Ic: Ico.Shield,   text: 'What makes DETECTAI different from GPTZero and Turnitin?',        cat: 'Compare'},
+  { Ic: Ico.DB,       text: 'Show me DETECTAI\'s current pipeline statistics',                 cat: 'Data'  },
 ]
 
 // ── Main ───────────────────────────────────────────────────────────────────
@@ -247,12 +331,31 @@ export default function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [attachments, setAttachments] = useState<Attachment[]>([])
   const [abort, setAbort] = useState<AbortController|null>(null)
+  const [hydrated, setHydrated] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showSearch, setShowSearch] = useState(false)
   const endRef = useRef<HTMLDivElement>(null)
   const taRef = useRef<HTMLTextAreaElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const activeChat = chats.find(c=>c.id===activeChatId)
 
-  useEffect(()=>{ endRef.current?.scrollIntoView({behavior:'smooth'}) }, [activeChat?.messages])
+  // ── Hydrate from localStorage on mount ──────────────────────────────────
+  useEffect(() => {
+    const saved = loadChats()
+    if (saved.length > 0) {
+      setChats(saved)
+      setActiveChatId(saved[0].id)
+    }
+    setHydrated(true)
+  }, [])
+
+  // ── Persist chats to localStorage whenever they change ──────────────────
+  useEffect(() => {
+    if (!hydrated) return
+    saveChats(chats)
+  }, [chats, hydrated])
+
+  useEffect(()=>{ endRef.current?.scrollIntoView({behavior:'smooth'}) }, [activeChat?.messages.length])
 
   useEffect(()=>{
     const ta = taRef.current
@@ -261,16 +364,36 @@ export default function ChatPage() {
     ta.style.height = `${Math.min(ta.scrollHeight, 160)}px`
   }, [input])
 
+  const now = () => new Date().toISOString()
+
   const newChat = useCallback(()=>{
     const id = `c${Date.now()}`
-    setChats(p=>[{ id, title:'New conversation', messages:[], createdAt:new Date() }, ...p])
-    setActiveChatId(id); setSidebarOpen(false); setInput(''); setAttachments([])
+    const nc: Chat = { id, title:'New conversation', messages:[], createdAt:now(), updatedAt:now() }
+    setChats(p=>[nc,...p]); setActiveChatId(id); setSidebarOpen(false); setInput(''); setAttachments([])
   },[])
 
-  const delChat = useCallback((id:string)=>{
+  const delChat = useCallback((id:string, e?: React.MouseEvent)=>{
+    e?.stopPropagation()
     setChats(p=>p.filter(c=>c.id!==id))
-    if (activeChatId===id) setActiveChatId(null)
-  },[activeChatId])
+    if (activeChatId===id) {
+      const remaining = chats.filter(c=>c.id!==id)
+      setActiveChatId(remaining[0]?.id || null)
+    }
+  },[activeChatId, chats])
+
+  const clearAll = useCallback(()=>{
+    if (!confirm('Delete all conversations? This cannot be undone.')) return
+    setChats([]); setActiveChatId(null)
+    localStorage.removeItem(STORAGE_KEY)
+  },[])
+
+  const exportChat = useCallback(()=>{
+    if (!activeChat) return
+    const text = activeChat.messages.map(m => `[${m.role.toUpperCase()}] ${new Date(m.timestamp).toLocaleString()}\n${m.content}`).join('\n\n---\n\n')
+    const blob = new Blob([text], { type: 'text/plain' })
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob)
+    a.download = `${activeChat.title.slice(0,30)}.txt`; a.click()
+  },[activeChat])
 
   const handleFiles = async (files: FileList|null)=>{
     if (!files) return
@@ -291,36 +414,48 @@ export default function ChatPage() {
     let chatId = activeChatId
     if (!chatId) {
       const id = `c${Date.now()}`
-      const nc: Chat = { id, title:content.slice(0,50)||'New conversation', messages:[], createdAt:new Date() }
+      const nc: Chat = { id, title:content.slice(0,50)||'New conversation', messages:[], createdAt:now(), updatedAt:now() }
       setChats(p=>[nc,...p]); setActiveChatId(id); chatId=id
     }
 
-    const userMsg: Message = { id:`m${Date.now()}`, role:'user', content, timestamp:new Date(), attachments:attachments.length?[...attachments]:undefined }
-    setChats(p=>p.map(c=>c.id===chatId?{...c, title:c.messages.length===0?content.slice(0,50):c.title, messages:[...c.messages, userMsg]}:c))
+    const userMsg: Message = {
+      id:`m${Date.now()}`, role:'user', content,
+      timestamp: now(),
+      attachments: attachments.length ? [...attachments] : undefined
+    }
+    setChats(p=>p.map(c=>c.id===chatId?{
+      ...c,
+      title: c.messages.length===0 ? content.slice(0,50) : c.title,
+      messages:[...c.messages, userMsg],
+      updatedAt: now()
+    }:c))
     setInput(''); setAttachments([]); setLoading(true)
 
     const aid = `m${Date.now()+1}`
-    const assistMsg: Message = { id:aid, role:'assistant', content:'', timestamp:new Date(), toolEvents:[], isStreaming:true }
+    const assistMsg: Message = { id:aid, role:'assistant', content:'', timestamp:now(), toolEvents:[], isStreaming:true }
     setChats(p=>p.map(c=>c.id===chatId?{...c,messages:[...c.messages,assistMsg]}:c))
 
     const ac = new AbortController(); setAbort(ac)
 
     try {
-      const history = [...(chats.find(c=>c.id===chatId)?.messages||[]), userMsg]
+      // Get current history including the user message
+      const currentChat = chats.find(c=>c.id===chatId)
+      const history = [...(currentChat?.messages||[]), userMsg]
+
       const res = await fetch('/api/chat',{
         method:'POST', signal:ac.signal,
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
-          messages: history.map(m=>({role:m.role,content:m.content})),
-          attachments: userMsg.attachments?.map(a=>({type:a.type,data:a.data,name:a.name})),
+          messages: history.map(m=>({role:m.role, content:m.content})),
+          attachments: userMsg.attachments?.map(a=>({type:a.type, data:a.data, name:a.name})),
         }),
       })
-      if (!res.ok) throw new Error(`${res.status}`)
+      if (!res.ok) throw new Error(`Server error ${res.status}`)
 
       const ct = res.headers.get('content-type')||''
       if (ct.includes('application/json')) {
         const d = await res.json()
-        setChats(p=>p.map(c=>c.id===chatId?{...c,messages:c.messages.map(m=>m.id===aid?{...m,content:d.text||'No response.',isStreaming:false}:m)}:c))
+        setChats(p=>p.map(c=>c.id===chatId?{...c,messages:c.messages.map(m=>m.id===aid?{...m,content:d.text||'No response.',isStreaming:false}:m),updatedAt:now()}:c))
         return
       }
 
@@ -332,18 +467,21 @@ export default function ChatPage() {
         for(const block of blocks){
           for(const line of block.split('\n')){
             if(!line.startsWith('data: ')) continue
+            const raw = line.slice(6).trim()
+            if(!raw || raw==='[DONE]') continue
             try{
-              const ev = JSON.parse(line.slice(6))
+              const ev = JSON.parse(raw)
               if(ev.type==='text') setChats(p=>p.map(c=>c.id===chatId?{...c,messages:c.messages.map(m=>m.id===aid?{...m,content:m.content+ev.text}:m)}:c))
-              if(ev.type==='tool_start'||ev.type==='tool_running') setChats(p=>p.map(c=>c.id===chatId?{...c,messages:c.messages.map(m=>m.id===aid?{...m,toolEvents:[...(m.toolEvents||[]).filter(t=>!(t.tool===ev.tool&&t.status==='running')),{tool:ev.tool,status:'running'}]}:m)}:c))
               if(ev.type==='tool_result') setChats(p=>p.map(c=>c.id===chatId?{...c,messages:c.messages.map(m=>m.id===aid?{...m,toolEvents:[...(m.toolEvents||[]).filter(t=>t.tool!==ev.tool),{tool:ev.tool,status:'done',result:ev.result}]}:m)}:c))
-              if(ev.type==='done') setChats(p=>p.map(c=>c.id===chatId?{...c,messages:c.messages.map(m=>m.id===aid?{...m,isStreaming:false}:m)}:c))
-            }catch(_){}
+              if(ev.type==='done') setChats(p=>p.map(c=>c.id===chatId?{...c,messages:c.messages.map(m=>m.id===aid?{...m,isStreaming:false}:m),updatedAt:now()}:c))
+            }catch(_){/* skip malformed SSE line */}
           }
         }
       }
     } catch(e:any){
-      if(e?.name!=='AbortError') setChats(p=>p.map(c=>c.id===chatId?{...c,messages:c.messages.map(m=>m.id===aid?{...m,content:'An error occurred. Please try again.',isStreaming:false}:m)}:c))
+      if(e?.name!=='AbortError'){
+        setChats(p=>p.map(c=>c.id===chatId?{...c,messages:c.messages.map(m=>m.id===aid?{...m,content:'Connection error — please try again.',isStreaming:false}:m)}:c))
+      }
     } finally { setLoading(false); setAbort(null) }
   },[input,attachments,activeChatId,chats,loading])
 
@@ -352,10 +490,23 @@ export default function ChatPage() {
     setChats(p=>p.map(c=>c.id===activeChatId?{...c,messages:c.messages.map(m=>m.isStreaming?{...m,isStreaming:false}:m)}:c))
   }
 
+  // Filter chats by search
+  const filteredChats = searchQuery
+    ? chats.filter(c =>
+        c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.messages.some(m => m.content.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+    : chats
+
+  if (!hydrated) return (
+    <div className="flex h-[calc(100dvh-4rem)] items-center justify-center bg-[#09090f]">
+      <div className="text-gray-700 text-sm">Loading conversations…</div>
+    </div>
+  )
+
   return (
     <div className="flex h-[calc(100dvh-4rem)] overflow-hidden bg-[#09090f]">
 
-      {/* Sidebar backdrop (mobile) */}
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black/70 z-20 lg:hidden" onClick={()=>setSidebarOpen(false)} />
       )}
@@ -366,18 +517,32 @@ export default function ChatPage() {
         bg-[#0c0c1a] border-r border-white/[0.06] transition-transform duration-300
         ${sidebarOpen?'translate-x-0':'-translate-x-full lg:translate-x-0'}
       `}>
-        {/* Sidebar header */}
-        <div className="p-3 pt-4 border-b border-white/[0.06]">
+        <div className="p-3 pt-4 border-b border-white/[0.06] space-y-2">
           <button onClick={newChat} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 text-white text-sm font-semibold hover:opacity-90 active:scale-[0.97] transition-all shadow-lg shadow-violet-500/20">
             <Ico.Plus /><span>New conversation</span>
           </button>
+          {/* Search toggle */}
+          <button onClick={()=>setShowSearch(s=>!s)} className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-gray-600 hover:text-gray-300 hover:bg-white/[0.04] text-xs transition-all">
+            <Ico.Search /><span>Search conversations</span>
+          </button>
+          {showSearch && (
+            <input
+              value={searchQuery}
+              onChange={e=>setSearchQuery(e.target.value)}
+              placeholder="Search…"
+              autoFocus
+              className="w-full px-3 py-2 rounded-xl bg-white/[0.05] border border-white/10 text-xs text-gray-300 placeholder:text-gray-700 outline-none focus:border-violet-500/40"
+            />
+          )}
         </div>
 
         <div className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
-          {chats.length===0 && (
-            <p className="text-xs text-gray-700 text-center py-10 px-4 leading-relaxed">Start a conversation to see it here</p>
+          {filteredChats.length===0 && (
+            <p className="text-xs text-gray-700 text-center py-10 px-4 leading-relaxed">
+              {searchQuery ? 'No matching conversations' : 'Start a conversation to see it here'}
+            </p>
           )}
-          {chats.map(c=>(
+          {filteredChats.map(c=>(
             <div key={c.id}
               className={`group flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer transition-all text-xs ${
                 activeChatId===c.id ? 'bg-white/8 text-white border border-white/10' : 'text-gray-600 hover:text-gray-300 hover:bg-white/[0.04]'
@@ -385,19 +550,29 @@ export default function ChatPage() {
               onClick={()=>{setActiveChatId(c.id);setSidebarOpen(false)}}
             >
               <span className="shrink-0 opacity-60"><Ico.Chat /></span>
-              <span className="flex-1 truncate">{c.title}</span>
-              <button onClick={e=>{e.stopPropagation();delChat(c.id)}} className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all rounded shrink-0"><Ico.Trash /></button>
+              <div className="flex-1 min-w-0">
+                <div className="truncate">{c.title}</div>
+                <div className="text-[10px] text-gray-700 mt-0.5">{c.messages.length} messages</div>
+              </div>
+              <button onClick={e=>delChat(c.id,e)} className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all rounded shrink-0">
+                <Ico.Trash />
+              </button>
             </div>
           ))}
         </div>
 
-        <div className="p-3 border-t border-white/[0.06]">
+        <div className="p-3 border-t border-white/[0.06] space-y-0.5">
+          {chats.length > 0 && (
+            <button onClick={clearAll} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-red-500/10 text-gray-700 hover:text-red-400 transition-all text-xs">
+              <Ico.TrashAll /><span>Clear all conversations</span>
+            </button>
+          )}
           <Link href="/" className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-white/[0.04] text-gray-700 hover:text-gray-400 transition-all text-xs w-full">
             <Ico.Home /><span>Back to home</span>
           </Link>
-          <div className="flex items-center gap-2 px-3 py-2 text-xs text-gray-700 mt-1">
+          <div className="flex items-center gap-2 px-3 py-2 text-xs text-gray-700">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-            All systems operational
+            {chats.length} conversation{chats.length!==1?'s':''} saved
           </div>
         </div>
       </aside>
@@ -415,38 +590,45 @@ export default function ChatPage() {
               <Ico.Brain />
             </div>
             <div className="min-w-0">
-              <div className="text-sm font-bold text-white leading-none truncate">DETECTAI Assistant</div>
-              <div className="text-xs text-gray-600 mt-0.5 hidden sm:block">Multi-modal · Tool-enabled · General knowledge</div>
+              <div className="text-sm font-bold text-white leading-none truncate">ARIA by DETECTAI</div>
+              <div className="text-xs text-gray-600 mt-0.5 hidden sm:block">
+                {activeChat ? `${activeChat.messages.length} messages · ${activeChat.title.slice(0,40)}` : 'Multi-modal · Tool-enabled · General knowledge'}
+              </div>
             </div>
           </div>
-          <div className="ml-auto hidden sm:flex items-center gap-1">
-            {(['Text','Image','Audio','Video'] as const).map(l => {
-              const icons = { Text: Ico.FileText, Image: Ico.Image, Audio: Ico.Music, Video: Ico.Video }
-              const I = icons[l]
-              return (
-                <div key={l} className="flex items-center gap-1 text-xs px-2 py-1.5 rounded-lg bg-white/[0.04] text-gray-600 border border-white/[0.06]">
-                  <span className="text-gray-500"><I /></span>
-                  <span className="hidden md:inline">{l}</span>
-                </div>
-              )
-            })}
+          <div className="ml-auto flex items-center gap-1">
+            {activeChat && activeChat.messages.length > 0 && (
+              <button onClick={exportChat} title="Export chat" className="p-2 rounded-lg hover:bg-white/8 text-gray-600 hover:text-gray-300 transition-colors">
+                <Ico.Download />
+              </button>
+            )}
+            <div className="hidden sm:flex items-center gap-1">
+              {(['Text','Image','Audio','Video'] as const).map(l => {
+                const icons = { Text: Ico.FileText, Image: Ico.Image, Audio: Ico.Music, Video: Ico.Video }
+                const I = icons[l]
+                return (
+                  <div key={l} className="flex items-center gap-1 text-xs px-2 py-1.5 rounded-lg bg-white/[0.04] text-gray-600 border border-white/[0.06]">
+                    <span className="text-gray-500"><I /></span>
+                    <span className="hidden md:inline">{l}</span>
+                  </div>
+                )
+              })}
+            </div>
           </div>
         </header>
 
         {/* Messages area */}
         <div className="flex-1 overflow-y-auto">
           {!activeChat || activeChat.messages.length===0 ? (
-            // Welcome screen
             <div className="h-full flex flex-col items-center justify-center px-4 py-6 sm:py-8 max-w-2xl mx-auto w-full">
               <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-blue-600 flex items-center justify-center mb-5 shadow-2xl shadow-violet-500/25">
                 <Ico.Brain />
               </div>
-              <h1 className="text-xl sm:text-2xl font-black text-white mb-2 tracking-tight">DETECTAI Assistant</h1>
+              <h1 className="text-xl sm:text-2xl font-black text-white mb-2 tracking-tight">ARIA — DETECTAI Assistant</h1>
               <p className="text-gray-600 text-sm text-center mb-6 sm:mb-8 max-w-sm leading-relaxed">
-                General-purpose AI with deep expertise in content detection. Ask anything or upload media to analyze.
+                Your AI-powered analyst. Ask any question, upload media for deepfake detection, or explore DETECTAI's capabilities.
               </p>
 
-              {/* Capability chips */}
               <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2 mb-6 sm:mb-8">
                 {[
                   ['AI Text Detection', Ico.FileText],
@@ -467,9 +649,8 @@ export default function ChatPage() {
                 })}
               </div>
 
-              {/* Suggestions */}
               <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {SUGGESTIONS.map(({Ic: I,text,cat})=>(
+                {SUGGESTIONS.map(({Ic: I, text, cat})=>(
                   <button key={text} onClick={()=>send(text)}
                     className="flex items-start gap-3 p-3 sm:p-3.5 rounded-xl border border-white/[0.07] bg-white/[0.02] hover:bg-white/[0.07] hover:border-violet-500/25 text-left transition-all group cursor-pointer"
                   >
@@ -498,7 +679,6 @@ export default function ChatPage() {
         <div className="shrink-0 border-t border-white/[0.06] bg-[#09090f]/80 backdrop-blur-xl px-3 sm:px-4 py-3 sm:py-4">
           <div className="max-w-3xl mx-auto">
 
-            {/* Attachment previews */}
             {attachments.length>0 && (
               <div className="flex flex-wrap gap-2 mb-2.5">
                 {attachments.map((a,i)=>(
@@ -511,16 +691,16 @@ export default function ChatPage() {
               </div>
             )}
 
-            {/* Input box */}
             <div className="flex items-end gap-1.5 sm:gap-2 px-2 py-2 rounded-2xl border border-white/10 bg-[#111128] focus-within:border-violet-500/40 focus-within:shadow-lg focus-within:shadow-violet-500/8 transition-all">
               <button
                 onClick={()=>fileRef.current?.click()}
                 className="p-2 rounded-xl text-gray-700 hover:text-gray-400 hover:bg-white/8 transition-colors shrink-0 mb-0.5"
-                title="Attach file"
+                title="Attach image, audio or video"
               >
                 <Ico.Clip />
               </button>
-              <input ref={fileRef} type="file" className="hidden" multiple accept="image/*,audio/*,video/*,.txt,.pdf" onChange={e=>handleFiles(e.target.files)} />
+              <input ref={fileRef} type="file" className="hidden" multiple accept="image/*,audio/*,video/*,.txt,.pdf"
+                onChange={e=>handleFiles(e.target.files)} />
 
               <textarea
                 ref={taRef} value={input}
@@ -544,7 +724,7 @@ export default function ChatPage() {
             </div>
 
             <p className="text-center text-[10px] sm:text-xs text-gray-800 mt-2 select-none">
-              Shift+Enter for new line · Supports image, audio, video up to 20 MB
+              Shift+Enter for new line · Supports image, audio, video up to 20 MB · Conversations auto-saved
             </p>
           </div>
         </div>

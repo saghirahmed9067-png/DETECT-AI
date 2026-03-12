@@ -158,6 +158,54 @@ export default function DashboardPage() {
         ))}
       </div>
 
+      {/* Quick Actions */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+        {[
+          { href: '/detect/image', label: 'Detect Image',  color: 'from-primary/20 to-primary/5   border-primary/20   text-primary',   icon: Eye   },
+          { href: '/detect/text',  label: 'Analyze Text',  color: 'from-amber/20  to-amber/5    border-amber/20    text-amber',    icon: FileText },
+          { href: '/detect/audio', label: 'Check Audio',   color: 'from-cyan/20   to-cyan/5     border-cyan/20     text-cyan',     icon: Mic   },
+          { href: '/batch',        label: 'Batch Scan',    color: 'from-secondary/20 to-secondary/5 border-secondary/20 text-secondary', icon: Zap },
+        ].map(({ href, label, color, icon: Icon }) => (
+          <a key={href} href={href}
+            className={`card bg-gradient-to-br ${color} border py-4 flex flex-col items-center gap-2 text-center hover:scale-[1.02] transition-all group cursor-pointer`}>
+            <Icon className="w-6 h-6 group-hover:scale-110 transition-transform" />
+            <span className="text-xs font-semibold">{label}</span>
+          </a>
+        ))}
+      </div>
+
+      {/* Detection breakdown bar */}
+      {stats && stats.total_scans > 0 && (
+        <div className="card mb-8">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-text-primary">Detection Breakdown</h3>
+            <span className="text-xs text-text-muted">{stats.total_scans} total</span>
+          </div>
+          <div className="h-3 bg-border rounded-full overflow-hidden flex">
+            {stats.ai_detected > 0 && (
+              <div className="h-full bg-rose transition-all rounded-l-full"
+                style={{ width: `${(stats.ai_detected / stats.total_scans) * 100}%` }}
+                title={`AI: ${stats.ai_detected}`} />
+            )}
+            {stats.human_detected > 0 && (
+              <div className="h-full bg-emerald transition-all"
+                style={{ width: `${(stats.human_detected / stats.total_scans) * 100}%` }}
+                title={`Human: ${stats.human_detected}`} />
+            )}
+            {(stats.uncertain ?? 0) > 0 && (
+              <div className="h-full bg-amber transition-all rounded-r-full"
+                style={{ width: `${((stats.uncertain ?? 0) / stats.total_scans) * 100}%` }}
+                title={`Uncertain: ${stats.uncertain}`} />
+            )}
+          </div>
+          <div className="flex items-center gap-4 mt-2 text-xs text-text-muted">
+            <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-rose" />AI ({stats.ai_detected})</div>
+            <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald" />Human ({stats.human_detected})</div>
+            {(stats.uncertain ?? 0) > 0 && <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber" />Uncertain ({stats.uncertain})</div>}
+          </div>
+        </div>
+      )}
+
       {/* Recent Scans */}
       <div className="card">
         <div className="flex items-center justify-between mb-6">
