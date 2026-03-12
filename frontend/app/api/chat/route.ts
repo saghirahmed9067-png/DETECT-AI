@@ -7,7 +7,7 @@ export const maxDuration = 120
 const NVIDIA_BASE     = 'https://integrate.api.nvidia.com/v1'
 const DEEPSEEK_MODEL  = 'deepseek-ai/deepseek-v3-0324'         // primary chat — fast, no <think> noise
 const CHAT_FALLBACK   = 'nvidia/llama-3.1-nemotron-70b-instruct' // fallback if DeepSeek unavailable
-const VILA_MODEL      = 'nvidia/llama-3.2-90b-vision-instruct'  // 90B vision — best for deepfake analysis
+const VILA_MODEL      = 'meta/llama-3.2-90b-vision-instruct'    // 90B vision — correct meta/ prefix on NIM
 const VILA_FALLBACK   = 'meta/llama-3.2-11b-vision-instruct'    // fallback vision (smaller, always available)
 
 // ─── Cloudflare D1 live pipeline stats ───────────────────────────────────────
@@ -229,7 +229,7 @@ export async function POST(req: NextRequest) {
       toolEvents.push({ tool: 'detect_image_with_vila', result: {
         verdict:        vilaResult.verdict,
         confidence_pct: vilaResult.confidence_pct,
-        analysis_model: 'NVIDIA Llama-3.2 Vision 90B (nvidia/llama-3.2-90b-vision-instruct)',
+        analysis_model: 'NVIDIA Llama-3.2 Vision 90B (meta/llama-3.2-90b-vision-instruct)',
         analysis_focus: 'general-authenticity',
         vila_analysis:  vilaResult.analysis,
       }})
