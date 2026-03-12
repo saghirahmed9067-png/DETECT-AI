@@ -6,7 +6,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { createUserWithEmailAndPassword, updateProfile, signInWithPopup, signInWithRedirect, getRedirectResult } from 'firebase/auth'
 import { auth, googleProvider } from '@/lib/firebase/client'
-import { createClient } from '@/lib/supabase/client'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Shield, Mail, Lock, User, ArrowRight, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -65,12 +64,16 @@ export default function SignupPage() {
   const [showPw, setShowPw]           = useState(false)
   const [googleLoading, setGoogle]    = useState(false)
   const [redirecting, setRedirecting] = useState(false)
-  const supabase = createClient()
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({ resolver: zodResolver(schema) })
 
+  // Server-side — uses service role key to bypass RLS (Firebase users have no Supabase auth.uid())
   const createProfile = async (uid: string, email: string, name: string) => {
     try {
-      await supabase.from('profiles').upsert({ id: uid, email, display_name: name, plan: 'free', scan_count: 0, monthly_scans: 0, created_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+      await fetch('/api/profiles/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid, email, display_name: name }),
+      })
     } catch {}
   }
 
