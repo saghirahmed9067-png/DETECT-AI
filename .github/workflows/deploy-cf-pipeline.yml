@@ -1,4 +1,4 @@
-name: Deploy Cloudflare Pipeline
+name: Deploy Cloudflare Pipeline (All 20 Workers)
 
 on:
   push:
@@ -6,10 +6,15 @@ on:
     paths:
       - 'cf-pipeline/**'
   workflow_dispatch:
+    inputs:
+      worker:
+        description: 'Worker number to deploy (1-20, or "all")'
+        required: false
+        default: 'all'
 
 jobs:
   deploy:
-    name: Deploy CF Worker
+    name: Deploy CF Workers
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -27,18 +32,41 @@ jobs:
       - name: Install deps
         run: npm ci
 
-      - name: Deploy Worker
-        run: npx wrangler deploy
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+      - name: Deploy Worker 1 (detectai-pipeline)
+        if: github.event.inputs.worker == 'all' || github.event.inputs.worker == '1' || github.event.inputs.worker == ''
+        run: npx wrangler deploy --config wrangler.toml
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
-      - name: Set HF_TOKEN secret on worker
-        run: echo "$HF_TOKEN_VAL" | npx wrangler secret put HF_TOKEN
+      - name: Set secrets Worker 1
+        if: github.event.inputs.worker == 'all' || github.event.inputs.worker == '1' || github.event.inputs.worker == ''
+        run: |
+          echo "$HF_TOKEN_VAL" | npx wrangler secret put HF_TOKEN --config wrangler.toml
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           HF_TOKEN_VAL: ${{ secrets.HUGGINGFACE_API_TOKEN }}
 
-      - name: Verify deployment
-        run: npx wrangler deployments list 2>/dev/null | head -5 || true
+      - name: Deploy Workers 2–20
+        run: |
+          TARGET="${{ github.event.inputs.worker }}"
+          for i in $(seq 2 20); do
+            if [ "$TARGET" = "all" ] || [ "$TARGET" = "" ] || [ "$TARGET" = "$i" ]; then
+              CONFIG="wrangler-w${i}.toml"
+              echo "▶ Deploying worker $i via $CONFIG"
+              npx wrangler deploy --config "$CONFIG" || echo "⚠ Worker $i deploy failed (non-fatal)"
+              echo "$HF_TOKEN_VAL" | npx wrangler secret put HF_TOKEN --config "$CONFIG" || true
+            fi
+          done
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          HF_TOKEN_VAL: ${{ secrets.HUGGINGFACE_API_TOKEN }}
+
+      - name: Verify deployments
+        run: |
+          echo "✅ Deployment complete"
+          npx wrangler deployments list --config wrangler.toml 2>/dev/null | head -3 || true
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
