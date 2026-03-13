@@ -489,15 +489,17 @@ export async function pushToHF(
   const now       = new Date().toISOString()
   const ids       = rows.map((r:any) => `'${r.id}'`).join(',')
 
-  await db.prepare(`UPDATE dataset_items SET hf_pushed_at=?,hf_commit_id=? WHERE id IN (${ids})`).bind(now, commitId).run()
+  // ✅ DELETE rows immediately after confirmed HF push — keeps D1 storage minimal
+  // We log the push first (with count + commitId), then delete the rows
   await db.prepare(`UPDATE pipeline_state SET total_pushed=total_pushed+?,last_push_at=?,updated_at=datetime('now') WHERE id=1`).bind(rows.length, now).run().catch(()=>{})
   await db.prepare(`INSERT INTO hf_push_log (item_count,commit_id,repo,status,created_at) VALUES (?,?,?,'success',datetime('now'))`).bind(rows.length, commitId, repo).run().catch(()=>{})
+  await db.prepare(`DELETE FROM dataset_items WHERE id IN (${ids})`).run()
 
-  return { pushed: rows.length, commitId }
+  return { pushed: rows.length, commitId, deleted: rows.length }
 }
 
 export async function cleanupPushed(db: D1Database): Promise<number> {
-  const r = await db.prepare(`DELETE FROM dataset_items WHERE hf_pushed_at IS NOT NULL AND hf_pushed_at < datetime('now','-48 hours')`).run()
+  const r = await db.prepare(`DELETE FROM dataset_items WHERE hf_pushed_at IS NOT NULL AND hf_pushed_at < datetime('now','-6 hours')`).run()
   return r.meta?.changes ?? 0
 }
 
