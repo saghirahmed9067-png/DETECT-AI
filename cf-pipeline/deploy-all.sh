@@ -1,59 +1,84 @@
 #!/bin/bash
-# DETECTAI Pipeline v3 — Deploy All 5 Workers
-# Usage: CLOUDFLARE_API_TOKEN=<token> bash deploy-all.sh
+# DETECTAI Pipeline v5 — Deploy all 20 Workers
+# Usage: CLOUDFLARE_API_TOKEN=xxx HF_TOKEN=xxx bash deploy-all.sh
 
 set -e
 
 if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
   echo "❌  Missing CLOUDFLARE_API_TOKEN"
-  echo "    Usage: CLOUDFLARE_API_TOKEN=your_token bash deploy-all.sh"
+  echo "    Create at: https://dash.cloudflare.com/profile/api-tokens"
+  echo "    Permission needed: Workers Scripts: Edit"
   exit 1
 fi
 
-# Also need HF_TOKEN as a secret on each worker
 if [ -z "$HF_TOKEN" ]; then
-  echo "⚠️  HF_TOKEN not set — you'll need to add it as a secret manually:"
-  echo "    wrangler secret put HF_TOKEN --config wrangler-b.toml"
-  echo ""
+  echo "❌  Missing HF_TOKEN"
+  echo "    Get at: https://huggingface.co/settings/tokens (write access)"
+  exit 1
 fi
 
-echo "🚀  DETECTAI Pipeline v3 — Deploying 5 workers..."
+echo "🚀  DETECTAI Pipeline v5 — Deploying 20 workers..."
+echo "    Each worker runs every minute (cron */1)"
+echo "    Worker 20 pushes to HuggingFace every 10 min"
 echo ""
 
-deploy() {
-  local name=$1
-  local config=$2
-  echo "──────────────────────────────────────────"
-  echo "  Deploying Worker $name ($config)..."
-  npx wrangler deploy --config "$config"
-  if [ -n "$HF_TOKEN" ]; then
-    echo "$HF_TOKEN" | npx wrangler secret put HF_TOKEN --config "$config"
+CONFIGS=(
+  "wrangler.toml"       # Worker 1
+  "wrangler-w2.toml"    # Worker 2
+  "wrangler-w3.toml"    # Worker 3
+  "wrangler-w4.toml"    # Worker 4
+  "wrangler-w5.toml"    # Worker 5
+  "wrangler-w6.toml"    # Worker 6
+  "wrangler-w7.toml"    # Worker 7
+  "wrangler-w8.toml"    # Worker 8
+  "wrangler-w9.toml"    # Worker 9
+  "wrangler-w10.toml"   # Worker 10
+  "wrangler-w11.toml"   # Worker 11
+  "wrangler-w12.toml"   # Worker 12
+  "wrangler-w13.toml"   # Worker 13
+  "wrangler-w14.toml"   # Worker 14
+  "wrangler-w15.toml"   # Worker 15
+  "wrangler-w16.toml"   # Worker 16
+  "wrangler-w17.toml"   # Worker 17
+  "wrangler-w18.toml"   # Worker 18
+  "wrangler-w19.toml"   # Worker 19
+  "wrangler-w20.toml"   # Worker 20 (HF push + cleanup)
+)
+
+DEPLOYED=0
+FAILED=0
+
+for cfg in "${CONFIGS[@]}"; do
+  num="${cfg//[^0-9]/}"
+  num="${num:-1}"
+  echo "── Worker $num: deploying ($cfg)..."
+
+  if npx wrangler deploy --config "$cfg" 2>&1; then
+    # Set HF_TOKEN secret
+    printf "%s" "$HF_TOKEN" | npx wrangler secret put HF_TOKEN --config "$cfg" 2>&1
+    echo "   ✅  Worker $num deployed + secret set"
+    DEPLOYED=$((DEPLOYED+1))
+  else
+    echo "   ❌  Worker $num FAILED"
+    FAILED=$((FAILED+1))
   fi
-  echo "  ✅  Worker $name deployed"
   echo ""
-}
+done
 
-deploy "A (shards 0–9)"   "wrangler.toml"
-deploy "B (shards 10–19)" "wrangler-b.toml"
-deploy "C (shards 20–29)" "wrangler-c.toml"
-deploy "D (shards 30–39)" "wrangler-d.toml"
-deploy "E (shards 40–49 + HF push)" "wrangler-e.toml"
-
-echo "══════════════════════════════════════════"
-echo "✅  All 5 workers deployed!"
+echo "══════════════════════════════════════════════════════"
+echo "✅  Deployed: $DEPLOYED / 20 workers"
+[ "$FAILED" -gt 0 ] && echo "❌  Failed:   $FAILED workers"
 echo ""
 echo "📊  Expected throughput:"
-echo "    • 5 workers × 4 shards × 200 items × 1440 min = ~5,760,000 items/day"
-echo "    • HuggingFace push: every 10 min (up to 50,000 items per push)"
+echo "    19 scrapers × ~3 sources × 60 items × 1440 min = ~4.9M items/day"
+echo "    Push: Worker 20 pushes every 10 min (up to 3000 items/push)"
 echo ""
-echo "🔗  Status endpoints:"
+echo "🔗  Status endpoint:"
 echo "    https://detectai-pipeline.workers.dev/status"
-echo "    https://detectai-pipeline-b.workers.dev/status"
-echo "    https://detectai-pipeline-c.workers.dev/status"
-echo "    https://detectai-pipeline-d.workers.dev/status"
-echo "    https://detectai-pipeline-e.workers.dev/status"
 echo ""
-echo "💡  Monitor all workers:"
-echo "    wrangler tail detectai-pipeline"
-echo "    wrangler tail detectai-pipeline-b"
-echo "    wrangler tail detectai-pipeline-e"
+echo "🔗  Health check all 20 workers:"
+for i in $(seq 1 20); do
+  name="detectai-pipeline"
+  [ "$i" -gt 1 ] && name="detectai-pipeline-w$i"
+  echo "    https://$name.workers.dev/health"
+done

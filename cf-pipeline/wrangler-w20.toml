@@ -1,6 +1,6 @@
-# ── Worker 01/20 ─────────────────────────────────────────────────────────
-# Role: scraper (sources slice 1/19)
-name               = "detectai-pipeline"
+# ── Worker 20/20 ─────────────────────────────────────────────────────────
+# Role: HF push + cleanup
+name               = "detectai-pipeline-w20"
 main               = "src/worker.ts"
 compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
@@ -15,5 +15,5 @@ database_id   = "50f5e26a-c794-4cfa-b2b7-2bbd1d7c045c"
 crons = ["*/1 * * * *"]
 
 [vars]
-WORKER_NUM = "1"
+WORKER_NUM = "20"
 HF_REPO    = "saghi776/detectai-dataset"
