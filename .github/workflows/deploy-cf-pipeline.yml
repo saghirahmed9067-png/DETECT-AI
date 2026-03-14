@@ -13,6 +13,10 @@ on:
         required: false
         default: 'all'
 
+env:
+  # Hardcoded so wrangler never needs to call /memberships
+  CLOUDFLARE_ACCOUNT_ID: 34400e6e147e83e95c942135f54aeba7
+
 jobs:
   deploy:
     name: Deploy CF Workers
@@ -44,7 +48,7 @@ jobs:
         run: |
           npx wrangler deploy --config wrangler.toml
           echo "$HF_TOKEN_VAL" | npx wrangler secret put HF_TOKEN --config wrangler.toml
-          echo "✅ Worker 1 deployed"
+          echo "Worker 1 deployed"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           HF_TOKEN_VAL:         ${{ secrets.HUGGINGFACE_API_TOKEN }}
@@ -76,8 +80,8 @@ jobs:
 
       - name: Deploy Legacy Workers b/c/d/e
         if: >
-          github.event.inputs.worker == 'all'    ||
-          github.event.inputs.worker == ''        ||
+          github.event.inputs.worker == 'all'  ||
+          github.event.inputs.worker == ''      ||
           github.event.inputs.worker == 'legacy'
         run: |
           for cfg in wrangler-b.toml wrangler-c.toml wrangler-d.toml wrangler-e.toml; do
