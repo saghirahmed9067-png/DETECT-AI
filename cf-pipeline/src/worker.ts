@@ -29,7 +29,7 @@ export default {
     }
 
     if (url.pathname === '/health') {
-      const sources = wnum <= 19 ? getWorkerSources(wnum) : []
+      const sources = wnum <= 4 ? getWorkerSources(wnum) : []
       return Response.json({
         ok:      true,
         version: 'v6.0',
@@ -60,7 +60,7 @@ export default {
       return Response.json({ ok: true, worker: wid, deleted }, { headers: cors })
     }
 
-    const sources = wnum <= 19 ? getWorkerSources(wnum) : []
+    const sources = wnum <= 4 ? getWorkerSources(wnum) : []
     return Response.json({
       worker:  wid,
       version: 'v6.0',
