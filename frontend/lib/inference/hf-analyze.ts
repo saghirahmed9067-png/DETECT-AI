@@ -211,7 +211,16 @@ export async function analyzeImage(imageBuffer: Buffer, mimeType: string, fileNa
   parseImg(r3, 0.25, MODELS.image_face)
 
   // Deterministic image signals (always available, catch what ML misses)
-  const imgSignals     = extractImageSignals(imageBuffer, imageBuffer.length)
+  let imgSignals = extractImageSignals(imageBuffer, imageBuffer.length)
+
+  // Apply live DiffusionDB calibration if available (makes thresholds data-driven)
+  try {
+    const cal = await getCalibrationStats()
+    if (cal && cal.ai_sample_count >= 10) {
+      imgSignals = applyCalibration(imgSignals, cal)
+    }
+  } catch {}
+
   const imgSignalScore = aggregateImageSignals(imgSignals)
 
   // Adaptive ensemble: ML models 65%, image signals 35%
@@ -240,7 +249,7 @@ export async function analyzeImage(imageBuffer: Buffer, mimeType: string, fileNa
   return {
     verdict,
     confidence:    Math.round(aiScore * 1000) / 1000,
-    model_used:    `DETECTAI-ImageEnsemble(${mlCount ? mlScores.map((s: {model:string;aiScore:number;weight:number}) => s.model.split('/').pop()).join('+') + '+' : ''}6PixelSignals)`,
+    model_used:    `DETECTAI-ImageEnsemble(${mlCount ? mlScores.map((s: {model:string;aiScore:number;weight:number}) => s.model.split('/').pop()).join('+') + '+' : ''}10PixelSignals+DiffusionDB)`,
     model_version: '4.0.0',
     signals: [
       {
