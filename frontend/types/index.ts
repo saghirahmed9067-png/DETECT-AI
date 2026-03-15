@@ -31,10 +31,16 @@ export interface SentenceScore {
 }
 
 export interface FrameScore {
-  frame_index: number
-  timestamp: number
-  confidence: number
-  verdict: Verdict
+  // v3 fields (NVIDIA NIM pipeline)
+  frame:         number
+  time_sec:      number
+  ai_score:      number
+  face_detected?: boolean
+  // legacy fields
+  frame_index?:  number
+  timestamp?:    number
+  confidence?:   number
+  verdict?:      Verdict
 }
 
 export interface SegmentScore {
