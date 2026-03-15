@@ -261,6 +261,39 @@ export default function AudioDetectionPage() {
                 </div>
               </div>
 
+              {/* Segment timeline */}
+              {result.segment_scores && result.segment_scores.length > 0 && (
+                <div className="card">
+                  <h3 className="font-semibold text-text-primary mb-3 flex items-center gap-2 text-sm">
+                    <span className="w-2 h-2 rounded-full bg-cyan" />
+                    Audio Segment Analysis
+                  </h3>
+                  <div className="space-y-1.5">
+                    {result.segment_scores.map((seg: any, i: number) => (
+                      <div key={i} className="flex items-center gap-3">
+                        <span className="text-xs text-text-muted w-16 shrink-0 font-mono">
+                          {seg.start_sec}s – {seg.end_sec}s
+                        </span>
+                        <div className="flex-1 h-2 bg-border rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${seg.ai_score > 0.62 ? 'bg-rose' : seg.ai_score > 0.38 ? 'bg-amber' : 'bg-emerald'}`}
+                            style={{ width: `${Math.round(seg.ai_score * 100)}%` }}
+                          />
+                        </div>
+                        <span className={`text-xs font-bold w-10 text-right ${seg.ai_score > 0.62 ? 'text-rose' : seg.ai_score > 0.38 ? 'text-amber' : 'text-emerald'}`}>
+                          {Math.round(seg.ai_score * 100)}%
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-4 mt-2 text-xs text-text-muted">
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose" />AI-synthetic</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber" />Uncertain</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald" />Authentic</span>
+                  </div>
+                </div>
+              )}
+
               <div className="card py-3 px-4 flex items-center justify-between gap-2 flex-wrap">
                 <span className="text-xs text-text-muted font-mono truncate">{result.model_used} · {result.processing_time}ms</span>
                 <button onClick={exportReport} className="text-xs btn-ghost py-1.5 px-3 flex items-center gap-1.5 shrink-0">

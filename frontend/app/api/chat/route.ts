@@ -5,8 +5,8 @@ export const maxDuration = 120
 
 // ─── Model config (internal — never exposed to users) ─────────────────────────
 const NVIDIA_BASE    = 'https://integrate.api.nvidia.com/v1'
-const CHAT_MODEL     = 'deepseek-ai/deepseek-v3-0324'
-const CHAT_FALLBACK  = 'nvidia/llama-3.1-nemotron-70b-instruct'
+const CHAT_MODEL     = 'nvidia/llama-3.1-nemotron-70b-instruct'  // primary
+const CHAT_FALLBACK  = 'meta/llama-3.3-70b-instruct'           // fallback
 const VISION_MODEL   = 'meta/llama-3.2-90b-vision-instruct'
 const VISION_FALLBACK = 'meta/llama-3.2-11b-vision-instruct'
 
@@ -435,6 +435,7 @@ export async function POST(req: NextRequest) {
           const dec    = new TextDecoder()
           let   buf    = ''
 
+          let inThinkBlock = false  // stateful DeepSeek <think> stripper
           while (true) {
             const { done, value } = await reader.read()
             if (done) break
@@ -449,10 +450,28 @@ export async function POST(req: NextRequest) {
               try {
                 const ev    = JSON.parse(raw)
                 const delta = ev.choices?.[0]?.delta
-                // Strip any <think> reasoning tokens from DeepSeek-R1 variants
-                if (delta?.content && !delta.content.includes('<think>')) {
-                  send({ type: 'text', text: delta.content })
+                let chunk = delta?.content || ''
+                if (!chunk) continue
+
+                // Strip DeepSeek <think>...</think> reasoning blocks (multi-line safe)
+                if (inThinkBlock) {
+                  const endIdx = chunk.indexOf('</think>')
+                  if (endIdx >= 0) { inThinkBlock = false; chunk = chunk.slice(endIdx + 8) }
+                  else continue  // still inside think block
                 }
+                // Detect opening <think> tag
+                while (chunk.includes('<think>')) {
+                  const startIdx = chunk.indexOf('<think>')
+                  const endIdx   = chunk.indexOf('</think>', startIdx)
+                  if (endIdx >= 0) {
+                    chunk = chunk.slice(0, startIdx) + chunk.slice(endIdx + 8)
+                  } else {
+                    chunk = chunk.slice(0, startIdx)
+                    inThinkBlock = true
+                    break
+                  }
+                }
+                if (chunk) send({ type: 'text', text: chunk })
               } catch (_) {}
             }
           }

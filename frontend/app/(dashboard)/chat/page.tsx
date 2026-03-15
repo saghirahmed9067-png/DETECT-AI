@@ -438,18 +438,31 @@ export default function ChatPage() {
     const ac = new AbortController(); setAbort(ac)
 
     try {
-      // Get current history including the user message
+      // Build history directly — don't read from stale chats state
+      // chats state may not yet include userMsg due to React batching
       const currentChat = chats.find(c=>c.id===chatId)
-      const history = [...(currentChat?.messages||[]), userMsg]
+      const prevMessages = (currentChat?.messages||[]).filter(m=>m.id!==userMsg.id)
+      const history = [...prevMessages, userMsg]
+
+      // Only send image attachments to API — audio/video not supported yet
+      const imageAtts = userMsg.attachments?.filter(a=>a.type?.startsWith('image/'))
+      const unsupportedAtts = userMsg.attachments?.filter(a=>!a.type?.startsWith('image/'))
 
       const res = await fetch('/api/chat',{
         method:'POST', signal:ac.signal,
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
           messages: history.map(m=>({role:m.role, content:m.content})),
-          attachments: userMsg.attachments?.map(a=>({type:a.type, data:a.data, name:a.name})),
+          attachments: imageAtts?.map(a=>({type:a.type, data:a.data, name:a.name})),
         }),
       })
+      // Warn about unsupported attachment types
+      if (unsupportedAtts?.length) {
+        setChats(p=>p.map(c=>c.id===chatId?{...c,messages:c.messages.map(m=>m.id===aid?{
+          ...m,
+          content: `⚠️ Note: Audio/video files can't be analyzed directly in chat. Please use the dedicated [Audio](/detect/audio) or [Video](/detect/video) detection tools for those files.\n\n`,
+        }:m)}:c))
+      }
       if (!res.ok) throw new Error(`Server error ${res.status}`)
 
       const ct = res.headers.get('content-type')||''

@@ -270,7 +270,22 @@ Analyzed: ${new Date().toLocaleString()}`
                 </button>
               </div>
             </motion.div>
-          ) : !loading ? (
+          ) : loading ? (
+            <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              className="card flex flex-col items-center justify-center py-16 gap-4">
+              <div className="relative">
+                <div className="w-20 h-20 rounded-full border-2 border-primary/20 flex items-center justify-center">
+                  <ImageIcon className="w-8 h-8 text-primary" />
+                </div>
+                <div className="absolute inset-0 rounded-full border-2 border-t-primary border-r-transparent border-b-transparent border-l-transparent animate-spin" />
+              </div>
+              <div className="text-center space-y-1">
+                <p className="font-semibold text-text-primary">Analyzing image…</p>
+                <p className="text-sm text-text-muted">Pixel forensics · GAN detection · Neural ensemble</p>
+                <p className="text-xs text-text-disabled animate-pulse">Running 3-model ensemble + 6 pixel signals…</p>
+              </div>
+            </motion.div>
+          ) : (
             <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               className="card flex flex-col items-center justify-center py-20 text-center">
               <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4 animate-float">
@@ -286,7 +301,7 @@ Analyzed: ${new Date().toLocaleString()}`
                 ))}
               </div>
             </motion.div>
-          ) : null}
+          )}
         </AnimatePresence>
       </div>
     </div>

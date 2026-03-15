@@ -83,7 +83,7 @@ export default function TextDetectionPage() {
     const out = `DETECTAI Text Analysis Report
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Verdict:    ${result.verdict === 'AI' ? 'AI GENERATED' : result.verdict === 'HUMAN' ? 'HUMAN WRITTEN' : 'UNCERTAIN'}
-Confidence: ${result.confidence}%
+Confidence: ${Math.round((result.confidence <= 1 ? result.confidence * 100 : result.confidence))}%
 Summary:    ${result.summary}
 
 Detection Signals:

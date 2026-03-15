@@ -52,10 +52,11 @@ async function extractFrames(
     const timeSec = Math.max(0, Math.min(duration - 0.1, FRAME_POSITIONS[i] * duration))
     onProgress(i, FRAME_POSITIONS.length)
 
-    await new Promise<void>((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error('Frame seek timeout')), 8000)
+    await new Promise<void>((resolve) => {
+      // Use resolve-only — reject causes whole extraction to fail for one bad frame
+      const timeout = setTimeout(() => resolve(), 5000)  // 5s timeout per frame, then skip
       videoEl.onseeked = () => { clearTimeout(timeout); resolve() }
-      videoEl.onerror  = () => { clearTimeout(timeout); reject(new Error('Video seek error')) }
+      videoEl.onerror  = () => { clearTimeout(timeout); resolve() }  // skip bad frames
       videoEl.currentTime = timeSec
     })
 
@@ -193,8 +194,15 @@ export default function VideoDetectionPage() {
       let frames: ExtractedFrame[] = []
 
       if (dur > 0.5) {
-        frames = await extractFrames(vid, dur, (n, total) => setFramesDone(n + 1))
-        setExtractedFrames(frames)
+        try {
+          frames = await extractFrames(vid, dur, (n, total) => setFramesDone(n + 1))
+          setExtractedFrames(frames)
+        } catch (frameErr) {
+          // Frame extraction failed (e.g. Firefox seek issue) — continue without frames
+          console.warn('[VideoDetection] Frame extraction failed:', frameErr)
+          setError('Frame extraction failed — analysis will use file metadata only. For best results use Chrome/Edge.')
+          frames = []
+        }
       }
 
       // Phase 2: send to API
