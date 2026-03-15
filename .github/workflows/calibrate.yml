@@ -1,0 +1,91 @@
+name: DETECTAI — Image & Audio Calibration
+
+on:
+  schedule:
+    # Every Sunday at 2:00 AM UTC
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+    inputs:
+      sample_count:
+        description: 'Images per class (default: 500)'
+        default: '500'
+        type: string
+      audio_sample_count:
+        description: 'Audio files per class (default: 300)'
+        default: '300'
+        type: string
+      run_images:
+        description: 'Run image calibration'
+        default: true
+        type: boolean
+      run_audio:
+        description: 'Run audio calibration'
+        default: true
+        type: boolean
+
+concurrency:
+  group: calibration
+  cancel-in-progress: false
+
+jobs:
+  calibrate-images:
+    name: Image Calibration (DiffusionDB)
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'schedule' || inputs.run_images == true }}
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install @supabase/supabase-js
+
+      - name: Free up disk space (use 70% of available storage)
+        run: |
+          df -h
+          # Remove unused large packages to maximise space for image downloads
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc || true
+          sudo apt-get clean || true
+          df -h
+
+      - name: Run image calibration
+        run: node .github/scripts/calibrate-images.js
+        env:
+          HF_TOKEN:            ${{ secrets.HUGGINGFACE_API_TOKEN }}
+          SUPABASE_URL:        ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY:${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SAMPLE_COUNT:        ${{ github.event.inputs.sample_count || '500' }}
+
+      - name: Summary
+        run: echo "✅ Image calibration complete — stats saved to Supabase image_calibration_stats"
+
+  calibrate-audio:
+    name: Audio Calibration (ASVspoof5 + MLAAD + WaveFake)
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'schedule' || inputs.run_audio == true }}
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install @supabase/supabase-js
+
+      - name: Run audio calibration
+        run: node .github/scripts/calibrate-audio.js
+        env:
+          HF_TOKEN:            ${{ secrets.HUGGINGFACE_API_TOKEN }}
+          SUPABASE_URL:        ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY:${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SAMPLE_COUNT:        ${{ github.event.inputs.audio_sample_count || '300' }}
+
+      - name: Summary
+        run: echo "✅ Audio calibration complete — stats saved to Supabase audio_calibration_stats"

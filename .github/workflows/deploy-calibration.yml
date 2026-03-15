@@ -1,109 +1,15 @@
-name: Deploy Calibration Workers (Separate CF Account)
-
+# Calibration is now handled by GitHub Actions (.github/workflows/calibrate.yml)
+# This workflow is kept only for historical reference - DO NOT RUN
+# The CF calibration workers have been replaced by the GH Actions approach
+# which processes 500 real images with no CPU limits.
+name: "[DEPRECATED] CF Calibration Workers"
 on:
   workflow_dispatch:
-    inputs:
-      cf_account_id:
-        description: 'New CF Account ID'
-        required: true
-        type: string
-  push:
-    branches: [main]
-    paths:
-      - 'cf-pipeline/workers/worker-cal-*.ts'
-      - 'cf-pipeline/src/calibration/**'
-      - 'cf-pipeline/wrangler-cal-*.toml'
-      - '.github/workflows/deploy-calibration.yml'
-
 jobs:
-  deploy-calibration:
-    name: Deploy Cal Workers to Separate CF Account
+  info:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: cf-pipeline
-    env:
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CF_CAL_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ github.event.inputs.cf_account_id || secrets.CF_CAL_ACCOUNT_ID }}
-
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: npm
-          cache-dependency-path: cf-pipeline/package-lock.json
-
-      - name: Install deps
-        run: npm ci
-
-      - name: TypeScript check
-        run: npx tsc --noEmit
-
-      # ── Step 1: Create D1 database on new account ───────────────────────
-      - name: Create D1 database (if not exists)
-        run: |
-          echo "Creating D1 database 'detectai-calibration' on new account..."
-          DB_OUTPUT=$(npx wrangler d1 create detectai-calibration 2>&1 || true)
-          echo "$DB_OUTPUT"
-          # Extract D1 ID from output
-          D1_ID=$(echo "$DB_OUTPUT" | grep -oP 'database_id\s*=\s*"\K[^"]+' | head -1)
-          if [ -z "$D1_ID" ]; then
-            # Try listing existing databases
-            D1_ID=$(npx wrangler d1 list 2>&1 | grep detectai-calibration | grep -oP '[0-9a-f-]{36}' | head -1)
-          fi
-          if [ -n "$D1_ID" ]; then
-            echo "D1_ID=$D1_ID" >> $GITHUB_ENV
-            echo "✅ D1 database ID: $D1_ID"
-            # Update all wrangler-cal configs with real D1 ID
-            sed -i "s/PLACEHOLDER_NEW_D1_ID/$D1_ID/g" wrangler-cal-ai.toml wrangler-cal-real.toml wrangler-cal-agg.toml
-          else
-            echo "⚠ Could not extract D1 ID — using placeholder"
-            echo "D1_ID=unknown" >> $GITHUB_ENV
-          fi
-
-      # ── Step 2: Run D1 migration ────────────────────────────────────────
-      - name: Run D1 migration
-        run: |
-          if [ "$D1_ID" != "unknown" ] && [ -n "$D1_ID" ]; then
-            echo "Running calibration tables migration..."
-            npx wrangler d1 execute detectai-calibration \
-              --file=../supabase/migrations/calibration_tables.sql \
-              --remote || echo "⚠ Migration failed — run manually in D1 console"
-          else
-            echo "⚠ Skipping migration — D1 ID unknown"
-          fi
-
-      # ── Step 3: Deploy workers ───────────────────────────────────────────
-      - name: Deploy detectai-cal-ai
-        run: |
-          npx wrangler deploy --config wrangler-cal-ai.toml
-          echo "${{ secrets.HUGGINGFACE_API_TOKEN }}" | \
-            npx wrangler secret put HF_TOKEN --config wrangler-cal-ai.toml || true
-          echo "✅ cal-ai deployed"
-
-      - name: Deploy detectai-cal-real
-        run: |
-          npx wrangler deploy --config wrangler-cal-real.toml
-          echo "${{ secrets.HUGGINGFACE_API_TOKEN }}" | \
-            npx wrangler secret put HF_TOKEN --config wrangler-cal-real.toml || true
-          echo "✅ cal-real deployed"
-
-      - name: Deploy detectai-cal-agg
-        run: |
-          npx wrangler deploy --config wrangler-cal-agg.toml
-          echo "✅ cal-agg deployed"
-
-      - name: Summary
-        run: |
-          echo "========================================"
-          echo "Calibration workers deployed!"
-          echo ""
-          echo "Workers:"
-          echo "  detectai-cal-ai   → AI image sampler (DiffusionDB)"
-          echo "  detectai-cal-real → Real photo sampler (Unsplash)"
-          echo "  detectai-cal-agg  → Aggregator + /calibration endpoint"
-          echo ""
-          echo "Next: Go to Admin Panel → Pipeline → Run Calibration"
-          echo "========================================"
+      - run: |
+          echo "Calibration now runs via GitHub Actions (calibrate.yml)"
+          echo "See .github/workflows/calibrate.yml for the active workflow"
+          exit 1

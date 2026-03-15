@@ -141,3 +141,38 @@ export function aggregateAudioSignals(signals: AudioSignalResult[]): number {
   const totalW = signals.reduce((s, sig) => s + sig.weight, 0)
   return signals.reduce((s, sig) => s + sig.score * sig.weight, 0) / totalW
 }
+
+
+// ── CALIBRATION SUPPORT ───────────────────────────────────────────────────────
+import type { AudioCalibrationStats } from '../calibration-client'
+import { calibratedScore }            from '../calibration-client'
+
+export function applyAudioCalibration(
+  signals: AudioSignalResult[],
+  cal:     AudioCalibrationStats,
+): AudioSignalResult[] {
+  const sigMap: Record<string, { aiM: number; aiS: number; realM: number; realS: number }> = {
+    'Bitrate Uniformity': {
+      aiM: cal.bitrate_ai_mean, aiS: cal.bitrate_ai_std,
+      realM: cal.bitrate_real_mean, realS: cal.bitrate_real_std,
+    },
+    'Silence / Breath Pattern': {
+      aiM: cal.silence_ai_mean, aiS: cal.silence_ai_std,
+      realM: cal.silence_real_mean, realS: cal.silence_real_std,
+    },
+    'Audio Byte Entropy': {
+      aiM: cal.entropy_ai_mean, aiS: cal.entropy_ai_std,
+      realM: cal.entropy_real_mean, realS: cal.entropy_real_std,
+    },
+    'File Compression Ratio': {
+      aiM: cal.filesize_ai_mean, aiS: cal.filesize_ai_std,
+      realM: cal.filesize_real_mean, realS: cal.filesize_real_std,
+    },
+  }
+  return signals.map(sig => {
+    const ref = sigMap[sig.name]
+    if (!ref) return sig
+    const calibrated = calibratedScore(sig.rawValue, ref.aiM, ref.aiS, ref.realM, ref.realS)
+    return { ...sig, score: calibrated }
+  })
+}

@@ -13,8 +13,8 @@
 
 import { extractTextSignals, aggregateTextSignals } from './signals/text-signals'
 import { extractImageSignals, aggregateImageSignals, applyCalibration } from './signals/image-signals'
-import { extractAudioSignals, aggregateAudioSignals }                    from './signals/audio-signals'
-import { getCalibrationStats } from './calibration-client'
+import { extractAudioSignals, aggregateAudioSignals, applyAudioCalibration } from './signals/audio-signals'
+import { getCalibrationStats, getAudioCalibrationStats } from './calibration-client'
 import { analyzeVideoFrames }                        from './nvidia-nim'
 import { buildVideoSignals }                         from './signals/video-signals'
 
@@ -296,10 +296,19 @@ export async function analyzeAudio(
 
   const [mlR1, mlR2] = await Promise.all(mlPromises.length ? mlPromises : [Promise.resolve(null), Promise.resolve(null)])
 
-  // Deterministic audio signals (always run)
-  const audioSignals = audioBuffer
+  // Deterministic audio signals + live calibration from Supabase
+  let audioSignals = audioBuffer
     ? extractAudioSignals(audioBuffer, fileSize, format, fileName)
     : extractAudioSignals(Buffer.alloc(0), fileSize, format, fileName)
+
+  // Apply live calibration from GitHub Actions (ASVspoof5 + MLAAD baselines)
+  try {
+    const audioCal = await getAudioCalibrationStats()
+    if (audioCal && audioCal.ai_sample_count >= 20) {
+      audioSignals = applyAudioCalibration(audioSignals, audioCal)
+    }
+  } catch {}
+
   const sigScore = aggregateAudioSignals(audioSignals)
 
   // Parse ML model results
