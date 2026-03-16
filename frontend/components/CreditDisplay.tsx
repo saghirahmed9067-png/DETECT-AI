@@ -1,50 +1,50 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { auth } from '@/lib/firebase/client'
+import { useAuth } from '@/components/auth-provider'
 import { Zap, Crown, TrendingUp, ArrowUpRight } from 'lucide-react'
 import Link from 'next/link'
 
 interface Profile {
   credits_remaining: number
-  credits_reset_at: string
-  plan_id: string
-  plan: string
+  credits_reset_at:  string
+  plan_id:           string
+  plan:              string
 }
 
-const PLAN_MAX: Record<string, number> = { free: 5, starter: 100, pro: 500, enterprise: -1 }
+const PLAN_MAX:    Record<string, number> = { free: 5, starter: 100, pro: 500, enterprise: -1 }
 const PLAN_COLORS: Record<string, string> = {
-  free: 'text-text-muted',
-  starter: 'text-cyan-400',
-  pro: 'text-primary',
-  enterprise: 'text-amber-400',
+  free: 'text-text-muted', starter: 'text-cyan-400',
+  pro: 'text-primary',     enterprise: 'text-amber-400',
 }
-const PLAN_LABELS: Record<string, string> = { free: 'Free', starter: 'Starter', pro: 'Pro', enterprise: 'Enterprise' }
+const PLAN_LABELS: Record<string, string> = {
+  free: 'Free', starter: 'Starter', pro: 'Pro', enterprise: 'Enterprise',
+}
 
 export default function CreditDisplay() {
+  const { user }          = useAuth()
   const [profile, setProfile] = useState<Profile | null>(null)
-  const supabase = createClient()
+  const supabase          = createClient()
 
   useEffect(() => {
-    const user = auth?.currentUser
-    if (!user) return
+    if (!user?.uid) return
     supabase.from('profiles')
       .select('credits_remaining, credits_reset_at, plan_id, plan')
       .eq('id', user.uid)
       .single()
       .then(({ data }) => data && setProfile(data))
-  }, [])
+  }, [user?.uid]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!profile) return null
 
-  const planKey = profile.plan_id || profile.plan || 'free'
-  const max     = PLAN_MAX[planKey] ?? 5
-  const used    = max === -1 ? 0 : Math.max(0, max - profile.credits_remaining)
-  const pct     = max === -1 ? 100 : Math.round((profile.credits_remaining / max) * 100)
-  const resetDays = profile.credits_reset_at
-    ? Math.max(0, Math.ceil((new Date(profile.credits_reset_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+  const planKey    = profile.plan_id || profile.plan || 'free'
+  const max        = PLAN_MAX[planKey] ?? 5
+  const used       = max === -1 ? 0 : Math.max(0, max - profile.credits_remaining)
+  const pct        = max === -1 ? 100 : Math.round((profile.credits_remaining / max) * 100)
+  const resetDays  = profile.credits_reset_at
+    ? Math.max(0, Math.ceil((new Date(profile.credits_reset_at).getTime() - Date.now()) / 86_400_000))
     : 30
-  const color   = PLAN_COLORS[planKey] || 'text-text-muted'
+  const color      = PLAN_COLORS[planKey] || 'text-text-muted'
   const isUnlimited = max === -1
 
   return (
