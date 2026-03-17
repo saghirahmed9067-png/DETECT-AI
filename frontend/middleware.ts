@@ -1,32 +1,17 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { clerkMiddleware } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 
-const isPublic = createRouteMatcher([
-  '/',
-  '/login(.*)',
-  '/signup(.*)',
-  '/pricing(.*)',
-  '/about(.*)',
-  '/contact(.*)',
-  '/privacy(.*)',
-  '/terms(.*)',
-  '/docs(.*)',
-  '/api/auth(.*)',
-  '/api/billing/webhook(.*)',
-])
-
+// Everything is public — open source, no auth walls
+// Admin routes still protected server-side via RoleGuard
 export default clerkMiddleware(async (auth, req) => {
-  // Redirect signed-in users away from auth pages
-  const { userId } = await auth()
+  // Only block admin API routes from unauthenticated requests
   const path = req.nextUrl.pathname
-
-  if (userId && (path === '/login' || path === '/signup')) {
-    return NextResponse.redirect(new URL('/dashboard', req.url))
+  if (path.startsWith('/api/admin')) {
+    const { userId } = await auth()
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
-
-  if (!isPublic(req)) {
-    await auth.protect()
-  }
+  // Everything else: fully open
+  return NextResponse.next()
 })
 
 export const config = {

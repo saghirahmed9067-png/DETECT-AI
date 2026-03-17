@@ -8,6 +8,9 @@ import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/auth-provider'
 import type { DetectionResult, Verdict } from '@/types'
 import { formatConfidence, formatFileSize } from '@/lib/utils/helpers'
+import { ReviewSuggestion } from '@/components/ReviewSuggestion'
+import { UsageLimitBanner } from '@/components/UsageLimitBanner'
+
 
 const verdictConfig = {
   AI:        { icon: AlertTriangle, color: 'text-rose',    border: 'border-rose/30',    bg: 'bg-rose/5',    label: 'AI GENERATED' },
@@ -94,6 +97,7 @@ Analyzed: ${new Date().toLocaleString()}`
   const cfg = result ? verdictConfig[result.verdict as Verdict] : null
 
   return (
+    <>
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
       {/* Zoom modal */}
       {zoomed && preview && (
@@ -305,5 +309,10 @@ Analyzed: ${new Date().toLocaleString()}`
         </AnimatePresence>
       </div>
     </div>
+    <div className="px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto pb-6">
+      <UsageLimitBanner tool="image" />
+      <ReviewSuggestion toolName="Image Detector" />
+    </div>
+  </>
   )
 }

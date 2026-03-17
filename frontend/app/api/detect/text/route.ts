@@ -5,9 +5,7 @@ import { getSupabaseAdmin } from '@/lib/supabase/admin'
 
 export const dynamic = 'force-dynamic'
 
-
 export async function POST(req: NextRequest) {
-  // Rate limit by IP (fast check before DB)
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown'
   if (!checkRateLimit(ip, 30)) {
     return NextResponse.json(
@@ -16,11 +14,9 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Internal server-to-server bypass (chat route calls this without a user session)
   const internalSecret = req.headers.get('X-Internal-Secret')
   const isInternal = internalSecret && internalSecret === process.env.INTERNAL_API_SECRET
 
-  // BUG-009 fix: require authentication + deduct credit before inference
   let userId: string
   if (isInternal) {
     userId = 'internal'
@@ -30,7 +26,7 @@ export async function POST(req: NextRequest) {
       userId = guard.userId
     } catch (err) {
       if (err instanceof HTTPError) return httpErrorResponse(err)
-      return NextResponse.json({ success: false, error: { code: 'AUTH_ERROR', message: 'Authentication failed' } }, { status: 401 })
+      return NextResponse.json({ success: false, error: { code: 'ERROR', message: 'Request failed' } }, { status: 500 })
     }
   }
 
@@ -49,21 +45,23 @@ export async function POST(req: NextRequest) {
     const result = await analyzeText(text)
     const processingTime = Date.now() - start
 
-    // Save scan to Supabase (skip for internal chat calls)
-    if (userId !== 'internal') {
-      await getSupabaseAdmin().from('scans').insert({
-        user_id:          userId,
-        media_type:       'text',
-        content_preview:  text.substring(0, 500),
-        verdict:          result.verdict,
-        confidence_score: result.confidence,
-        signals:          result.signals,
-        processing_time:  processingTime,
-        model_used:       result.model_used,
-        model_version:    result.model_version,
-        status:           'complete',
-        metadata:         { char_count: text.length, word_count: text.split(/\s+/).length },
-      })
+    // Save scan to Supabase only for real signed-in users (not anon_, not internal)
+    if (userId !== 'internal' && !userId.startsWith('anon_')) {
+      try {
+        await getSupabaseAdmin().from('scans').insert({
+          user_id:          userId,
+          media_type:       'text',
+          content_preview:  text.substring(0, 500),
+          verdict:          result.verdict,
+          confidence_score: result.confidence,
+          signals:          result.signals,
+          processing_time:  processingTime,
+          model_used:       result.model_used,
+          model_version:    result.model_version,
+          status:           'complete',
+          metadata:         { char_count: text.length, word_count: text.split(/\s+/).length },
+        })
+      } catch { /* non-fatal */ }
     }
 
     return NextResponse.json({ success: true, data: { ...result, processing_time: processingTime } })

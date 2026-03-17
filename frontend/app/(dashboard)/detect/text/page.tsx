@@ -7,6 +7,9 @@ import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/auth-provider'
 import type { DetectionResult, Verdict } from '@/types'
 import { formatConfidence } from '@/lib/utils/helpers'
+import { ReviewSuggestion } from '@/components/ReviewSuggestion'
+import { UsageLimitBanner } from '@/components/UsageLimitBanner'
+
 
 const SAMPLE_AI = `Artificial intelligence has revolutionized the way we process and analyze information in modern society. Furthermore, it has enabled unprecedented advances in machine learning algorithms and computational capabilities. Moreover, these systems demonstrate remarkable performance across various benchmarks and metrics. Additionally, the integration of AI technologies into everyday applications has fundamentally transformed human-computer interaction paradigms. The implications of such advancements are multifaceted and warrant careful consideration.`
 
@@ -151,6 +154,7 @@ Analyzed: ${new Date().toLocaleString()}`
   }
 
   return (
+    <>
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
       <div className="mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-3xl font-black text-text-primary mb-1 flex items-center gap-3">
@@ -444,6 +448,10 @@ Analyzed: ${new Date().toLocaleString()}`
         </div>
       </div>
     </div>
+    <div className="px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto pb-6">
+      <UsageLimitBanner tool="text" />
+      <ReviewSuggestion toolName="AI Text Detector" />
+    </div>
+  </>
   )
 }
-// Metadata added separately in (marketing) or via generateMetadata; keeping dynamic page

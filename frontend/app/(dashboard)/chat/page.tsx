@@ -3,6 +3,8 @@ export const dynamic = 'force-dynamic'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useAuth } from '@/components/auth-provider'
 import Link from 'next/link'
+import { ReviewSuggestion } from '@/components/ReviewSuggestion'
+
 
 const STORAGE_KEY = 'detectai_chats_v2'
 
@@ -557,6 +559,7 @@ export default function ChatPage() {
   )
 
   return (
+    <>
     <div className="flex h-[calc(100dvh-4rem)] overflow-hidden bg-[#09090f]">
 
       {sidebarOpen && (
@@ -782,5 +785,9 @@ export default function ChatPage() {
         </div>
       </main>
     </div>
+    <div className="px-4 pb-4 max-w-full">
+      <ReviewSuggestion toolName="AI Detection Assistant" />
+    </div>
+  </>
   )
 }

@@ -180,7 +180,7 @@ function LiveDemo({ isLoggedIn }: { isLoggedIn: boolean }) {
 
   const analyze = async () => {
     if (text.length < 50) return
-    if (used && !isLoggedIn) { router.push('/signup'); return }
+    // Open access — no signup gate
     setLoading(true); setResult(null)
     try {
       const res = await fetch('/api/detect/text', {
@@ -253,14 +253,12 @@ function LiveDemo({ isLoggedIn }: { isLoggedIn: boolean }) {
                     transition={{ duration: 0.8, ease: 'easeOut' }}
                     className={`h-full rounded-full ${result.verdict === 'AI' ? 'bg-rose' : result.verdict === 'HUMAN' ? 'bg-emerald' : 'bg-amber'}`} />
                 </div>
-                {!isLoggedIn && (
-                  <div className="mt-3 pt-3 border-t border-border/50 flex items-center justify-between flex-wrap gap-2">
-                    <p className="text-xs text-text-muted">Sign up for unlimited scans, history & more</p>
-                    <Link href="/signup" className="text-xs text-primary hover:underline font-medium flex items-center gap-1">
-                      Start Detecting AI Content Free <ArrowRight className="w-3 h-3" />
+                <div className="mt-3 pt-3 border-t border-border/50 flex items-center justify-between flex-wrap gap-2">
+                    <p className="text-xs text-text-muted">✓ Free to use — no signup required</p>
+                    <Link href="/detect/text" className="text-xs text-primary hover:underline font-medium flex items-center gap-1">
+                      Full text detector <ArrowRight className="w-3 h-3" />
                     </Link>
                   </div>
-                )}
               </div>
             </motion.div>
           )}
@@ -381,7 +379,7 @@ export default function HomePage() {
               ) : (
                 <>
                   <Link href="/login"  className="hidden sm:block text-sm text-text-muted hover:text-text-primary transition-colors">Sign in</Link>
-                  <Link href="/signup" className="btn-primary px-3 sm:px-4 py-2 text-sm" title="Start Detecting AI Content Free">Get started free</Link>
+                  <Link href="/detect/text" className="btn-primary px-3 sm:px-4 py-2 text-sm" title="Start Detecting AI Content Free">Try Free Now</Link>
                 </>
               )
             )}
@@ -461,7 +459,7 @@ export default function HomePage() {
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-12 sm:mb-16">
-            <Link href={user ? '/dashboard' : '/signup'} className="btn-primary w-full sm:w-auto px-6 sm:px-8 py-3.5 text-base font-bold flex items-center justify-center gap-2 shadow-xl shadow-primary/30" title="Start Detecting AI Content Free">
+            <Link href={user ? '/dashboard' : '/detect/text'} className="btn-primary w-full sm:w-auto px-6 sm:px-8 py-3.5 text-base font-bold flex items-center justify-center gap-2 shadow-xl shadow-primary/30" title="Start Detecting AI Content Free">
               {user ? 'Open Dashboard' : 'Start Detecting AI Content Free'}
               <ArrowRight className="w-5 h-5" />
             </Link>
@@ -644,7 +642,7 @@ export default function HomePage() {
               Start with 5 free scans. No credit card required. Upgrade when you&apos;re ready.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
-              <Link href={user ? '/dashboard' : '/signup'} className="btn-primary px-7 sm:px-8 py-4 text-base sm:text-lg font-bold flex items-center justify-center gap-2 shadow-2xl shadow-primary/30" title="Start Detecting AI Content Free">
+              <Link href={user ? '/dashboard' : '/detect/text'} className="btn-primary px-7 sm:px-8 py-4 text-base sm:text-lg font-bold flex items-center justify-center gap-2 shadow-2xl shadow-primary/30" title="Start Detecting AI Content Free">
                 {user ? 'Go to Dashboard' : 'Start Detecting AI Content Free'}
                 <ArrowRight className="w-5 h-5" />
               </Link>

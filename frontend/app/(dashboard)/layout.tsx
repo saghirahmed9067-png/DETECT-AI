@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Image, Video, Music, FileText, Globe,
   Layers, Clock, User, Settings, Shield, ChevronLeft,
-  ChevronRight, Menu, BarChart2, LogOut, ChevronDown, MessageSquare, Zap
+  ChevronRight, Menu, BarChart2, LogOut, ChevronDown, MessageSquare, Zap, Star
 } from 'lucide-react'
 import { useAuth } from '@/components/auth-provider'
 import { UserButton } from '@clerk/nextjs'
@@ -32,10 +32,17 @@ const navGroups = [
       { href: '/dashboard#analytics', icon: 'BarChart2', label: 'Analytics' },
     ],
   },
+  {
+    label: 'Info',
+    items: [
+      { href: '/reviews', icon: 'Star',   label: 'Reviews' },
+      { href: '/pricing', icon: 'Zap',    label: 'Pricing' },
+    ],
+  },
 ]
 
 const iconMap: Record<string, any> = {
-  LayoutDashboard, Image, Video, Music, FileText, Globe, Layers, Clock, BarChart2, User, Settings, MessageSquare, Zap
+  LayoutDashboard, Image, Video, Music, FileText, Globe, Layers, Clock, BarChart2, User, Settings, MessageSquare, Zap, Star
 }
 
 function Avatar({ user, size = 8 }: { user: any; size?: number }) {

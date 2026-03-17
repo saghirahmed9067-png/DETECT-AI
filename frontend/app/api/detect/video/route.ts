@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     userId = guard.userId
   } catch (err) {
     if (err instanceof HTTPError) return httpErrorResponse(err)
-    return NextResponse.json({ success: false, error: { code: 'AUTH_ERROR', message: 'Authentication failed' } }, { status: 401 })
+    return NextResponse.json({ success: false, error: { code: 'ERROR', message: 'Request failed' } }, { status: 500 })
   }
 
   const start = Date.now()
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
       )
       const processingTime = Date.now() - start
 
-      if (userId) {
+      if (userId && !userId.startsWith('anon_')) {
         await getSupabaseAdmin().from('scans').insert({
           user_id:          userId,
           media_type:       'video',
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
     const result = await analyzeVideo(file.name, file.size, ext, buffer)
     const processingTime = Date.now() - start
 
-    if (userId) {
+    if (userId && !userId.startsWith('anon_')) {
       await getSupabaseAdmin().from('scans').insert({
         user_id:          userId,
         media_type:       'video',

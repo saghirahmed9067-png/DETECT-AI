@@ -7,6 +7,8 @@ import { Layers, Upload, X, Play, Pause, CheckCircle, AlertTriangle, HelpCircle,
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/auth-provider'
 import { formatFileSize } from '@/lib/utils/helpers'
+import { ReviewSuggestion } from '@/components/ReviewSuggestion'
+
 
 interface BatchFile {
   id: string; file: File
@@ -253,6 +255,7 @@ export default function BatchPage() {
   }
 
   return (
+    <>
     <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
       <div className="mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-3xl font-black text-text-primary mb-1 flex items-center gap-3">
@@ -473,5 +476,9 @@ export default function BatchPage() {
         </div>
       )}
     </div>
+    <div className="px-4 sm:px-6 pb-4">
+      <ReviewSuggestion toolName="Batch AI Content Analyser" />
+    </div>
+  </>
   )
 }

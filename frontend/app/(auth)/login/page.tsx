@@ -8,6 +8,11 @@ export default function LoginPage() {
         forceRedirectUrl="/dashboard"
         signUpUrl="/signup"
       />
+      <div className="mt-6 text-center">
+        <a href="/detect/text" className="text-sm text-text-muted hover:text-primary transition-colors">
+          → Continue without signing in — everything is free
+        </a>
+      </div>
     </div>
   )
 }

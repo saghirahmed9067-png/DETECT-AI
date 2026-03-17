@@ -10,6 +10,9 @@ import {
 import { useAuth } from '@/components/auth-provider'
 import type { DetectionResult, Verdict } from '@/types'
 import { formatConfidence, formatFileSize } from '@/lib/utils/helpers'
+import { ReviewSuggestion } from '@/components/ReviewSuggestion'
+import { UsageLimitBanner } from '@/components/UsageLimitBanner'
+
 
 const verdictConfig = {
   AI:        { icon: AlertTriangle, color: 'text-rose',    border: 'border-rose/30',    bg: 'bg-rose/5',    label: 'DEEPFAKE / AI DETECTED' },
@@ -278,6 +281,7 @@ export default function VideoDetectionPage() {
     : 'Analyzing…'
 
   return (
+    <>
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
       <div className="mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-3xl font-black text-text-primary mb-1 flex items-center gap-3">
@@ -532,5 +536,10 @@ export default function VideoDetectionPage() {
         </AnimatePresence>
       </div>
     </div>
+    <div className="px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto pb-6">
+      <UsageLimitBanner tool="video" />
+      <ReviewSuggestion toolName="Video Detector" />
+    </div>
+  </>
   )
 }
