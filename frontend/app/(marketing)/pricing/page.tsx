@@ -109,7 +109,7 @@ export default function PricingPage() {
               </Link>
             </div>
           </div>
-          <p className="text-xs text-text-disabled">
+          <p className="text-xs text-text-muted">
             We may add optional supporter tiers in the future to fund model training — but core detection will always remain free.
           </p>
         </div>

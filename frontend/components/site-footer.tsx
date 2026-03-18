@@ -18,14 +18,14 @@ export function SiteFooter() {
             <p className="text-text-muted text-sm leading-relaxed mb-4">
               Enterprise-grade multi-modal AI content detection. Detect deepfakes, synthetic text, AI audio, and more — in seconds.
             </p>
-            <p className="text-xs text-text-disabled">
+            <p className="text-xs text-text-muted">
               Founded by <span className="text-text-secondary font-semibold">Anas Ali</span> · Islamabad, Pakistan
             </p>
           </div>
 
           {/* Product */}
           <div>
-            <h4 className="text-sm font-bold text-text-primary mb-4 uppercase tracking-wider">Platform</h4>
+            <h3 className="text-sm font-bold text-text-primary mb-4 uppercase tracking-wider">Platform</h3>
             <ul className="space-y-2.5">
               {[
                 { label: 'Deepfake Image Detector',           href: '/detect/image', title: 'Deepfake Image Detector' },
@@ -46,7 +46,7 @@ export function SiteFooter() {
 
           {/* Company */}
           <div>
-            <h4 className="text-sm font-bold text-text-primary mb-4 uppercase tracking-wider">Company</h4>
+            <h3 className="text-sm font-bold text-text-primary mb-4 uppercase tracking-wider">Company</h3>
             <ul className="space-y-2.5">
               {[
                 { label: 'About Aiscern',  href: '/about',    title: 'About Aiscern — AI Detection Built on 285k+ Samples' },
@@ -66,7 +66,7 @@ export function SiteFooter() {
 
           {/* Legal */}
           <div>
-            <h4 className="text-sm font-bold text-text-primary mb-4 uppercase tracking-wider">Legal</h4>
+            <h3 className="text-sm font-bold text-text-primary mb-4 uppercase tracking-wider">Legal</h3>
             <ul className="space-y-2.5">
               {[
                 { label: 'Privacy Policy',    href: '/privacy', title: 'Aiscern Privacy Policy' },
@@ -82,7 +82,7 @@ export function SiteFooter() {
             </ul>
 
             <div className="mt-6">
-              <h4 className="text-sm font-bold text-text-primary mb-3 uppercase tracking-wider">Contact</h4>
+              <h3 className="text-sm font-bold text-text-primary mb-3 uppercase tracking-wider">Contact</h3>
               <a href="mailto:contact@aiscern.com" title="Email Aiscern"
                 className="flex items-center gap-2 text-sm text-text-muted hover:text-primary transition-colors">
                 <Mail className="w-4 h-4" /> contact@aiscern.com
@@ -94,10 +94,10 @@ export function SiteFooter() {
         {/* Bottom bar */}
         <div className="border-t border-border pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex flex-col items-center sm:items-start gap-1">
-            <p className="text-xs text-text-disabled">
+            <p className="text-xs text-text-muted">
               &copy; 2026 Aiscern. All rights reserved.
             </p>
-            <p className="text-xs text-text-disabled">
+            <p className="text-xs text-text-muted">
               Testimonial photos courtesy of Unsplash photographers.
             </p>
           </div>

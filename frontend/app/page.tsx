@@ -277,7 +277,7 @@ function TrustBar() {
       <p className="text-center text-xs text-text-disabled uppercase tracking-widest mb-4 font-medium">Trusted by teams at</p>
       <div className="flex gap-8 items-center justify-center flex-wrap">
         {TRUST_COMPANIES.map((c) => (
-          <span key={c} className="text-sm font-semibold text-text-disabled hover:text-text-muted transition-colors">{c}</span>
+          <span key={c} className="text-sm font-semibold text-text-muted hover:text-text-primary transition-colors">{c}</span>
         ))}
       </div>
     </div>
@@ -305,9 +305,9 @@ const STATS = [
 ]
 
 const REVIEWS = [
-  { text: 'Saved us from publishing AI content. The sentence-level heatmap is incredibly useful — now part of our daily editorial workflow.', name: 'Sarah K.', role: 'Senior Editor, Reuters Digital', stars: 5, photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=face', avatar: 'SK', color: '#6366f1' },
-  { text: 'Tested against our own synthetic dataset — accuracy rivals enterprise tools. The multimodal approach sets Aiscern apart.', name: 'Marcus T.', role: 'AI Research Lead, University of Edinburgh', stars: 5, photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face', avatar: 'MT', color: '#0ea5e9' },
-  { text: 'Replaced 3 tools with just Aiscern. The batch analyser handles text, images and audio in one platform — massive cost saving.', name: 'Priya M.', role: 'Content Integrity Manager, Publicis Group', stars: 5, photo: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=80&h=80&fit=crop&crop=face', avatar: 'PM', color: '#10b981' },
+  { text: 'Saved us from publishing AI content. The sentence-level heatmap is incredibly useful — now part of our daily editorial workflow.', name: 'Sarah K.', role: 'Senior Editor, Reuters Digital', stars: 5, photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=face&fm=webp&q=60', avatar: 'SK', color: '#6366f1' },
+  { text: 'Tested against our own synthetic dataset — accuracy rivals enterprise tools. The multimodal approach sets Aiscern apart.', name: 'Marcus T.', role: 'AI Research Lead, University of Edinburgh', stars: 5, photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face&fm=webp&q=60', avatar: 'MT', color: '#0ea5e9' },
+  { text: 'Replaced 3 tools with just Aiscern. The batch analyser handles text, images and audio in one platform — massive cost saving.', name: 'Priya M.', role: 'Content Integrity Manager, Publicis Group', stars: 5, photo: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=80&h=80&fit=crop&crop=face&fm=webp&q=60', avatar: 'PM', color: '#10b981' },
 ]
 
 const HOW_IT_WORKS = [
@@ -340,7 +340,7 @@ export default function HomePage() {
           <Link href="/" className="flex items-center gap-2.5 shrink-0" title="Aiscern — Free AI Content Detector">
             <Image
               src="/logo.png"
-              alt="Aiscern"
+              alt="Aiscern logo"
               width={36}
               height={25}
               className="object-contain drop-shadow-[0_0_6px_rgba(245,100,0,0.4)]"
@@ -414,6 +414,7 @@ export default function HomePage() {
         </AnimatePresence>
       </nav>
 
+      <main id="main-content">
       {/* ── HERO ── */}
       <section className="relative min-h-[85vh] sm:min-h-screen flex items-center justify-center overflow-hidden pt-28 sm:pt-32">
         <ParticleNetwork />
@@ -613,7 +614,7 @@ export default function HomePage() {
       <section className="py-16 sm:py-20 px-4 border-t border-border/40">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <span className="text-xs font-bold uppercase tracking-widest text-text-disabled mb-3 block">Why people trust Aiscern</span>
+            <span className="text-xs font-bold uppercase tracking-widest text-text-muted mb-3 block">Why people trust Aiscern</span>
             <h2 className="text-3xl sm:text-4xl font-black text-text-primary">Built for accuracy. <span className="gradient-text">Verified by data.</span></h2>
           </div>
 
@@ -637,10 +638,10 @@ export default function HomePage() {
 
           {/* Press / media logos as text */}
           <div className="text-center mb-8">
-            <p className="text-xs font-semibold uppercase tracking-widest text-text-disabled mb-5">Used by professionals at</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-text-muted mb-5">Used by professionals at</p>
             <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10">
               {['Reuters', 'BBC', 'Deloitte', 'Publicis', 'University of Edinburgh', 'WPP', 'IPG', 'City University'].map(org => (
-                <span key={org} className="text-sm font-bold text-text-disabled hover:text-text-muted transition-colors tracking-wide">{org}</span>
+                <span key={org} className="text-sm font-bold text-text-muted hover:text-text-primary transition-colors tracking-wide">{org}</span>
               ))}
             </div>
           </div>
@@ -688,6 +689,7 @@ export default function HomePage() {
         </div>
       </section>
 
+      </main>
       <SiteFooter />
     </div>
   )
