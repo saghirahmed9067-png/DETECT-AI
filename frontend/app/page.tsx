@@ -17,7 +17,7 @@ import {
   Activity, Layers, Wand2, Star
 } from 'lucide-react'
 
-// ─── Canvas Particle Network ───────────────────────────────────────────────
+// ─── Canvas Particle Network (decorative, non-blocking) ─────────────────────
 function ParticleNetwork() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   useEffect(() => {
@@ -424,27 +424,26 @@ export default function HomePage() {
         <div className="absolute top-1/3 left-1/4 w-[300px] h-[300px] rounded-full bg-secondary/8 blur-[80px] pointer-events-none" />
         <div className="absolute top-1/3 right-1/4 w-[300px] h-[300px] rounded-full bg-cyan/5 blur-[80px] pointer-events-none" />
 
-        <motion.div style={{ y: heroY }} className="relative z-20 text-center px-4 max-w-5xl mx-auto w-full">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-xs font-semibold mb-6">
+        <div className="relative z-20 text-center px-4 max-w-5xl mx-auto w-full">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-xs font-semibold mb-6">
             <Sparkles className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">285,000+ training samples · Enterprise-grade AI detection</span>
             <span className="sm:hidden">285k+ samples · Open-source</span>
-          </motion.div>
+          </div>
 
-          <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+          <motion.h1 initial={{ opacity: 1, y: 0 }} animate={{ opacity: 1, y: 0 }}
             className="text-3xl sm:text-5xl lg:text-7xl font-black leading-[0.95] mb-6">
             <span className="gradient-text">Unmask AI-Generated Content</span>
             <br /><span className="text-text-primary text-3xl sm:text-4xl lg:text-5xl">— Free Detector for Text, Images, Audio &amp; Video</span>
           </motion.h1>
 
-          <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
+          <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
             className="text-base sm:text-xl text-text-muted max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed px-2">
             Detect AI-generated <strong className="text-text-secondary">text</strong>, <strong className="text-text-secondary">images</strong>, <strong className="text-text-secondary">audio</strong> &amp; <strong className="text-text-secondary">video</strong> with state-of-the-art models.
             Start free. No signup required.
           </motion.p>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-12 sm:mb-16">
             <Link href={user ? '/dashboard' : '/detect/text'} className="btn-primary w-full sm:w-auto px-6 sm:px-8 py-3.5 text-base font-bold flex items-center justify-center gap-2 shadow-xl shadow-primary/30" title="Start Detecting AI Content Free">
               {user ? 'Open Dashboard' : 'Start Detecting AI Content Free'}
@@ -455,11 +454,11 @@ export default function HomePage() {
             </Link>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
             className="max-w-2xl mx-auto w-full">
             <LiveDemo isLoggedIn={!!user} />
           </motion.div>
-        </motion.div>
+        </div>
       </section>
 
       {/* ── TRUST BAR ── */}
