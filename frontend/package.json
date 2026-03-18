@@ -1,7 +1,13 @@
 {
-  "name": "detectai",
+  "name": "aiscern",
   "version": "1.0.0",
   "private": true,
+  "browserslist": [
+    "last 2 Chrome versions",
+    "last 2 Firefox versions",
+    "last 2 Safari versions",
+    "last 2 Edge versions"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -34,8 +40,6 @@
     "clsx": "2.1.1",
     "d3": "7.9.0",
     "date-fns": "3.6.0",
-    "firebase": "^12.10.0",
-    "firebase-admin": "^12.7.0",
     "framer-motion": "11.2.10",
     "html2canvas": "^1.4.1",
     "jspdf": "^2.5.1",
@@ -50,7 +54,6 @@
     "react-icons": "5.2.1",
     "recharts": "2.12.7",
     "sonner": "1.4.41",
-    "stripe": "^20.4.1",
     "tailwind-merge": "2.3.0",
     "zod": "^3.23.8",
     "zustand": "4.5.2"
