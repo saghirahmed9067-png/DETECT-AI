@@ -13,8 +13,7 @@ export default function SignUpPage() {
       </Link>
 
       <SignUp
-        routing="path"
-        path="/signup"
+        routing="hash"
         forceRedirectUrl="/dashboard"
         signInUrl="/login"
         appearance={{

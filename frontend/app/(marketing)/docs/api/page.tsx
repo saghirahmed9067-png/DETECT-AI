@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { Shield } from 'lucide-react'
 
 const CODE = {
-  curl: `curl -X POST https://detect-ai-nu.vercel.app/api/v1/detect/text \\
+  curl: `curl -X POST https://aiscern.com/api/v1/detect/text \\
   -H "X-API-Key: YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{"text": "The text you want to analyze goes here..."}'`,
@@ -10,14 +10,14 @@ const CODE = {
   python: `import requests
 
 response = requests.post(
-    "https://detect-ai-nu.vercel.app/api/v1/detect/text",
+    "https://aiscern.com/api/v1/detect/text",
     headers={"X-API-Key": "YOUR_API_KEY"},
     json={"text": "The text you want to analyze goes here..."}
 )
 result = response.json()
 print(result["verdict"])  # "AI", "HUMAN", or "UNCERTAIN"`,
 
-  js: `const response = await fetch('https://detect-ai-nu.vercel.app/api/v1/detect/text', {
+  js: `const response = await fetch('https://aiscern.com/api/v1/detect/text', {
   method: 'POST',
   headers: {
     'X-API-Key': 'YOUR_API_KEY',

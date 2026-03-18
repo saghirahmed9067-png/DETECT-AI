@@ -1,24 +1,25 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextRequest, NextResponse } from 'next/server'
 
+// Only these pages REQUIRE login — everything else is publicly accessible
+// detect/* is open so users can try tools (SignupGate fires after 3 scans)
 const isProtectedRoute = createRouteMatcher([
   '/dashboard(.*)',
-  '/detect(.*)',
   '/batch(.*)',
   '/history(.*)',
   '/profile(.*)',
   '/settings(.*)',
-  '/chat(.*)',
-  '/scraper(.*)',
-  '/pipeline(.*)',
   '/api/admin(.*)',
 ])
 
-// Correct Clerk v7 pattern: clerkMiddleware wraps handler, auth().protect() redirects
 export default clerkMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) {
-    // auth().protect() in Clerk v7 automatically redirects to sign-in
-    await auth.protect()
+  try {
+    if (isProtectedRoute(req)) {
+      await auth.protect()
+    }
+  } catch (err: any) {
+    // Clerk not configured or user unauthenticated — redirect to login
+    return NextResponse.redirect(new URL('/login', req.url))
   }
 })
 

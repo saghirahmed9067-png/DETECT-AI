@@ -131,7 +131,6 @@ export default function AudioDetectionPage() {
   return (
     <>
     <SignupGate />
-    <>
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
       <audio ref={audioRef} className="hidden" />
       <div className="mb-6 sm:mb-8">
@@ -332,7 +331,6 @@ export default function AudioDetectionPage() {
       
       <ReviewSuggestion toolName="Audio Detector" />
     </div>
-  </>
     </>
   )
 }

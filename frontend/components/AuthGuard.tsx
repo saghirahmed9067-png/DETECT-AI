@@ -5,6 +5,7 @@
  * Works even if middleware redirect fails (e.g. during Clerk key setup).
  */
 import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { useAuth } from '@/components/auth-provider'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
@@ -22,12 +23,21 @@ const PERKS = [
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
   const [checked, setChecked] = useState(false)
+  const pathname = usePathname()
+  // These paths are open to anonymous users (SignupGate handles them after 3 scans)
+  const isOpenPath = pathname.startsWith('/detect') || 
+                     pathname.startsWith('/chat') ||
+                     pathname.startsWith('/scraper') ||
+                     pathname.startsWith('/pipeline')
 
   useEffect(() => {
     // Small delay to let Clerk initialize — avoids flash of modal for logged-in users
     const t = setTimeout(() => setChecked(true), 400)
     return () => clearTimeout(t)
   }, [])
+
+  // Open paths don't need auth — render immediately
+  if (isOpenPath) return <>{children}</>
 
   // Still loading — render children silently (Clerk is initializing)
   if (!checked || loading) {
