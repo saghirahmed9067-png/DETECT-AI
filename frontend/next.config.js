@@ -22,7 +22,6 @@ const nextConfig = {
     {
       source: '/:path*',
       headers: [
-        { key: 'X-Frame-Options',          value: 'DENY'                          },
         { key: 'X-Content-Type-Options',   value: 'nosniff'                       },
         { key: 'X-XSS-Protection',         value: '1; mode=block'                 },
         { key: 'Referrer-Policy',          value: 'strict-origin-when-cross-origin' },
@@ -36,10 +35,11 @@ const nextConfig = {
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.clerk.accounts.dev https://*.clerk.com",
             "font-src 'self' data: https://fonts.gstatic.com",
             "img-src 'self' data: blob: https: lh3.googleusercontent.com *.supabase.co images.unsplash.com img.clerk.com *.clerk.accounts.dev",
-            "connect-src 'self' https://*.supabase.co https://api-inference.huggingface.co https://integrate.api.nvidia.com https://api.cloudflare.com https://*.clerk.com https://*.clerk.accounts.dev https://api.clerk.com https://clerk.aiscern.com https://aiscern.com wss://*.clerk.accounts.dev wss://*.clerk.com",
+            "connect-src 'self' https://*.supabase.co https://api-inference.huggingface.co https://integrate.api.nvidia.com https://api.cloudflare.com https://*.clerk.com https://*.clerk.accounts.dev https://api.clerk.com https://clerk.aiscern.com https://aiscern.com wss://*.clerk.accounts.dev wss://*.clerk.com https://clerk.shared.com",
             "frame-src https://accounts.google.com https://*.google.com https://*.clerk.accounts.dev https://*.clerk.com https://clerk.aiscern.com",
             "worker-src 'self' blob:",
-            "object-src 'none'",
+            "frame-ancestors 'self'",
+            "object-src 'none'"
           ].join('; '),
         },
       ],
