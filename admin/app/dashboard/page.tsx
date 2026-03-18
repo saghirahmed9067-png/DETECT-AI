@@ -1,6 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
-import { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
@@ -190,7 +190,7 @@ function UsersTab() {
   useEffect(load,[load])
 
   const ban=async(id:string,banned:boolean)=>{setActing(id);await api(`/users/${id}/ban`,'POST',{ban:!banned});load();setActing(null)}
-  const setPlanFn=async(id:string,p:string)=>{setActing(id);await api(`/users/${id}/plan`,'POST',{plan:p});load();setActing(null)}
+  const setPlanFn=async(id:string,p:string)=>{setActing(id);await api(`/users/${id}/plan`,'POST',{planId:p});load();setActing(null)}
 
   return (
     <div className="space-y-4">
@@ -462,7 +462,7 @@ function AuditTab() {
                     <td className="py-2.5 px-4">{log.metadata&&Object.keys(log.metadata).length>0&&(expanded===log.id?<ChevronUp className="w-4 h-4 text-gray-600"/>:<ChevronDown className="w-4 h-4 text-gray-600"/>)}</td>
                   </tr>
                   {expanded===log.id&&log.metadata&&(
-                    <tr key={`${log.id}-d`}><td colSpan={6} className="px-4 pb-3 bg-gray-800/40">
+                    <tr><td colSpan={6} className="px-4 pb-3 bg-gray-800/40">
                       <pre className="text-xs text-gray-400 font-mono bg-black/20 rounded p-3 overflow-x-auto">{JSON.stringify(log.metadata,null,2)}</pre>
                     </td></tr>
                   )}
@@ -595,9 +595,9 @@ export default function AdminDashboard() {
   const router=useRouter()
 
   useEffect(()=>{
-    fetch('/api/auth',{method:'GET'}).then(r=>{
-      if(r.status===401)router.push('/')
-      else{setChecking(false);api('/stats/overview').then(setOverview)}
+    api('/stats/overview').then(r=>{
+      if(r.error==='Unauthorized'||r.status===401){router.push('/');return}
+      setChecking(false);setOverview(r)
     }).catch(()=>router.push('/'))
   },[router])
 

@@ -32,3 +32,11 @@ export async function DELETE() {
   res.cookies.delete(COOKIE_NAME)
   return res
 }
+
+export async function GET(req: NextRequest) {
+  const token = req.cookies.get('admin_session')?.value
+  const { verifyAdminSession } = await import('@/lib/auth')
+  const valid = await verifyAdminSession(token)
+  if (!valid) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  return NextResponse.json({ ok: true })
+}
