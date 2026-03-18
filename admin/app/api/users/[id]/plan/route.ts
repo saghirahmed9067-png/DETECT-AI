@@ -5,7 +5,8 @@ export const dynamic = 'force-dynamic'
 
 const PLAN_CREDITS: Record<string, number> = { free: 5, starter: 100, pro: 500, enterprise: -1 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const auth = await requireAdmin(req)
   if (auth instanceof NextResponse) return auth
 
@@ -19,9 +20,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     plan_id: planId, plan: planId,
     subscription_status: planId === 'free' ? 'free' : 'active',
     credits_remaining: PLAN_CREDITS[planId] ?? 5,
-  }).eq('id', params.id)
+  }).eq('id', id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  await logAdminAction('plan_change', params.id, auth.ip, { planId })
+  await logAdminAction('plan_change', id, auth.ip, { planId })
   return NextResponse.json({ ok: true })
 }
