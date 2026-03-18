@@ -375,11 +375,23 @@ export default function HomePage() {
           <div className="flex items-center gap-2 sm:gap-3">
             {!loading && (
               user ? (
-                <Link href="/dashboard" className="btn-primary px-3 sm:px-4 py-2 text-sm">Dashboard →</Link>
+                <Link href="/dashboard" className="btn-primary px-4 py-2 text-sm font-semibold">Dashboard →</Link>
               ) : (
                 <>
-                  <Link href="/login"  className="hidden sm:block text-sm text-text-muted hover:text-text-primary transition-colors">Sign in</Link>
-                  <Link href="/detect/text" className="btn-primary px-3 sm:px-4 py-2 text-sm" title="Start Detecting AI Content Free">Try Free Now</Link>
+                  <Link
+                    href="/login"
+                    className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl border border-border text-sm font-semibold text-text-primary hover:bg-surface-hover hover:border-primary/40 transition-all"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all"
+                    title="Create free Aiscern account"
+                  >
+                    <Zap className="w-3.5 h-3.5" />
+                    Get Started
+                  </Link>
                 </>
               )
             )}
@@ -409,7 +421,10 @@ export default function HomePage() {
                 <Link href="/reviews"  onClick={() => setMobileNavOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface text-text-muted hover:text-text-primary transition-all text-sm font-medium"><Star className="w-4 h-4" />Reviews</Link>
                 <Link href="/pricing"  onClick={() => setMobileNavOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface text-text-muted hover:text-text-primary transition-all text-sm font-medium"><Zap className="w-4 h-4" />View AI Detector Plans</Link>
                 {!loading && !user && (
-                  <Link href="/login"  onClick={() => setMobileNavOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface text-text-muted hover:text-text-primary transition-all text-sm font-medium"><Lock className="w-4 h-4" />Sign in</Link>
+                  <>
+                    <Link href="/login"   onClick={() => setMobileNavOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface text-text-muted hover:text-text-primary transition-all text-sm font-medium"><Lock className="w-4 h-4" />Sign In</Link>
+                    <Link href="/signup"  onClick={() => setMobileNavOpen(false)} className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold mt-1"><Zap className="w-4 h-4" />Get Started Free</Link>
+                  </>
                 )}
               </div>
             </motion.div>
