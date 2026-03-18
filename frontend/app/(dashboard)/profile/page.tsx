@@ -9,7 +9,7 @@ import { useUser } from '@clerk/nextjs'
 import { toast } from 'sonner'
 
 export default function ProfilePage() {
-  const { user: fbUser } = useAuth()
+  const { user: currentUser } = useAuth()
   const { user: clerkUser } = useUser()
   const [profile,     setProfile]      = useState<any>(null)
   const [stats,       setStats]        = useState<any>(null)
@@ -23,19 +23,19 @@ export default function ProfilePage() {
   const supabase  = createClient()
 
   useEffect(() => {
-    if (!fbUser?.uid) return
+    if (!currentUser?.uid) return
     async function load() {
-      const { data: p } = await supabase.from('profiles').select('*').eq('id', fbUser!.uid).single()
+      const { data: p } = await supabase.from('profiles').select('*').eq('id', currentUser!.uid).single()
       if (p) { setProfile(p); setDisplayName(p.display_name || ''); setAvatarUrl(p.avatar_url || '') }
-      if (!p?.display_name && fbUser?.displayName) setDisplayName(fbUser.displayName)
-      if (!p?.avatar_url  && fbUser?.photoURL)    setAvatarUrl(fbUser.photoURL)
-      const { data: s, error: rpcErr } = await supabase.rpc('get_user_stats', { p_user_id: fbUser!.uid })
+      if (!p?.display_name && currentUser?.displayName) setDisplayName(currentUser.displayName)
+      if (!p?.avatar_url  && currentUser?.photoURL)    setAvatarUrl(currentUser.photoURL)
+      const { data: s, error: rpcErr } = await supabase.rpc('get_user_stats', { p_user_id: currentUser!.uid })
       if (s && !rpcErr) {
         const avgConf = (s.avg_confidence ?? 0) <= 1 ? Math.round(s.avg_confidence * 100) : Math.round(s.avg_confidence)
         setStats({ ...s, avg_confidence: avgConf })
       } else {
         // Fallback: compute stats directly from scans table
-        const { data: scanRows } = await supabase.from('scans').select('verdict,confidence_score,media_type').eq('user_id', fbUser!.uid)
+        const { data: scanRows } = await supabase.from('scans').select('verdict,confidence_score,media_type').eq('user_id', currentUser!.uid)
         if (scanRows) {
           const total = scanRows.length
           setStats({
@@ -54,19 +54,19 @@ export default function ProfilePage() {
       setLoading(false)
     }
     load()
-  }, [fbUser])
+  }, [currentUser])
 
   const handleAvatarUpload = async (file: File) => {
-    if (!fbUser?.uid) return
+    if (!currentUser?.uid) return
     setUploading(true)
     try {
       const ext  = file.name.split('.').pop()
-      const path = `avatars/${fbUser.uid}.${ext}`
+      const path = `avatars/${currentUser.uid}.${ext}`
       const { error: uploadErr } = await supabase.storage.from('avatars').upload(path, file, { upsert: true, contentType: file.type })
       if (uploadErr) throw uploadErr
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path)
       const url = urlData.publicUrl
-      await supabase.from('profiles').upsert({ id: fbUser.uid, avatar_url: url })
+      await supabase.from('profiles').upsert({ id: currentUser.uid, avatar_url: url })
       if (null) await clerkUser?.update({ firstName: displayName.trim().split(' ')[0], lastName: displayName.trim().split(' ').slice(1).join(' ') || undefined })
       setAvatarUrl(url)
       setProfile((p: any) => ({ ...p, avatar_url: url }))
@@ -80,11 +80,11 @@ export default function ProfilePage() {
   }
 
   const saveProfile = async () => {
-    if (!fbUser?.uid) return
+    if (!currentUser?.uid) return
     setSaving(true)
     try {
       if (null) await clerkUser?.update({ firstName: displayName.trim().split(' ')[0], lastName: displayName.trim().split(' ').slice(1).join(' ') || undefined })
-      await supabase.from('profiles').upsert({ id: fbUser.uid, display_name: displayName, avatar_url: avatarUrl || null, updated_at: new Date().toISOString() })
+      await supabase.from('profiles').upsert({ id: currentUser.uid, display_name: displayName, avatar_url: avatarUrl || null, updated_at: new Date().toISOString() })
       setProfile((p: any) => ({ ...p, display_name: displayName, avatar_url: avatarUrl }))
       setEditing(false)
       toast.success('Profile saved!')
@@ -98,8 +98,8 @@ export default function ProfilePage() {
     </div>
   )
 
-  const avatar   = avatarUrl || fbUser?.photoURL || ''
-  const initials = (displayName || fbUser?.email || 'U').slice(0, 2).toUpperCase()
+  const avatar   = avatarUrl || currentUser?.photoURL || ''
+  const initials = (displayName || currentUser?.email || 'U').slice(0, 2).toUpperCase()
   const aiRate   = stats ? Math.round((stats.ai_detected / Math.max(stats.total_scans, 1)) * 100) : 0
 
   return (
@@ -154,10 +154,10 @@ export default function ProfilePage() {
                     <Edit3 className="w-4 h-4" />
                   </button>
                 </div>
-                <p className="text-text-muted text-sm mt-1 truncate">{fbUser?.email}</p>
+                <p className="text-text-muted text-sm mt-1 truncate">{currentUser?.email}</p>
                 <div className="flex items-center gap-3 mt-2">
                   <span className="text-xs font-medium text-primary bg-primary/10 px-2.5 py-0.5 rounded-full">
-                    {profile?.plan || 'Free'} Plan
+                    Free · Open Source
                   </span>
                   <span className="text-xs text-text-muted flex items-center gap-1">
                     <Calendar className="w-3 h-3" />
@@ -189,9 +189,9 @@ export default function ProfilePage() {
         <h3 className="font-semibold text-text-primary text-sm">Account Details</h3>
         <div className="space-y-1">
           {[
-            { icon: Mail,     label: 'Email',         value: fbUser?.email || '—',                     extra: true ? <Check className="w-4 h-4 text-emerald ml-auto" /> : null },
+            { icon: Mail,     label: 'Email',         value: currentUser?.email || '—',                     extra: true ? <Check className="w-4 h-4 text-emerald ml-auto" /> : null },
             { icon: Shield,   label: 'Auth Provider', value: ('password' || 'password').replace('.com','').replace('password','Email/Password') },
-            { icon: BarChart3, label: 'Plan',         value: profile?.plan === 'pro' ? 'Pro' : 'Free Forever' },
+            { icon: BarChart3, label: 'Plan',         value: 'Free Forever' },
           ].map((row, i) => (
             <div key={i} className={`flex items-center gap-3 py-3 ${i < 2 ? 'border-b border-border' : ''}`}>
               <row.icon className="w-4 h-4 text-text-muted flex-shrink-0" />

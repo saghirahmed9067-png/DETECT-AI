@@ -35,9 +35,12 @@ export const metadata: Metadata = {
   creator: 'Anas Ali',
   publisher: 'Aiscern',
   icons: {
-    icon: '/favicon.ico',
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon-logo.png', type: 'image/png', sizes: '256x256' },
+    ],
     shortcut: '/favicon.ico',
-    apple: '/logo.png',
+    apple: { url: '/logo-512.png', sizes: '512x512', type: 'image/png' },
   },
   robots: {
     index: true,

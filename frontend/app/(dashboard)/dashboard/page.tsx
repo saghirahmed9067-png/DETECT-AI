@@ -38,17 +38,17 @@ function VerdictBadge({ verdict }: { verdict: string }) {
 }
 
 export default function DashboardPage() {
-  const { user: firebaseUser } = useAuth()
+  const { user: currentUser } = useAuth()
   const [stats, setStats] = useState<UserStats | null>(null)
   const [scans, setScans] = useState<Scan[]>([])
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
   useEffect(() => {
-    // Don't wait for firebaseUser — read UID from cookie immediately via
+    // Don't wait for currentUser — read UID from cookie immediately via
     // a lightweight decode. Dashboard renders skeleton instantly, data loads fast.
-    if (!firebaseUser?.uid) return
-    const uid = firebaseUser.uid
+    if (!currentUser?.uid) return
+    const uid = currentUser.uid
     async function loadData() {
       // Run all queries in parallel — no sequential fallback
       const [rpcResult, scansResult, allScansResult] = await Promise.all([
@@ -91,7 +91,7 @@ export default function DashboardPage() {
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [firebaseUser?.uid])
+  }, [currentUser?.uid])
 
   if (loading) {
     return (

@@ -9,7 +9,7 @@ import { useAuth } from '@/components/auth-provider'
 import type { DetectionResult, Verdict } from '@/types'
 import { formatConfidence, formatFileSize } from '@/lib/utils/helpers'
 import { ReviewSuggestion } from '@/components/ReviewSuggestion'
-import { UsageLimitBanner } from '@/components/UsageLimitBanner'
+
 
 
 const verdictConfig = {
@@ -19,7 +19,7 @@ const verdictConfig = {
 }
 
 export default function ImageDetectionPage() {
-  const { user: firebaseUser } = useAuth()
+  const { user: currentUser } = useAuth()
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -59,9 +59,9 @@ export default function ImageDetectionPage() {
       const data = await res.json()
       if (!data.success) throw new Error(data.error?.message || 'Detection failed')
       setResult(data.data)
-      if (firebaseUser?.uid) {
+      if (currentUser?.uid) {
         await supabase.from('scans').insert({
-          user_id: firebaseUser.uid, media_type: 'image', file_name: file.name,
+          user_id: currentUser.uid, media_type: 'image', file_name: file.name,
           file_size: file.size, verdict: data.data.verdict,
           confidence_score: data.data.confidence, signals: data.data.signals,
           model_used: data.data.model_used, status: 'complete'
@@ -310,7 +310,7 @@ Analyzed: ${new Date().toLocaleString()}`
       </div>
     </div>
     <div className="px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto pb-6">
-      <UsageLimitBanner tool="image" />
+      
       <ReviewSuggestion toolName="Image Detector" />
     </div>
   </>

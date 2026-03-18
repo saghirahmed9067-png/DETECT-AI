@@ -11,7 +11,7 @@ import { useAuth } from '@/components/auth-provider'
 import type { DetectionResult, Verdict } from '@/types'
 import { formatConfidence, formatFileSize } from '@/lib/utils/helpers'
 import { ReviewSuggestion } from '@/components/ReviewSuggestion'
-import { UsageLimitBanner } from '@/components/UsageLimitBanner'
+
 
 
 const verdictConfig = {
@@ -125,7 +125,7 @@ function FrameStrip({
 }
 
 export default function VideoDetectionPage() {
-  const { user: firebaseUser } = useAuth()
+  const { user: currentUser } = useAuth()
   const [file,        setFile]        = useState<File | null>(null)
   const [preview,     setPreview]     = useState<string | null>(null)
   const [loading,     setLoading]     = useState(false)
@@ -537,7 +537,7 @@ export default function VideoDetectionPage() {
       </div>
     </div>
     <div className="px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto pb-6">
-      <UsageLimitBanner tool="video" />
+      
       <ReviewSuggestion toolName="Video Detector" />
     </div>
   </>

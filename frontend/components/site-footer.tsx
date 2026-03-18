@@ -12,7 +12,7 @@ export function SiteFooter() {
           {/* Brand */}
           <div className="sm:col-span-2 lg:col-span-1">
             <div className="flex items-center gap-2 mb-3">
-              <Image src="/logo.png" alt="Aiscern AI Detection Platform Logo" width={36} height={36} className="rounded-lg" />
+              <Image src="/logo.png" alt="Aiscern AI Detection Platform Logo" width={50} height={34} className="object-contain drop-shadow-[0_0_8px_rgba(245,100,0,0.4)]" />
               <span className="font-black text-lg gradient-text">Aiscern</span>
             </div>
             <p className="text-text-muted text-sm leading-relaxed mb-4">
@@ -52,7 +52,7 @@ export function SiteFooter() {
                 { label: 'About Aiscern',  href: '/about',    title: 'About Aiscern — AI Detection Built on 285k+ Samples' },
                 { label: 'Contact',        href: '/contact',  title: 'Contact Aiscern' },
                 { label: 'API Docs',       href: '/docs/api', title: 'Aiscern API — AI Detection REST API for Developers' },
-                { label: 'View AI Detector Plans', href: '/pricing', title: 'View AI Detector Plans' },
+                { label: 'Free · Open Source', href: '/pricing', title: 'Aiscern is Free' },
                 { label: 'Reviews',        href: '/reviews',  title: 'Aiscern User Reviews' },
               ].map(l => (
                 <li key={l.label}>

@@ -95,7 +95,7 @@ function ScanDetailModal({ scan, onClose }: { scan: Scan; onClose: () => void })
 }
 
 export default function HistoryPage() {
-  const { user: firebaseUser } = useAuth()
+  const { user: currentUser } = useAuth()
   const [scans, setScans] = useState<Scan[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -110,7 +110,7 @@ export default function HistoryPage() {
   const supabase = createClient()
 
   const loadScans = useCallback(async (showRefresh = false) => {
-    const uid = firebaseUser?.uid
+    const uid = currentUser?.uid
     if (!uid) { setLoading(false); return }
     if (showRefresh) setRefreshing(true)
 
@@ -120,7 +120,7 @@ export default function HistoryPage() {
     if (data) setScans(data)
     setLoading(false)
     setRefreshing(false)
-  }, [firebaseUser?.uid]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [currentUser?.uid]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { loadScans() }, [loadScans])
 
@@ -133,7 +133,7 @@ export default function HistoryPage() {
 
   async function deleteAll() {
     if (!confirm(`Delete all ${scans.length} scans? This cannot be undone.`)) return
-    const uid = firebaseUser?.uid; if (!uid) return
+    const uid = currentUser?.uid; if (!uid) return
     await supabase.from('scans').delete().eq('user_id', uid)
     setScans([])
   }

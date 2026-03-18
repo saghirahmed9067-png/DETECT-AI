@@ -353,9 +353,9 @@ export default function HomePage() {
             <Image
               src="/logo.png"
               alt="Aiscern AI Detection Platform Logo"
-              width={40}
-              height={40}
-              className="rounded-lg"
+              width={44}
+              height={30}
+              className="object-contain drop-shadow-[0_0_8px_rgba(245,100,0,0.5)]"
               priority
             />
             <span className="font-black text-xl gradient-text">Aiscern</span>
@@ -431,9 +431,9 @@ export default function HomePage() {
             <Image
               src="/logo.png"
               alt="Aiscern — AI Content Detection Platform"
-              width={120}
-              height={120}
-              className="mx-auto mb-6 rounded-2xl shadow-2xl"
+              width={180}
+              height={124}
+              className="mx-auto mb-6 object-contain drop-shadow-[0_0_40px_rgba(245,100,0,0.4)]"
               priority
             />
           </motion.div>

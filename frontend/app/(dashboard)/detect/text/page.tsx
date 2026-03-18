@@ -8,7 +8,7 @@ import { useAuth } from '@/components/auth-provider'
 import type { DetectionResult, Verdict } from '@/types'
 import { formatConfidence } from '@/lib/utils/helpers'
 import { ReviewSuggestion } from '@/components/ReviewSuggestion'
-import { UsageLimitBanner } from '@/components/UsageLimitBanner'
+
 
 
 const SAMPLE_AI = `Artificial intelligence has revolutionized the way we process and analyze information in modern society. Furthermore, it has enabled unprecedented advances in machine learning algorithms and computational capabilities. Moreover, these systems demonstrate remarkable performance across various benchmarks and metrics. Additionally, the integration of AI technologies into everyday applications has fundamentally transformed human-computer interaction paradigms. The implications of such advancements are multifaceted and warrant careful consideration.`
@@ -29,7 +29,7 @@ function avgSentenceLen(text: string) {
 }
 
 export default function TextDetectionPage() {
-  const { user: firebaseUser } = useAuth()
+  const { user: currentUser } = useAuth()
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<DetectionResult | null>(null)
@@ -69,9 +69,9 @@ export default function TextDetectionPage() {
       if (!data.success) throw new Error(data.error?.message || 'PDF analysis failed')
       setResult(data.data)
       if (data.data.paragraph_scores) setParagraphScores(data.data.paragraph_scores)
-      if (firebaseUser?.uid) {
+      if (currentUser?.uid) {
         await supabase.from('scans').insert({
-          user_id: firebaseUser.uid, media_type: 'text',
+          user_id: currentUser.uid, media_type: 'text',
           content_preview: `[PDF: ${file.name}]`,
           verdict: data.data.verdict, confidence_score: data.data.confidence,
           model_used: data.data.model_used, processing_time: data.data.processing_time, status: 'complete'
@@ -96,9 +96,9 @@ export default function TextDetectionPage() {
       const data = await res.json()
       if (!data.success) throw new Error(data.error?.message || 'Detection failed')
       setResult(data.data)
-      if (firebaseUser?.uid) {
+      if (currentUser?.uid) {
         await supabase.from('scans').insert({
-          user_id: firebaseUser.uid, media_type: 'text',
+          user_id: currentUser.uid, media_type: 'text',
           content_preview: text.substring(0, 200),
           verdict: data.data.verdict, confidence_score: data.data.confidence,
           signals: data.data.signals, model_used: data.data.model_used,
@@ -449,7 +449,7 @@ Analyzed: ${new Date().toLocaleString()}`
       </div>
     </div>
     <div className="px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto pb-6">
-      <UsageLimitBanner tool="text" />
+      
       <ReviewSuggestion toolName="AI Text Detector" />
     </div>
   </>

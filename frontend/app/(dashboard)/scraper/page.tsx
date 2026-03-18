@@ -47,7 +47,7 @@ function ScoreRing({ score }: { score: number }) {
 }
 
 export default function ScraperPage() {
-  const { user: firebaseUser } = useAuth()
+  const { user: currentUser } = useAuth()
   const [url, setUrl] = useState('')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<ScrapeResult | null>(null)
@@ -73,7 +73,7 @@ export default function ScraperPage() {
       clearInterval(interval)
       if (!data.success) throw new Error(data.error?.message || 'Scraping failed')
       setResult(data.data)
-      const user = firebaseUser ? { id: firebaseUser.uid } : null
+      const user = currentUser ? { id: currentUser.uid } : null
       if (user) {
         await supabase.from('scraper_sessions').insert({
           user_id: user.id, target_url: url.trim(),

@@ -1,11 +1,10 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Aiscern Pricing — Free AI Detector Plans',
-  description: 'Start detecting AI content for free. Upgrade to Pro for unlimited scans. No credit card required.',
-  alternates: { canonical: 'https://aiscern.com/pricing' },
+  title: 'Free AI Detector — No Subscription | Aiscern',
+  description: 'Aiscern is 100% free forever. Detect AI-generated text, deepfakes, audio clones, and synthetic images with no limits and no credit card required.',
 }
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default function PricingLayout({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }

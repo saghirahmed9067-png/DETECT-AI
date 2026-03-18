@@ -34,7 +34,7 @@ function normalizeConf(c: number | undefined) {
 }
 
 export default function BatchPage() {
-  const { user: firebaseUser } = useAuth()
+  const { user: currentUser } = useAuth()
   const [files, setFiles] = useState<BatchFile[]>([])
   const [running, setRunning] = useState(false)
   const [correlation, setCorrelation] = useState<{score:number;pattern:string}|null>(null)
@@ -112,7 +112,7 @@ export default function BatchPage() {
     startTimeRef.current = Date.now()
     timerRef.current = setInterval(() => setElapsed(Math.floor((Date.now() - startTimeRef.current) / 1000)), 1000)
 
-    const uid = firebaseUser?.uid || null
+    const uid = currentUser?.uid || null
 
     // Process with concurrency limit
     let idx = 0

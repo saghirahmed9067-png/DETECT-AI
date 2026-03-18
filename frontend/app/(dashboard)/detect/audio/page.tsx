@@ -9,7 +9,7 @@ import { useAuth } from '@/components/auth-provider'
 import type { DetectionResult, Verdict } from '@/types'
 import { formatConfidence, formatFileSize } from '@/lib/utils/helpers'
 import { ReviewSuggestion } from '@/components/ReviewSuggestion'
-import { UsageLimitBanner } from '@/components/UsageLimitBanner'
+
 
 
 const verdictConfig = {
@@ -44,7 +44,7 @@ function formatDuration(secs: number) {
 }
 
 export default function AudioDetectionPage() {
-  const { user: firebaseUser } = useAuth()
+  const { user: currentUser } = useAuth()
   const [file, setFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<DetectionResult | null>(null)
@@ -104,9 +104,9 @@ export default function AudioDetectionPage() {
       const data = await res.json()
       if (!data.success) throw new Error(data.error?.message || 'Detection failed')
       setResult(data.data)
-      if (firebaseUser?.uid) {
+      if (currentUser?.uid) {
         await supabase.from('scans').insert({
-          user_id: firebaseUser.uid, media_type: 'audio', file_name: file.name,
+          user_id: currentUser.uid, media_type: 'audio', file_name: file.name,
           file_size: file.size, verdict: data.data.verdict,
           confidence_score: data.data.confidence, signals: data.data.signals,
           model_used: data.data.model_used, status: 'complete'
@@ -326,7 +326,7 @@ export default function AudioDetectionPage() {
       </div>
     </div>
     <div className="px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto pb-6">
-      <UsageLimitBanner tool="audio" />
+      
       <ReviewSuggestion toolName="Audio Detector" />
     </div>
   </>

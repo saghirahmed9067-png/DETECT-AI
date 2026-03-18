@@ -36,7 +36,7 @@ const navGroups = [
     label: 'Info',
     items: [
       { href: '/reviews', icon: 'Star',   label: 'Reviews' },
-      { href: '/pricing', icon: 'Zap',    label: 'Pricing' },
+      { href: '/pricing', icon: 'Zap',    label: 'Free Access' },
     ],
   },
 ]
