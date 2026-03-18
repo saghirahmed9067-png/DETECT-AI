@@ -24,6 +24,8 @@ const config: Config = {
         emerald:       '#10b981',
         amber:         '#f59e0b',
         rose:          '#f43f5e',
+        'surface-hover':  'rgba(255,255,255,0.04)',
+        'surface-border': 'rgba(255,255,255,0.08)',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
