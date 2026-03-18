@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/auth-provider'
 import type { DetectionResult, Verdict } from '@/types'
 import { formatConfidence, formatFileSize } from '@/lib/utils/helpers'
+import { SignupGate, incrementGlobalScanCount } from '@/components/SignupGate'
 import { ReviewSuggestion } from '@/components/ReviewSuggestion'
 
 

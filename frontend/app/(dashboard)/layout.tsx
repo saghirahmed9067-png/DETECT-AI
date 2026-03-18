@@ -1,10 +1,11 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  LayoutDashboard, Image, Video, Music, FileText, Globe,
+  LayoutDashboard, Image as ImageIcon, Video, Music, FileText, Globe,
   Layers, Clock, User, Settings, Shield, ChevronLeft,
   ChevronRight, Menu, BarChart2, LogOut, ChevronDown, MessageSquare, Zap, Star
 } from 'lucide-react'
@@ -16,7 +17,7 @@ const navGroups = [
     label: 'Detection',
     items: [
       { href: '/dashboard',     icon: 'LayoutDashboard', label: 'Overview'   },
-      { href: '/detect/image',  icon: 'Image',           label: 'Image'      },
+      { href: '/detect/image',  icon: 'ImageIcon',           label: 'Image'      },
       { href: '/detect/video',  icon: 'Video',           label: 'Video'      },
       { href: '/detect/audio',  icon: 'Music',           label: 'Audio'      },
       { href: '/detect/text',   icon: 'FileText',        label: 'Text'       },
@@ -42,7 +43,7 @@ const navGroups = [
 ]
 
 const iconMap: Record<string, any> = {
-  LayoutDashboard, Image, Video, Music, FileText, Globe, Layers, Clock, BarChart2, User, Settings, MessageSquare, Zap, Star
+  LayoutDashboard, ImageIcon, Video, Music, FileText, Globe, Layers, Clock, BarChart2, User, Settings, MessageSquare, Zap, Star
 }
 
 function Avatar({ user, size = 8 }: { user: any; size?: number }) {
@@ -92,10 +93,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
       <div className={`flex items-center gap-3 px-4 py-5 border-b border-border ${collapsed ? 'justify-center' : ''}`}>
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center flex-shrink-0">
-          <Shield className="w-5 h-5 text-white" />
-        </div>
-        {!collapsed && <span className="text-xl font-black gradient-text">DETECTAI</span>}
+        <Image src="/logo.png" alt="Aiscern" width={36} height={25} className="object-contain drop-shadow-[0_0_6px_rgba(245,100,0,0.5)] flex-shrink-0" />
+        {!collapsed && <span className="text-lg font-black gradient-text">Aiscern</span>}
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-5 overflow-y-auto">
@@ -198,8 +197,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Menu className="w-6 h-6" />
             </button>
             <div className="flex items-center gap-2 lg:hidden">
-              <Shield className="w-5 h-5 text-primary" />
-              <span className="font-bold gradient-text text-sm">DETECTAI</span>
+              <Image src="/logo.png" alt="Aiscern" width={28} height={19} className="object-contain drop-shadow-[0_0_6px_rgba(245,100,0,0.5)]" />
+              <span className="font-bold gradient-text text-sm">Aiscern</span>
             </div>
             <div className="hidden lg:flex items-center gap-2 text-sm text-text-muted">
               <span className="w-2 h-2 rounded-full bg-emerald animate-pulse" />

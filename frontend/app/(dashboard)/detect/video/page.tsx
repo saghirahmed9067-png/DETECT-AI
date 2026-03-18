@@ -10,6 +10,7 @@ import {
 import { useAuth } from '@/components/auth-provider'
 import type { DetectionResult, Verdict } from '@/types'
 import { formatConfidence, formatFileSize } from '@/lib/utils/helpers'
+import { SignupGate, incrementGlobalScanCount } from '@/components/SignupGate'
 import { ReviewSuggestion } from '@/components/ReviewSuggestion'
 
 
@@ -282,6 +283,8 @@ export default function VideoDetectionPage() {
 
   return (
     <>
+    <SignupGate />
+    <>
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
       <div className="mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-3xl font-black text-text-primary mb-1 flex items-center gap-3">
@@ -541,5 +544,6 @@ export default function VideoDetectionPage() {
       <ReviewSuggestion toolName="Video Detector" />
     </div>
   </>
+    </>
   )
 }

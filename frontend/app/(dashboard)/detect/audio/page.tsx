@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/auth-provider'
 import type { DetectionResult, Verdict } from '@/types'
 import { formatConfidence, formatFileSize } from '@/lib/utils/helpers'
+import { SignupGate, incrementGlobalScanCount } from '@/components/SignupGate'
 import { ReviewSuggestion } from '@/components/ReviewSuggestion'
 
 
@@ -128,6 +129,8 @@ export default function AudioDetectionPage() {
   const cfg = result ? verdictConfig[result.verdict as Verdict] : null
 
   return (
+    <>
+    <SignupGate />
     <>
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
       <audio ref={audioRef} className="hidden" />
@@ -330,5 +333,6 @@ export default function AudioDetectionPage() {
       <ReviewSuggestion toolName="Audio Detector" />
     </div>
   </>
+    </>
   )
 }

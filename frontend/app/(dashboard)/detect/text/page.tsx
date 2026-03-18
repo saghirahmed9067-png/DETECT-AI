@@ -8,6 +8,7 @@ import { useAuth } from '@/components/auth-provider'
 import type { DetectionResult, Verdict } from '@/types'
 import { formatConfidence } from '@/lib/utils/helpers'
 import { ReviewSuggestion } from '@/components/ReviewSuggestion'
+import { SignupGate, incrementGlobalScanCount } from '@/components/SignupGate'
 
 
 
@@ -69,6 +70,8 @@ export default function TextDetectionPage() {
       if (!data.success) throw new Error(data.error?.message || 'PDF analysis failed')
       setResult(data.data)
       if (data.data.paragraph_scores) setParagraphScores(data.data.paragraph_scores)
+      incrementGlobalScanCount()
+      window.dispatchEvent(new Event('aiscern:scan'))
       if (currentUser?.uid) {
         await supabase.from('scans').insert({
           user_id: currentUser.uid, media_type: 'text',
@@ -96,6 +99,8 @@ export default function TextDetectionPage() {
       const data = await res.json()
       if (!data.success) throw new Error(data.error?.message || 'Detection failed')
       setResult(data.data)
+      incrementGlobalScanCount()
+      window.dispatchEvent(new Event('aiscern:scan'))
       if (currentUser?.uid) {
         await supabase.from('scans').insert({
           user_id: currentUser.uid, media_type: 'text',
