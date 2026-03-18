@@ -6,7 +6,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/auth-provider'
-import { SignInButton, SignUpButton } from '@clerk/nextjs'
+import { useClerk } from '@clerk/nextjs'
 import { SiteFooter } from '@/components/site-footer'
 import {
   Shield, Brain, Eye, Mic, FileText, Globe, Zap, BarChart3,
@@ -321,6 +321,7 @@ const HOW_IT_WORKS = [
 // ─── Main Page ───────────────────────────────────────────────────────────────
 export default function HomePage() {
   const { user, loading } = useAuth()
+  const { openSignIn, openSignUp } = useClerk()
   const { scrollY } = useScroll()
   const heroY = useTransform(scrollY, [0, 500], [0, -80])
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
@@ -368,18 +369,20 @@ export default function HomePage() {
               </Link>
             ) : (
               <>
-                <SignInButton mode="modal" forceRedirectUrl="/dashboard" fallbackRedirectUrl="/dashboard">
-                  <button className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl border border-border text-sm font-semibold text-text-primary hover:bg-surface-hover hover:border-primary/40 transition-all">
-                    Sign In
-                  </button>
-                </SignInButton>
-                <SignUpButton mode="modal" forceRedirectUrl="/dashboard" fallbackRedirectUrl="/dashboard">
-                  <button className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all">
-                    <Zap className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Get Started</span>
-                    <span className="sm:hidden">Join</span>
-                  </button>
-                </SignUpButton>
+                <button
+                  onClick={() => openSignIn({ forceRedirectUrl: '/dashboard', fallbackRedirectUrl: '/dashboard' })}
+                  className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl border border-border text-sm font-semibold text-text-primary hover:bg-surface-hover hover:border-primary/40 transition-all"
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => openSignUp({ forceRedirectUrl: '/dashboard', fallbackRedirectUrl: '/dashboard' })}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all"
+                >
+                  <Zap className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Get Started</span>
+                  <span className="sm:hidden">Join</span>
+                </button>
               </>
             )}
             <button
@@ -409,12 +412,8 @@ export default function HomePage() {
                 <Link href="/pricing"  onClick={() => setMobileNavOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface text-text-muted hover:text-text-primary transition-all text-sm font-medium"><Zap className="w-4 h-4" />View AI Detector Plans</Link>
                 {!loading && !user && (
                   <>
-                    <SignInButton mode="modal" forceRedirectUrl="/dashboard" fallbackRedirectUrl="/dashboard">
-                      <button onClick={() => setMobileNavOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface text-text-muted hover:text-text-primary transition-all text-sm font-medium w-full"><Lock className="w-4 h-4" />Sign In</button>
-                    </SignInButton>
-                    <SignUpButton mode="modal" forceRedirectUrl="/dashboard" fallbackRedirectUrl="/dashboard">
-                      <button onClick={() => setMobileNavOpen(false)} className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold mt-1 w-full"><Zap className="w-4 h-4" />Get Started Free</button>
-                    </SignUpButton>
+                    <button onClick={() => { setMobileNavOpen(false); openSignIn({ forceRedirectUrl: '/dashboard', fallbackRedirectUrl: '/dashboard' }) }} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface text-text-muted hover:text-text-primary transition-all text-sm font-medium w-full"><Lock className="w-4 h-4" />Sign In</button>
+                    <button onClick={() => { setMobileNavOpen(false); openSignUp({ forceRedirectUrl: '/dashboard', fallbackRedirectUrl: '/dashboard' }) }} className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold mt-1 w-full"><Zap className="w-4 h-4" />Get Started Free</button>
                   </>
                 )}
               </div>
