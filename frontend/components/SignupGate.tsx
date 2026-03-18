@@ -10,7 +10,6 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Zap, Shield, CheckCircle, ArrowRight } from 'lucide-react'
 import { useAuth } from '@/components/auth-provider'
-import { AuthModal } from '@/components/AuthModal'
 
 const SCAN_LIMIT = 3
 const STORAGE_KEY = 'aiscern_total_scans'
@@ -105,18 +104,14 @@ export function SignupGate() {
 
             {/* CTA buttons */}
             <div className="space-y-3">
-              <AuthModal mode="signUp">
-                <button className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 shadow-lg shadow-primary/30 transition-all">
-                  <Zap className="w-4 h-4" />
-                  Create Free Account
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </AuthModal>
-              <AuthModal mode="signIn">
-                <button className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-border text-text-secondary text-sm font-semibold hover:bg-surface-hover transition-all">
-                  Already have an account? Sign In
-                </button>
-              </AuthModal>
+              <Link href="/signup" className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 shadow-lg shadow-primary/30 transition-all">
+                <Zap className="w-4 h-4" />
+                Create Free Account
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link href="/login" className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-border text-text-secondary text-sm font-semibold hover:bg-surface-hover transition-all">
+                Already have an account? Sign In
+              </Link>
             </div>
 
             <p className="text-center text-xs text-text-disabled">
