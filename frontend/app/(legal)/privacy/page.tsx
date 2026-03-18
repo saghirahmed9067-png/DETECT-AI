@@ -4,8 +4,8 @@ import { Shield, ArrowLeft } from 'lucide-react'
 import { SiteFooter } from '@/components/site-footer'
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy',
-  description: 'DETECTAI Privacy Policy — How we collect, use, and protect your data.',
+  title: 'Privacy Policy | Aiscern AI Detector',
+  description: 'Aiscern privacy policy. We do not sell your data, display ads, or require personal information to use our AI detection tools.',
 }
 
 const LAST_UPDATED = 'March 10, 2025'

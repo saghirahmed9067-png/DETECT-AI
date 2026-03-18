@@ -4,18 +4,32 @@ module.exports = {
   generateRobotsTxt: false,
   changefreq: 'weekly',
   priority: 0.7,
-  exclude: ['/admin', '/admin/*', '/unauthorized', '/dashboard/*', '/history', '/profile', '/settings', '/scraper', '/pipeline'],
+  exclude: [
+    '/admin', '/admin/*', '/unauthorized',
+    '/dashboard', '/dashboard/*',
+    '/history', '/profile', '/settings',
+    '/scraper', '/pipeline',
+    '/login', '/signup',
+  ],
   additionalPaths: async (config) => [
-    { loc: '/', changefreq: 'daily',  priority: 1.0 },
-    { loc: '/detect/text',  changefreq: 'weekly', priority: 0.9 },
-    { loc: '/detect/image', changefreq: 'weekly', priority: 0.9 },
-    { loc: '/detect/audio', changefreq: 'weekly', priority: 0.9 },
-    { loc: '/detect/video', changefreq: 'weekly', priority: 0.9 },
-    { loc: '/batch',        changefreq: 'weekly', priority: 0.8 },
-    { loc: '/chat',         changefreq: 'weekly', priority: 0.8 },
-    { loc: '/pricing',      changefreq: 'monthly', priority: 0.8 },
-    { loc: '/reviews',      changefreq: 'weekly', priority: 0.7 },
-    { loc: '/about',        changefreq: 'monthly', priority: 0.6 },
-    { loc: '/docs/api',     changefreq: 'monthly', priority: 0.7 },
+    // Core pages — highest priority
+    { loc: '/',              changefreq: 'daily',   priority: 1.0, lastmod: new Date().toISOString() },
+    // Detection tools — primary keywords
+    { loc: '/detect/text',  changefreq: 'weekly',  priority: 0.95, lastmod: new Date().toISOString() },
+    { loc: '/detect/image', changefreq: 'weekly',  priority: 0.95, lastmod: new Date().toISOString() },
+    { loc: '/detect/audio', changefreq: 'weekly',  priority: 0.90, lastmod: new Date().toISOString() },
+    { loc: '/detect/video', changefreq: 'weekly',  priority: 0.90, lastmod: new Date().toISOString() },
+    // Tools
+    { loc: '/batch',        changefreq: 'weekly',  priority: 0.85, lastmod: new Date().toISOString() },
+    { loc: '/chat',         changefreq: 'weekly',  priority: 0.80, lastmod: new Date().toISOString() },
+    // Marketing
+    { loc: '/pricing',      changefreq: 'monthly', priority: 0.80, lastmod: new Date().toISOString() },
+    { loc: '/reviews',      changefreq: 'weekly',  priority: 0.75, lastmod: new Date().toISOString() },
+    { loc: '/docs/api',     changefreq: 'monthly', priority: 0.75, lastmod: new Date().toISOString() },
+    // Company
+    { loc: '/about',        changefreq: 'monthly', priority: 0.65, lastmod: new Date().toISOString() },
+    { loc: '/contact',      changefreq: 'monthly', priority: 0.60, lastmod: new Date().toISOString() },
+    { loc: '/privacy',      changefreq: 'yearly',  priority: 0.40, lastmod: new Date().toISOString() },
+    { loc: '/terms',        changefreq: 'yearly',  priority: 0.40, lastmod: new Date().toISOString() },
   ],
 }

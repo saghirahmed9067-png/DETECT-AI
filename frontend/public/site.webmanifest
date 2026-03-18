@@ -1,0 +1,17 @@
+{
+  "name": "Aiscern — Free AI Detector",
+  "short_name": "Aiscern",
+  "description": "Detect AI text, deepfakes, voice cloning and synthetic video. Free. 94% accuracy.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0f",
+  "theme_color": "#7c3aed",
+  "icons": [
+    { "src": "/favicon-logo.png", "sizes": "256x256", "type": "image/png" },
+    { "src": "/logo-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "categories": ["utilities", "productivity", "security"],
+  "screenshots": [
+    { "src": "/og-image.png", "sizes": "1200x630", "type": "image/png", "form_factor": "wide" }
+  ]
+}

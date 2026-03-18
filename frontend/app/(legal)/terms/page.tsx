@@ -4,8 +4,8 @@ import { Shield, ArrowLeft } from 'lucide-react'
 import { SiteFooter } from '@/components/site-footer'
 
 export const metadata: Metadata = {
-  title: 'Terms of Service',
-  description: 'DETECTAI Terms of Service — Rules and guidelines for using our platform.',
+  title: 'Terms of Service | Aiscern AI Detector',
+  description: 'Aiscern terms of service. Use our AI detection tools freely. No spam, no misuse of detection results for harmful purposes.',
 }
 
 const LAST_UPDATED = 'March 10, 2025'

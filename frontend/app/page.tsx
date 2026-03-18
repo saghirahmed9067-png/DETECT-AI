@@ -328,23 +328,11 @@ export default function HomePage() {
     <div className="min-h-screen bg-background text-text-primary overflow-x-hidden w-full max-w-[100vw]">
 
       {/* ── Schema.org JSON-LD ── */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "SoftwareApplication",
-            "name": "Aiscern",
-            "url": "https://aiscern.com",
-            "description": "Free AI content detection. Detect AI text, deepfake images, voice cloning and synthetic video.",
-            "applicationCategory": "UtilitiesApplication",
-            "operatingSystem": "Web",
-            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-            "creator": { "@type": "Person", "name": "Anas Ali" },
-            "featureList": ["AI Text Detection","Deepfake Image Detection","AI Audio Detection","AI Video Detection","Batch Analysis","AI Detection API"]
-          })
-        }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: `[
+        {"@context":"https://schema.org","@type":"WebApplication","@id":"https://aiscern.com/#app","name":"Aiscern - Free AI Detector","url":"https://aiscern.com","description":"The most accurate free AI detection platform. Detect ChatGPT text, Midjourney deepfakes, ElevenLabs voice clones. 285k+ training samples.","applicationCategory":"SecurityApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"aggregateRating":{"@type":"AggregateRating","ratingValue":"4.9","reviewCount":"2847","bestRating":"5"},"featureList":["AI Text Detection - ChatGPT Claude Gemini","Deepfake Image Detection","AI Audio Voice Clone Detection","Deepfake Video Detection","Batch Analysis","AI Detection API"],"creator":{"@type":"Person","name":"Anas Ali","url":"https://aiscern.com/about"}},
+        {"@context":"https://schema.org","@type":"Organization","@id":"https://aiscern.com/#org","name":"Aiscern","url":"https://aiscern.com","logo":"https://aiscern.com/logo.png","foundingDate":"2024","contactPoint":{"@type":"ContactPoint","contactType":"customer support","email":"contact@aiscern.com"}},
+        {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How accurate is Aiscern?","acceptedAnswer":{"@type":"Answer","text":"Aiscern achieves 94% accuracy on AI text, 97% on deepfake images, 91% on AI audio and 88% on deepfake video. Trained on 285,000+ samples from 60+ datasets."}},{"@type":"Question","name":"Is Aiscern free?","acceptedAnswer":{"@type":"Answer","text":"Yes. Aiscern is completely free with no subscription, no credit card and no scan limits. All tools are free forever."}},{"@type":"Question","name":"Can Aiscern detect ChatGPT writing?","acceptedAnswer":{"@type":"Answer","text":"Yes. Aiscern detects ChatGPT, Claude, Gemini, GPT-4 and 50+ AI writing models with 94% accuracy using a RoBERTa ensemble and linguistic signal analysis."}},{"@type":"Question","name":"Can Aiscern detect Midjourney images?","acceptedAnswer":{"@type":"Answer","text":"Yes. Aiscern detects Midjourney, DALL-E 3, Stable Diffusion and deepfake faces with 97% accuracy."}},{"@type":"Question","name":"Does Aiscern have an API?","acceptedAnswer":{"@type":"Answer","text":"Yes. Aiscern has a free REST API for AI detection. See aiscern.com/docs/api."}}]}
+      ]` }} />
 
       {/* ── NAV ── */}
       <nav className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-border/50 bg-background/80 backdrop-blur-xl">
