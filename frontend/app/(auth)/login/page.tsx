@@ -1,140 +1,131 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { SignIn, useAuth } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Shield, CheckCircle } from 'lucide-react'
+import { CheckCircle } from 'lucide-react'
+
+const PERKS = [
+  'Detect ChatGPT, Claude & Gemini text',
+  'Deepfake image & video detection',
+  'AI voice clone detection',
+  'Save unlimited scan history',
+  'Batch scan 20 files at once',
+]
+
+const AVATARS = ['#7c3aed','#2563eb','#10b981','#f59e0b','#ef4444']
 
 export default function LoginPage() {
   const { isSignedIn, isLoaded } = useAuth()
   const router = useRouter()
-  const [mounted, setMounted] = useState(false)
 
-  useEffect(() => { setMounted(true) }, [])
   useEffect(() => {
     if (isLoaded && isSignedIn) router.replace('/dashboard')
   }, [isLoaded, isSignedIn, router])
 
   return (
-    <div className="min-h-screen bg-[#07070d] flex flex-col">
-      {/* Top bar */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
-        <Link href="/" className="flex items-center gap-2.5">
-          <Image src="/logo.png" alt="Aiscern" width={36} height={25}
-            className="object-contain" priority />
-          <span className="text-lg font-black bg-gradient-to-r from-violet-400 to-blue-400 bg-clip-text text-transparent">
-            Aiscern
-          </span>
+    <div className="min-h-screen bg-[#07070f] flex">
+      {/* Left panel — branding */}
+      <div className="hidden lg:flex lg:w-[480px] xl:w-[560px] flex-col justify-between p-12 bg-[#0d0d1f] border-r border-white/5 relative overflow-hidden">
+        {/* Background glow */}
+        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-primary/10 blur-[120px] pointer-events-none" />
+        <div className="absolute -bottom-40 -right-20 w-[400px] h-[400px] rounded-full bg-blue-600/8 blur-[100px] pointer-events-none" />
+
+        <Link href="/" className="flex items-center gap-3 relative z-10">
+          <Image src="/logo.png" alt="Aiscern" width={48} height={32}
+            className="object-contain drop-shadow-[0_0_10px_rgba(245,100,0,0.5)]" priority />
+          <span className="text-2xl font-black gradient-text">Aiscern</span>
         </Link>
-        <Link href="/signup"
-          className="text-sm text-slate-400 hover:text-white transition-colors">
-          No account? <span className="text-violet-400 font-semibold">Sign up free →</span>
-        </Link>
+
+        <div className="space-y-8 relative z-10">
+          <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-xs text-text-muted font-medium">Free forever</span>
+          </div>
+
+          <div>
+            <h1 className="text-4xl font-black text-text-primary leading-tight mb-2">
+              The world&apos;s most accurate
+            </h1>
+            <h2 className="text-4xl font-black text-primary leading-tight">AI detector</h2>
+          </div>
+
+          <ul className="space-y-3">
+            {PERKS.map(p => (
+              <li key={p} className="flex items-center gap-3 text-text-secondary text-sm">
+                <CheckCircle className="w-4 h-4 text-emerald flex-shrink-0" />{p}
+              </li>
+            ))}
+          </ul>
+
+          <div className="flex items-center gap-3">
+            <div className="flex">
+              {AVATARS.map((c, i) => (
+                <div key={i} className="w-8 h-8 rounded-full border-2 border-[#0d0d1f] flex items-center justify-center text-xs font-bold text-white"
+                  style={{ background: c, marginLeft: i > 0 ? '-8px' : 0, zIndex: 5 - i }}>
+                  {String.fromCharCode(65 + i)}
+                </div>
+              ))}
+            </div>
+            <span className="text-sm text-text-muted">
+              <strong className="text-text-primary">5,000+</strong> users trust Aiscern
+            </span>
+          </div>
+        </div>
+
+        <p className="text-xs text-text-disabled relative z-10">© 2025 Aiscern · Free AI Detection</p>
       </div>
 
-      <div className="flex flex-1">
-        {/* Left panel - benefits */}
-        <div className="hidden lg:flex flex-col justify-center px-16 w-[480px] bg-gradient-to-b from-violet-950/30 to-transparent border-r border-white/5">
-          <div className="space-y-8">
-            <div>
-              <div className="inline-flex items-center gap-2 bg-violet-500/10 border border-violet-500/20 rounded-full px-3 py-1 text-xs text-violet-300 font-medium mb-4">
-                <Shield className="w-3 h-3" /> Free forever
-              </div>
-              <h2 className="text-3xl font-black text-white leading-tight">
-                The world's most accurate<br/>
-                <span className="text-violet-400">AI detector</span>
-              </h2>
-            </div>
-            <ul className="space-y-3">
-              {[
-                'Detect ChatGPT, Claude & Gemini text',
-                'Deepfake image & video detection',
-                'AI voice clone detection',
-                'Save unlimited scan history',
-                'Batch scan 20 files at once',
-              ].map(item => (
-                <li key={item} className="flex items-center gap-3 text-sm text-slate-300">
-                  <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-            <div className="flex items-center gap-3 pt-2">
-              <div className="flex -space-x-2">
-                {['#7c3aed','#2563eb','#059669','#dc2626','#d97706'].map((c,i) => (
-                  <div key={i} className="w-8 h-8 rounded-full border-2 border-[#07070d]"
-                    style={{ background: c }} />
-                ))}
-              </div>
-              <p className="text-xs text-slate-400">
-                <span className="text-white font-semibold">5,000+</span> users trust Aiscern
-              </p>
-            </div>
-          </div>
+      {/* Right panel — Clerk SignIn embedded */}
+      <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-12">
+        {/* Mobile logo */}
+        <Link href="/" className="flex lg:hidden items-center gap-2 mb-8">
+          <Image src="/logo.png" alt="Aiscern" width={36} height={24} className="object-contain" priority />
+          <span className="text-xl font-black gradient-text">Aiscern</span>
+        </Link>
+
+        <div className="w-full max-w-[400px]">
+          <SignIn
+            routing="hash"
+            forceRedirectUrl="/dashboard"
+            fallbackRedirectUrl="/dashboard"
+            signUpUrl="/signup"
+            appearance={{
+              variables: {
+                colorPrimary: '#7c3aed',
+                colorBackground: '#0d0d1f',
+                colorInputBackground: '#12122a',
+                colorInputText: '#e2e8f0',
+                colorText: '#e2e8f0',
+                colorTextSecondary: '#94a3b8',
+                borderRadius: '0.75rem',
+                fontFamily: 'inherit',
+              },
+              elements: {
+                rootBox: 'w-full',
+                card: 'bg-[#0d0d1f] border border-white/10 shadow-2xl shadow-primary/10 rounded-2xl',
+                headerTitle: 'text-text-primary font-black text-2xl',
+                headerSubtitle: 'text-text-muted',
+                socialButtonsBlockButton: 'bg-white/5 border border-white/10 text-text-primary hover:bg-white/10 transition-all',
+                formFieldInput: 'bg-[#12122a] border-white/10 text-text-primary focus:border-primary',
+                formButtonPrimary: 'bg-primary hover:bg-primary/90 shadow-lg shadow-primary/30',
+                footerActionLink: 'text-primary hover:text-primary/80',
+                identityPreviewText: 'text-text-primary',
+                formFieldLabel: 'text-text-secondary',
+                dividerLine: 'bg-white/10',
+                dividerText: 'text-text-disabled',
+              }
+            }}
+          />
         </div>
 
-        {/* Right panel - Clerk SignIn */}
-        <div className="flex-1 flex flex-col items-center justify-center p-6">
-          <div className="w-full max-w-[400px] space-y-6">
-            <div className="text-center lg:hidden">
-              <h1 className="text-2xl font-black text-white">Welcome back</h1>
-              <p className="text-slate-400 text-sm mt-1">Sign in to your Aiscern account</p>
-            </div>
-            <div className="hidden lg:block text-center mb-2">
-              <h1 className="text-2xl font-black text-white">Welcome back</h1>
-              <p className="text-slate-400 text-sm mt-1">Sign in to your Aiscern account</p>
-            </div>
-
-            {/* Clerk renders here */}
-            {mounted && (
-              <SignIn
-                forceRedirectUrl="/dashboard"
-                fallbackRedirectUrl="/dashboard"
-                signUpUrl="/signup"
-                appearance={{
-                  variables: {
-                    colorPrimary: '#7c3aed',
-                    colorBackground: '#0f0f1a',
-                    colorInputBackground: '#0a0a14',
-                    colorInputText: '#e2e8f0',
-                    colorText: '#e2e8f0',
-                    colorTextSecondary: '#94a3b8',
-                    colorTextOnPrimaryBackground: '#ffffff',
-                    colorDanger: '#f43f5e',
-                    borderRadius: '10px',
-                    fontSize: '14px',
-                  },
-                  elements: {
-                    card: 'bg-[#0f0f1a] border border-[#1e1e2e] shadow-2xl shadow-black/60 rounded-2xl',
-                    headerTitle: 'text-white font-black',
-                    headerSubtitle: 'text-slate-400',
-                    socialButtonsBlockButton: 'bg-[#161622] border border-[#2a2a3e] text-white hover:bg-[#1e1e2e] transition-colors',
-                    socialButtonsBlockButtonText: 'text-white font-medium',
-                    dividerLine: 'bg-[#1e1e2e]',
-                    dividerText: 'text-slate-500',
-                    formFieldLabel: 'text-slate-300 font-medium',
-                    formFieldInput: 'bg-[#07070d] border-[#1e1e2e] text-white placeholder:text-slate-600 focus:border-violet-500 focus:ring-1 focus:ring-violet-500/30',
-                    formButtonPrimary: 'bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-lg transition-colors',
-                    footerActionLink: 'text-violet-400 hover:text-violet-300',
-                    footerAction: 'text-slate-400',
-                    identityPreviewText: 'text-white',
-                    identityPreviewEditButtonIcon: 'text-violet-400',
-                    alertText: 'text-red-400',
-                    formResendCodeLink: 'text-violet-400',
-                    otpCodeFieldInput: 'bg-[#07070d] border-[#1e1e2e] text-white',
-                    logoBox: 'hidden',
-                    logoImage: 'hidden',
-                  },
-                  layout: {
-                    socialButtonsPlacement: 'top',
-                    showOptionalFields: false,
-                  },
-                }}
-              />
-            )}
-          </div>
-        </div>
+        <p className="mt-6 text-xs text-text-disabled text-center">
+          No account?{' '}
+          <Link href="/signup" className="text-primary hover:underline">
+            Sign up free →
+          </Link>
+        </p>
       </div>
     </div>
   )
