@@ -29,7 +29,7 @@ export default function PipelinePage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const r = await fetch('/api/pipeline-stats')
+      const r = await fetch('/api/pipeline/push')
       if (!r.ok) throw new Error('Failed to load')
       const d = await r.json() as any
       setStats(d.stats)
@@ -48,7 +48,7 @@ export default function PipelinePage() {
   const triggerPush = async () => {
     setPushing(true); setPushMsg(null)
     try {
-      const r = await fetch('/api/pipeline-stats?action=push', { method: 'POST' })
+      const r = await fetch('/api/pipeline/push', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ limit: 10000 }) })
       const d = await r.json() as any
       if (d.ok) {
         const pushed = d.result?.push?.pushed ?? 0
