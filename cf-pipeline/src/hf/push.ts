@@ -160,9 +160,9 @@ export async function pushToHF(
   // ── Also push/update dataset_infos.json ─────────────────────────────────
   const datasetInfo = buildDatasetInfo(shardMetas)
   operations.push({
-    type:  'addOrUpdate',
-    key:   'dataset_infos.json',
-    value: toBase64(JSON.stringify(datasetInfo, null, 2)),
+    type:    'addOrUpdate',
+    path:    'dataset_infos.json',
+    content: toBase64(JSON.stringify(datasetInfo, null, 2)),
   })
 
   // ── Commit all operations in one HF API call ─────────────────────────────
