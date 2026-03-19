@@ -7,22 +7,37 @@ export const dynamic = 'force-dynamic'
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
-    const page  = parseInt(searchParams.get('page') ?? '1')
+    const page  = Math.max(1, parseInt(searchParams.get('page') ?? '1'))
     const limit = 12
     const offset = (page - 1) * limit
+    const sort  = searchParams.get('sort') ?? 'helpful'
 
     const db = getSupabaseAdmin()
-    const { data, error, count } = await db
-      .from('reviews')
-      .select('*', { count: 'exact' })
-      .eq('published', true)
-      .order('helpful_count', { ascending: false })
-      .range(offset, offset + limit - 1)
+    let query = db.from('reviews').select('*', { count: 'exact' }).eq('published', true)
 
+    if (sort === 'newest')  query = query.order('created_at', { ascending: false })
+    else if (sort === 'top') query = query.order('rating', { ascending: false }).order('helpful_count', { ascending: false })
+    else                     query = query.order('helpful_count', { ascending: false })
+
+    const { data, error, count } = await query.range(offset, offset + limit - 1)
     if (error) throw error
-    return NextResponse.json({ data: data ?? [], total: count ?? 0, pages: Math.ceil((count ?? 0) / limit) })
-  } catch (err: any) {
-    // Fallback: return empty if table doesn't exist yet
+
+    // Mask user_id, apply anonymous display
+    const sanitized = (data ?? []).map((r: any) => ({
+      id:           r.id,
+      display_name: r.is_anonymous ? 'Anonymous User' : (r.display_name || 'Aiscern User'),
+      is_anonymous: r.is_anonymous,
+      rating:       r.rating,
+      title:        r.title,
+      body:         r.body,
+      tool_used:    r.tool_used,
+      helpful_count: r.helpful_count,
+      verified:     r.verified,
+      created_at:   r.created_at,
+    }))
+
+    return NextResponse.json({ data: sanitized, total: count ?? 0, pages: Math.ceil((count ?? 0) / limit) })
+  } catch {
     return NextResponse.json({ data: [], total: 0, pages: 0 })
   }
 }
@@ -30,29 +45,47 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const { userId } = await auth()
-    if (!userId) return NextResponse.json({ error: 'Sign in to leave a review' }, { status: 401 })
+    if (!userId) {
+      return NextResponse.json({ error: 'Sign in to leave a review' }, { status: 401 })
+    }
 
     const body = await req.json()
-    const { rating, title, body: reviewBody, toolUsed } = body
+    const { rating, title, body: reviewBody, toolUsed, displayName, isAnonymous } = body
 
     if (!rating || rating < 1 || rating > 5)
-      return NextResponse.json({ error: 'Rating must be 1-5' }, { status: 400 })
+      return NextResponse.json({ error: 'Rating must be 1–5 stars' }, { status: 400 })
     if (!title?.trim() || title.length > 100)
-      return NextResponse.json({ error: 'Title required (max 100 chars)' }, { status: 400 })
-    if (!reviewBody?.trim() || reviewBody.length < 20 || reviewBody.length > 1000)
-      return NextResponse.json({ error: 'Review must be 20-1000 chars' }, { status: 400 })
+      return NextResponse.json({ error: 'Title required (max 100 characters)' }, { status: 400 })
+    if (!reviewBody?.trim() || reviewBody.length < 30 || reviewBody.length > 1000)
+      return NextResponse.json({ error: 'Review must be 30–1000 characters' }, { status: 400 })
 
+    // Check if user already reviewed
     const db = getSupabaseAdmin()
+    const { data: existing } = await db.from('reviews').select('id').eq('user_id', userId).single()
+    if (existing) {
+      return NextResponse.json({ error: 'You have already submitted a review' }, { status: 409 })
+    }
+
     const { data, error } = await db.from('reviews').insert({
-      user_id: userId, rating, title,
-      body: reviewBody, tool_used: toolUsed,
-      verified: false, helpful_count: 0, published: true,
-      created_at: new Date().toISOString(),
+      user_id:      userId,
+      display_name: isAnonymous ? null : (displayName?.trim() || null),
+      is_anonymous: !!isAnonymous,
+      rating,
+      title:        title.trim(),
+      body:         reviewBody.trim(),
+      tool_used:    toolUsed || null,
+      helpful_count: 0,
+      verified:     false,
+      published:    true,
+      created_at:   new Date().toISOString(),
     }).select().single()
 
     if (error) throw error
     return NextResponse.json({ data }, { status: 201 })
   } catch (err: any) {
-    return NextResponse.json({ error: 'Failed to submit review' }, { status: 500 })
+    if (err?.code === '23505') {
+      return NextResponse.json({ error: 'You have already submitted a review' }, { status: 409 })
+    }
+    return NextResponse.json({ error: 'Failed to submit review. Please try again.' }, { status: 500 })
   }
 }

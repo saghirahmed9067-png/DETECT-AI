@@ -104,15 +104,15 @@ function FloatingCards() {
           className="absolute hidden lg:block pointer-events-none z-0 overflow-hidden rounded-2xl"
           style={{ left: img.x, top: img.y, width: img.w, height: img.h, rotate: img.rot }}
           initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: [0, 0.18, 0.18], y: [0, -12, 0] }}
+          animate={{ opacity: [0, 0.35, 0.35], y: [0, -12, 0] }}
           transition={{
             opacity: { delay: img.delay + 0.5, duration: 1.2 },
             y: { delay: img.delay, duration: 5 + i * 0.7, repeat: Infinity, ease: 'easeInOut' }
           }}
         >
           <img src={img.src} alt={img.alt}
-            className="w-full h-full object-cover opacity-70 mix-blend-luminosity"
-            style={{ filter: 'saturate(0.4) brightness(0.6)' }}
+            className="w-full h-full object-cover opacity-90"
+            style={{ filter: 'saturate(0.3) brightness(0.45) contrast(1.1)' }}
             loading="lazy"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/60" />
@@ -280,15 +280,17 @@ function LiveDemo({ isLoggedIn }: { isLoggedIn: boolean }) {
 }
 
 // ─── Trust Bar ───────────────────────────────────────────────────────────────
-const TRUST_COMPANIES = ['Reuters','BBC','Deloitte','Publicis','University of Edinburgh','City University','Medialink','IPG','WPP']
+const TRUST_CATS = [{ e:'📰',l:'Journalists' },{ e:'🎓',l:'Educators' },{ e:'🔒',l:'Security Teams' },{ e:'⚖️',l:'Legal Professionals' },{ e:'🏛️',l:'Researchers' },{ e:'🎨',l:'Content Creators' },{ e:'🏢',l:'HR Departments' },{ e:'📊',l:'Marketing Teams' },{ e:'🩺',l:'Healthcare Pros' }]
 
 function TrustBar() {
   return (
     <div className="overflow-hidden py-4">
-      <p className="text-center text-xs text-text-disabled uppercase tracking-widest mb-4 font-medium">Trusted by teams at</p>
-      <div className="flex gap-8 items-center justify-center flex-wrap">
-        {TRUST_COMPANIES.map((c) => (
-          <span key={c} className="text-sm font-semibold text-text-muted hover:text-text-primary transition-colors">{c}</span>
+      <p className="text-center text-xs text-text-disabled uppercase tracking-widest mb-5 font-medium">Used by professionals in</p>
+      <div className="flex gap-4 sm:gap-6 items-center justify-center flex-wrap">
+        {TRUST_CATS.map((t) => (
+          <span key={t.l} className="flex items-center gap-1.5 text-sm font-medium text-text-muted hover:text-text-primary transition-colors">
+            <span>{t.e}</span>{t.l}
+          </span>
         ))}
       </div>
     </div>
@@ -309,16 +311,16 @@ const TOOLS = [
 ]
 
 const STATS = [
-  { value: 285246, suffix: '+', label: 'Training Samples',  icon: Database  },
-  { value: 60,     suffix: '',  label: 'Source Datasets',   icon: Globe     },
-  { value: 94,     suffix: '%', label: 'Text Accuracy',     icon: TrendingUp },
-  { value: 100,    suffix: '%', label: 'Uptime SLA',        icon: Award     },
+  { value: 413000, suffix: '+', label: 'Samples Collected', icon: Database  },
+  { value: 87,     suffix: '',  label: 'Source Datasets',   icon: Globe     },
+  { value: 4,      suffix: '',  label: 'Modalities Covered',icon: Layers    },
+  { value: 20,     suffix: '',  label: 'Cloudflare Workers',icon: Zap       },
 ]
 
 const REVIEWS = [
-  { text: 'Saved us from publishing AI content. The sentence-level heatmap is incredibly useful — now part of our daily editorial workflow.', name: 'Sarah K.', role: 'Senior Editor, Reuters Digital', stars: 5, photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=face&fm=webp&q=60', avatar: 'SK', color: '#6366f1' },
-  { text: 'Multi-model ensemble detection gives well-rounded results across text, images, audio and video. The multimodal approach sets Aiscern apart.', name: 'Marcus T.', role: 'AI Research Lead, University of Edinburgh', stars: 5, photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face&fm=webp&q=60', avatar: 'MT', color: '#0ea5e9' },
-  { text: 'Replaced 3 tools with just Aiscern. The batch analyser handles text, images and audio in one platform — massive cost saving.', name: 'Priya M.', role: 'Content Integrity Manager, Publicis Group', stars: 5, photo: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=80&h=80&fit=crop&crop=face&fm=webp&q=60', avatar: 'PM', color: '#10b981' },
+  { text: 'Saved us from publishing AI content. The sentence-level heatmap is incredibly useful — now part of our daily editorial workflow.', name: 'Sarah K.', role: 'Senior Editorial Staff', stars: 5, photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=face&fm=webp&q=60', avatar: 'SK', color: '#6366f1' },
+  { text: 'Multi-model ensemble detection gives well-rounded results across text, images, audio and video. The multimodal approach sets Aiscern apart.', name: 'Marcus T.', role: 'AI Researcher', stars: 5, photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face&fm=webp&q=60', avatar: 'MT', color: '#0ea5e9' },
+  { text: 'Replaced 3 tools with just Aiscern. The batch analyser handles text, images and audio in one platform — massive cost saving.', name: 'Priya M.', role: 'Content Manager', stars: 5, photo: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=80&h=80&fit=crop&crop=face&fm=webp&q=60', avatar: 'PM', color: '#10b981' },
 ]
 
 const HOW_IT_WORKS = [
@@ -842,10 +844,12 @@ export default function HomePage() {
 
           {/* Press / media logos as text */}
           <div className="text-center mb-8">
-            <p className="text-xs font-semibold uppercase tracking-widest text-text-muted mb-5">Used by professionals at</p>
-            <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10">
-              {['Reuters', 'BBC', 'Deloitte', 'Publicis', 'University of Edinburgh', 'WPP', 'IPG', 'City University'].map(org => (
-                <span key={org} className="text-sm font-bold text-text-muted hover:text-text-primary transition-colors tracking-wide">{org}</span>
+            <p className="text-xs font-semibold uppercase tracking-widest text-text-muted mb-5">Built for professionals across</p>
+            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
+              {TRUST_CATS.map(t => (
+                <span key={t.l} className="flex items-center gap-1.5 text-sm font-medium text-text-muted hover:text-text-primary transition-colors">
+                  <span>{t.e}</span>{t.l}
+                </span>
               ))}
             </div>
           </div>

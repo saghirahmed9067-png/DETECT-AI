@@ -1,22 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
 import { getSupabaseAdmin } from '@/lib/supabase/admin'
 
 export const dynamic = 'force-dynamic'
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { userId } = await auth()
-    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const { id } = await params
-
     const db = getSupabaseAdmin()
-    await db.rpc('increment_helpful_count', { review_id: id })
+    const { error } = await db.rpc('increment_helpful', { review_id: id })
+    if (error) {
+      // Fallback: manual increment
+      const { data: current } = await db.from('reviews').select('helpful_count').eq('id', id).single()
+      await db.from('reviews').update({ helpful_count: (current?.helpful_count ?? 0) + 1 }).eq('id', id)
+    }
     return NextResponse.json({ success: true })
   } catch {
-    return NextResponse.json({ success: false }, { status: 500 })
+    return NextResponse.json({ error: 'Failed' }, { status: 500 })
   }
 }
