@@ -1,10 +1,13 @@
 'use client'
 /**
  * Aiscern — Auth Provider (Clerk)
- * Safe wrapper: if Clerk keys are missing the app renders with user=null.
+ * Handles auth state, profile sync, and post-auth redirect.
+ * The redirect here is the most reliable approach — fires the moment
+ * Clerk confirms the user is signed in, regardless of Clerk dashboard settings.
  */
 import { createContext, useContext, useEffect, useRef } from 'react'
 import { useUser, useClerk } from '@clerk/nextjs'
+import { useRouter, usePathname } from 'next/navigation'
 
 interface AuthUser {
   uid:         string
@@ -25,6 +28,9 @@ const AuthContext = createContext<AuthContextValue>({
   signOut: async () => {},
 })
 
+// Pages where a signed-in user should be redirected to /dashboard
+const AUTH_PAGES = ['/login', '/signup']
+
 async function syncProfile(user: AuthUser) {
   try {
     await fetch('/api/profiles/create', {
@@ -36,11 +42,12 @@ async function syncProfile(user: AuthUser) {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  // useUser() is safe inside ClerkProvider even with missing keys —
-  // it returns { user: null, isLoaded: false } rather than throwing.
   const { user, isLoaded } = useUser()
   const { signOut: clerkSignOut } = useClerk()
-  const syncedRef = useRef<string | null>(null)
+  const router   = useRouter()
+  const pathname = usePathname()
+  const syncedRef     = useRef<string | null>(null)
+  const redirectedRef = useRef(false)
 
   const authUser: AuthUser | null = user ? {
     uid:         user.id,
@@ -49,7 +56,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     photoURL:    user.imageUrl ?? null,
   } : null
 
-  // Auto-sync Supabase profile once per sign-in
+  // ── Post-auth redirect ───────────────────────────────────────────────────
+  // When user signs in/up on /login or /signup, push them to /dashboard.
+  // This fires regardless of Clerk dashboard redirect settings.
+  useEffect(() => {
+    if (!isLoaded || !authUser || redirectedRef.current) return
+    if (AUTH_PAGES.some(p => pathname.startsWith(p))) {
+      redirectedRef.current = true
+      router.replace('/dashboard')
+    }
+  }, [isLoaded, authUser?.uid, pathname]) // eslint-disable-line
+
+  // Reset redirect flag on sign-out
+  useEffect(() => {
+    if (isLoaded && !user) {
+      redirectedRef.current = false
+    }
+  }, [isLoaded, user])
+
+  // ── Supabase profile sync ─────────────────────────────────────────────
   useEffect(() => {
     if (authUser && syncedRef.current !== authUser.uid) {
       syncedRef.current = authUser.uid
@@ -58,7 +83,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [authUser?.uid]) // eslint-disable-line
 
   const handleSignOut = async () => {
-    syncedRef.current = null
+    syncedRef.current     = null
+    redirectedRef.current = false
     try {
       await clerkSignOut({ redirectUrl: '/' })
     } catch {
