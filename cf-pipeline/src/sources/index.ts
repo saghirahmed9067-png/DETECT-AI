@@ -7,16 +7,15 @@ import { VIDEO_SOURCES } from './video'
 export { TEXT_SOURCES, IMAGE_SOURCES, AUDIO_SOURCES, VIDEO_SOURCES }
 
 /**
- * All sources — 72 total (was 58)
- *   Text:  27 sources  (unchanged)
- *   Image: 11 sources  (unchanged)
- *   Audio: 18 sources  (+6: ASVspoof5, MLAAD, UniDataPro, kept all 12)
- *   Video: 10 sources  (+2: AV-Deepfake1M++, AV-Deepfake1M)
+ * All sources — 87 total (was 72)
+ *   Text:  35 sources  (+8: M4, RAID-v2, CHEAT, TuringBench, AiWriter, SemEval2024, GPT-wiki, CC-News)
+ *   Image: 15 sources  (+4: GenImage, SDXL, COCO-real, FakeFaces)
+ *   Audio: 18 sources  (unchanged)
+ *   Video: 10 sources  (unchanged, 2 gated)
  *
  * Gated datasets (require HF access approval):
  *   ControlNet/AV-Deepfake1M-PlusPlus
  *   ControlNet/AV-Deepfake1M
- *   nuriachandra/Deepfake-Eval-2024 (not yet added — pending access)
  * Workers skip gated sources gracefully with GATED: error log.
  */
 export const ALL_SOURCES: Source[] = [

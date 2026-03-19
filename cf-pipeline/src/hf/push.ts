@@ -42,7 +42,7 @@ export async function pushToHF(
   db:      D1Database,
   token:   string,
   repo:    string,
-  batchSz = 3000,
+  batchSz = 10000,
 ): Promise<PushResult> {
   // Fetch unpushed rows ordered by quality DESC
   const { results } = await db.prepare(`

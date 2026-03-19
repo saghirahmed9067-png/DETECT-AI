@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type { APIResponse } from '@/types'
+import { auth } from '@clerk/nextjs/server'
 
 const HF_API   = 'https://api-inference.huggingface.co/models'
-const HF_TOKEN = process.env.HUGGINGFACE_API_TOKEN || process.env.HF_TOKEN || ''
-const TEXT_MODEL = 'openai-community/roberta-base-openai-detector'
+const HF_TOKEN   = process.env.HUGGINGFACE_API_TOKEN || process.env.HF_TOKEN || ''
+const TEXT_MODEL  = 'openai-community/roberta-base-openai-detector'
 
 export const dynamic    = 'force-dynamic'
 export const maxDuration = 30
@@ -79,25 +80,13 @@ async function analyzeTextBlock(text: string): Promise<{ verdict: string; confid
 
 export async function POST(req: NextRequest) {
   // Require authentication to prevent scraping abuse
-  const session = req.cookies.get('__session')?.value
-  if (!session) {
-    return NextResponse.json({ success: false, error: { code: 'UNAUTHORIZED', message: 'Authentication required' } }, { status: 401 })
+  const { userId } = await auth()
+  if (!userId) {
+    return NextResponse.json({ success: false, error: { code: 'UNAUTHORIZED', message: 'Sign in to use the web scanner' } }, { status: 401 })
   }
 
-  // IP-based rate limit: 10 scrapes per minute
-  const ip = req.headers.get('x-forwarded-for') || 'unknown'
-  const rateKey = `scraper:${ip}`
-  const _scraperLimits = new Map<string, { count: number; resetAt: number }>()
-  const now = Date.now()
-  const entry = _scraperLimits.get(rateKey)
-  if (entry && now < entry.resetAt) {
-    if (entry.count >= 10) {
-      return NextResponse.json({ success: false, error: { code: 'RATE_LIMIT', message: 'Too many requests' } }, { status: 429 })
-    }
-    entry.count++
-  } else {
-    _scraperLimits.set(rateKey, { count: 1, resetAt: now + 60_000 })
-  }
+  // Rate limit via creditGuard (already handles IP-based limits)
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown'
 
   try {
     const { url } = await req.json()
@@ -131,8 +120,8 @@ export async function POST(req: NextRequest) {
         verdict:    r.verdict,
         confidence: r.confidence,
         signals: [
-          { name: 'RoBERTa AI Classifier', flagged: r.verdict === 'AI' },
-          { name: 'Linguistic Pattern', flagged: r.confidence > 60 },
+          { name: 'AI Content Classifier', flagged: r.verdict === 'AI' },
+          { name: 'Linguistic Pattern Analysis', flagged: r.confidence > 60 },
         ],
       })
     })
@@ -169,7 +158,7 @@ export async function POST(req: NextRequest) {
         total_assets:      assets.length,
         ai_asset_count:    aiAssets,
         scraped_content:   assets,
-        analysis_note:     'Text blocks analyzed with RoBERTa AI classifier. Images require manual upload for full analysis.',
+        analysis_note:     'Text blocks analyzed with Aiscern detection engine. Images require manual upload for full analysis.',
         status:            'complete',
       }
     })

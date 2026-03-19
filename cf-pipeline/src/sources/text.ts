@@ -63,4 +63,22 @@ export const TEXT_SOURCES: Source[] = [
   { name: 'scientific-papers', id: 'armanc/scientific_papers',                 config: 'pubmed',          media_type: 'text', label: 'human', text_fields: ['article', 'abstract'] },
   { name: 'ag-news',           id: 'fancyzhx/ag_news',                                                     media_type: 'text', label: 'human', text_fields: ['text', 'description'] },
   { name: 'reddit-eli5',       id: 'Pavithree/eli5_category',                                              media_type: 'text', label: 'human', text_fields: ['answers', 'title', 'selftext'] },
+
+  // ── NEW ADDITIONS — Higher quality AI detection datasets ─────────────────
+  // M4 benchmark — top academic AI detection dataset, 4 AI models x 4 domains
+  { name: 'm4-ai',           id: 'NicolaiSivesind/M4',                     config: 'default',   media_type: 'text', label: 'mixed', label_field: 'source', label_map: { human: 'human', chatgpt: 'ai', cohere: 'ai', davinci003: 'ai', bloomz: 'ai' }, text_fields: ['text'] },
+  // RAID — adversarial AI detection, 11 generators, 4 attack types
+  { name: 'raid-v2',         id: 'liamdugan/raid',                         config: 'raid_extra', media_type: 'text', label: 'mixed', label_field: 'label',  label_map: { human: 'human', ai: 'ai', '0': 'human', '1': 'ai' }, text_fields: ['generation', 'prompt'] },
+  // CHEAT — ChatGPT paraphrase detection (harder cases)
+  { name: 'cheat',           id: 'hannxu/CHEAT',                                                media_type: 'text', label: 'mixed', label_field: 'label',  label_map: { human: 'human', ai: 'ai', ChatGPT: 'ai' }, text_fields: ['abstract', 'text'] },
+  // TuringBench — 19 neural generators including GPT-4
+  { name: 'turingbench',     id: 'zhiheng-liu/TuringBench',                                    media_type: 'text', label: 'mixed', label_field: 'label',  label_map: { human: 'human', ai: 'ai', '0': 'human', '1': 'ai' }, text_fields: ['Generation', 'text'] },
+  // AiWriter detection dataset — essays and academic writing  
+  { name: 'aiwriter-detect', id: 'tum-nlp/cannot-tell-ai-apart',                               media_type: 'text', label: 'mixed', label_field: 'label',  label_map: { human: 'human', ai: 'ai', '0': 'human', '1': 'ai' }, text_fields: ['text', 'essay'] },
+  // SemEval 2024 Task 8 — multilingual machine-generated text detection
+  { name: 'semeval2024-mg',  id: 'nbarnabee/SemEval2024Task8',                                 media_type: 'text', label: 'mixed', label_field: 'label',  label_map: { human: 'human', machine: 'ai', '0': 'human', '1': 'ai' }, text_fields: ['text'] },
+  // GPT-wiki — Wikipedia paragraphs rewritten by GPT-3.5
+  { name: 'gpt-wiki',        id: 'aadityaubhat/GPT-wiki-intro',                                media_type: 'text', label: 'ai',   text_fields: ['generated_intro', 'intro'] },
+  // Human news articles (Reuters, BBC — high quality)
+  { name: 'cc-news-human',   id: 'cc_news',                                config: 'default',   media_type: 'text', label: 'human', text_fields: ['text', 'title', 'description'] },
 ]
