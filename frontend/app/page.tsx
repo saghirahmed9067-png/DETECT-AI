@@ -78,68 +78,79 @@ function ParticleNetwork() {
   return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none opacity-60" />
 }
 
-// ─── Interactive Floating Cards ─────────────────────────────────────────────
-const FLOAT_ITEMS = [
-  { Icon: Search,      label: 'AI Text',    pct: '94.2%',   color: '#7c3aed', x: '6%',  y: '18%', delay: 0,   pulse: true  },
-  { Icon: Eye,         label: 'Deepfake',   pct: '97.1%',   color: '#2563eb', x: '80%', y: '12%', delay: 0.6, pulse: false },
-  { Icon: Waves,       label: 'AI Audio',   pct: '91.8%',   color: '#06b6d4', x: '3%',  y: '60%', delay: 1.2, pulse: false },
-  { Icon: Video,       label: 'AI Video',   pct: '88.5%',   color: '#10b981', x: '83%', y: '56%', delay: 0.3, pulse: false },
-  { Icon: Bot,         label: 'GPT-4',      pct: 'Detected',color: '#f43f5e', x: '48%', y: '80%', delay: 0.9, pulse: true  },
-  { Icon: Fingerprint, label: 'Stable Diff',pct: 'Flagged', color: '#f59e0b', x: '18%', y: '83%', delay: 1.5, pulse: false },
+// ─── Floating Nature Images (hero background trees/plants) ───────────────────
+const NATURE_IMGS = [
+  { src: 'https://images.unsplash.com/photo-1518173946687-a4c8892bbd9f?w=180&h=260&fit=crop&fm=webp&q=70', alt: 'Tall forest trees', x: '2%',  y: '8%',  w: 110, h: 160, delay: 0,   rot: -6  },
+  { src: 'https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?w=160&h=240&fit=crop&fm=webp&q=70', alt: 'Pine tree',        x: '88%', y: '4%',  w: 95,  h: 150, delay: 0.4, rot: 5   },
+  { src: 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=200&h=280&fit=crop&fm=webp&q=70', alt: 'Forest sunlight',  x: '0%',  y: '55%', w: 100, h: 155, delay: 0.8, rot: -4  },
+  { src: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=140&h=200&fit=crop&fm=webp&q=70', alt: 'Tropical leaves',  x: '91%', y: '52%', w: 90,  h: 140, delay: 0.2, rot: 7   },
+  { src: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=160&h=220&fit=crop&fm=webp&q=70', alt: 'Forest path',      x: '10%', y: '78%', w: 100, h: 140, delay: 1.0, rot: -3  },
+  { src: 'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?w=140&h=200&fit=crop&fm=webp&q=70', alt: 'Autumn tree',      x: '84%', y: '76%', w: 90,  h: 135, delay: 0.6, rot: 4   },
+]
+
+const FLOAT_BADGES = [
+  { Icon: Search,      label: 'AI Text',    pct: 'Detected', color: '#7c3aed', x: '16%', y: '14%', delay: 0,   pulse: true  },
+  { Icon: Eye,         label: 'Deepfake',   pct: 'Flagged',  color: '#2563eb', x: '76%', y: '10%', delay: 0.5, pulse: false },
+  { Icon: Waves,       label: 'AI Audio',   pct: 'AI 91%',   color: '#06b6d4', x: '72%', y: '72%', delay: 1.0, pulse: false },
+  { Icon: Bot,         label: 'GPT-4',      pct: 'Detected', color: '#f43f5e', x: '22%', y: '72%', delay: 0.7, pulse: true  },
 ]
 
 function FloatingCards() {
-  const [hovered, setHovered] = useState<number | null>(null)
   return (
     <>
-      {FLOAT_ITEMS.map((item, i) => {
+      {/* Nature/tree images floating in background */}
+      {NATURE_IMGS.map((img, i) => (
+        <motion.div key={i}
+          className="absolute hidden lg:block pointer-events-none z-0 overflow-hidden rounded-2xl"
+          style={{ left: img.x, top: img.y, width: img.w, height: img.h, rotate: img.rot }}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: [0, 0.18, 0.18], y: [0, -12, 0] }}
+          transition={{
+            opacity: { delay: img.delay + 0.5, duration: 1.2 },
+            y: { delay: img.delay, duration: 5 + i * 0.7, repeat: Infinity, ease: 'easeInOut' }
+          }}
+        >
+          <img src={img.src} alt={img.alt}
+            className="w-full h-full object-cover opacity-70 mix-blend-luminosity"
+            style={{ filter: 'saturate(0.4) brightness(0.6)' }}
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/60" />
+        </motion.div>
+      ))}
+
+      {/* Detection badge overlays */}
+      {FLOAT_BADGES.map((item, i) => {
         const Icon = item.Icon
-        const isHovered = hovered === i
         return (
           <motion.div key={i}
-            className="absolute hidden xl:flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border backdrop-blur-xl z-10 cursor-pointer select-none"
+            className="absolute hidden xl:flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border backdrop-blur-xl z-10 select-none"
             style={{
               left: item.x, top: item.y,
               background: `${item.color}18`,
-              borderColor: isHovered ? `${item.color}70` : `${item.color}35`,
-              boxShadow: isHovered
-                ? `0 0 30px ${item.color}40, 0 0 60px ${item.color}20`
-                : `0 0 20px ${item.color}20`,
+              borderColor: `${item.color}35`,
+              boxShadow: `0 0 20px ${item.color}20`,
             }}
             initial={{ opacity: 0, scale: 0.8, y: 20 }}
-            animate={{
-              opacity: 1, scale: isHovered ? 1.08 : 1,
-              y: isHovered ? -14 : [0, -10, 0],
-            }}
+            animate={{ opacity: 1, scale: 1, y: [0, -10, 0] }}
             transition={{
               opacity: { delay: item.delay + 0.5, duration: 0.6 },
-              scale: { duration: 0.2 },
-              y: isHovered
-                ? { duration: 0.2 }
-                : { delay: item.delay, duration: 3 + i * 0.4, repeat: Infinity, ease: 'easeInOut' }
+              y: { delay: item.delay, duration: 3 + i * 0.4, repeat: Infinity, ease: 'easeInOut' }
             }}
-            onHoverStart={() => setHovered(i)}
-            onHoverEnd={() => setHovered(null)}
           >
-            <motion.div
-              className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-              style={{ background: `${item.color}28`, color: item.color }}
-              animate={isHovered ? { rotate: [0, -10, 10, 0], scale: [1, 1.2, 1] } : {}}
-              transition={{ duration: 0.4 }}
-            >
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+              style={{ background: `${item.color}28`, color: item.color }}>
               <Icon className="w-4 h-4" strokeWidth={1.8} />
-            </motion.div>
+            </div>
             <div>
               <div className="text-[10px] font-medium" style={{ color: `${item.color}cc` }}>{item.label}</div>
               <div className="text-xs font-bold text-white">{item.pct}</div>
             </div>
             {item.pulse && (
-              <motion.div
-                className="absolute -top-1.5 -right-1.5 w-3 h-3 rounded-full"
+              <motion.div className="absolute -top-1.5 -right-1.5 w-3 h-3 rounded-full"
                 style={{ background: item.color }}
                 animate={{ scale: [1, 1.4, 1], opacity: [1, 0.5, 1] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-              />
+                transition={{ duration: 1.5, repeat: Infinity }} />
             )}
           </motion.div>
         )
@@ -189,7 +200,7 @@ function LiveDemo({ isLoggedIn }: { isLoggedIn: boolean }) {
       })
       if (res.status === 401) { router.push('/signup'); setLoading(false); return }
       const d = await res.json()
-      if (d.success) { setResult(d.data); setUsed(true) }
+      if (d.success) { setResult(d.result); setUsed(true) }
       else setResult({ verdict: 'UNCERTAIN', confidence: 50, summary: d.error?.message || 'Try signing in for full results.' })
     } catch { setResult({ verdict: 'UNCERTAIN', confidence: 50, summary: 'Analysis unavailable. Sign in for full access.' }) }
     setLoading(false)
@@ -317,6 +328,172 @@ const HOW_IT_WORKS = [
   { n: '04', title: 'Export & Share',   desc: 'Save history, share results, export PDF reports' },
 ]
 
+
+// ─── AI vs Real Comparison Cards ─────────────────────────────────────────────
+// All images from Unsplash (free commercial license: https://unsplash.com/license)
+const COMPARISON_CARDS = [
+  // Text AI vs Human
+  { type: 'text', label: 'AI-Generated Text',  verdict: 'AI',    confidence: 96, color: '#f43f5e',
+    preview: 'The implementation of advanced machine learning algorithms has fundamentally transformed the paradigm of data processing...',
+    tag: 'GPT-4', icon: 'text' },
+  { type: 'text', label: 'Human Writing',       verdict: 'HUMAN', confidence: 94, color: '#10b981',
+    preview: "I burned my toast again this morning. Third time this week. My smoke alarm and I have a complicated relationship at this point...",
+    tag: 'Authentic', icon: 'text' },
+  // Image AI vs Real
+  { type: 'image', label: 'AI-Generated Portrait', verdict: 'AI',    confidence: 98, color: '#f43f5e',
+    img: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=320&h=220&fit=crop&fm=webp&q=75',
+    tag: 'Midjourney', icon: 'image' },
+  { type: 'image', label: 'Authentic Photo',        verdict: 'HUMAN', confidence: 97, color: '#10b981',
+    img: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=320&h=220&fit=crop&fm=webp&q=75',
+    tag: 'Authentic', icon: 'image' },
+  { type: 'image', label: 'DALL-E 3 Landscape',    verdict: 'AI',    confidence: 95, color: '#f43f5e',
+    img: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=320&h=220&fit=crop&fm=webp&q=75',
+    tag: 'DALL-E 3', icon: 'image' },
+  { type: 'image', label: 'Real Landscape',         verdict: 'HUMAN', confidence: 93, color: '#10b981',
+    img: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=320&h=220&fit=crop&fm=webp&q=75',
+    tag: 'Authentic', icon: 'image' },
+  { type: 'image', label: 'Stable Diffusion Art',  verdict: 'AI',    confidence: 99, color: '#f43f5e',
+    img: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=320&h=220&fit=crop&fm=webp&q=75',
+    tag: 'SD XL', icon: 'image' },
+  { type: 'image', label: 'Real Urban Photo',       verdict: 'HUMAN', confidence: 91, color: '#10b981',
+    img: 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=320&h=220&fit=crop&fm=webp&q=75',
+    tag: 'Authentic', icon: 'image' },
+  // More text
+  { type: 'text', label: 'AI Essay',            verdict: 'AI',    confidence: 93, color: '#f43f5e',
+    preview: 'Furthermore, the multifaceted implications of this technological advancement necessitate a comprehensive reevaluation of existing frameworks and paradigms...',
+    tag: 'Claude 3', icon: 'text' },
+  { type: 'text', label: 'Student Writing',     verdict: 'HUMAN', confidence: 88, color: '#10b981',
+    preview: "ok so i know this essay is due tomorrow but i literally just figured out what my thesis even means. starting over at midnight feels bad but here we are lol",
+    tag: 'Authentic', icon: 'text' },
+  // More images
+  { type: 'image', label: 'AI Nature Scene',    verdict: 'AI',    confidence: 97, color: '#f43f5e',
+    img: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=320&h=220&fit=crop&fm=webp&q=75',
+    tag: 'Firefly', icon: 'image' },
+  { type: 'image', label: 'Real Forest',        verdict: 'HUMAN', confidence: 95, color: '#10b981',
+    img: 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=320&h=220&fit=crop&fm=webp&q=75',
+    tag: 'Authentic', icon: 'image' },
+  { type: 'image', label: 'AI Portrait',        verdict: 'AI',    confidence: 99, color: '#f43f5e',
+    img: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=320&h=220&fit=crop&fm=webp&q=75',
+    tag: 'ThisPersonDoesNotExist', icon: 'image' },
+  { type: 'image', label: 'Real Portrait',      verdict: 'HUMAN', confidence: 92, color: '#10b981',
+    img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=320&h=220&fit=crop&fm=webp&q=75',
+    tag: 'Authentic', icon: 'image' },
+  { type: 'image', label: 'AI Architecture',    verdict: 'AI',    confidence: 94, color: '#f43f5e',
+    img: 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=320&h=220&fit=crop&fm=webp&q=75',
+    tag: 'Midjourney', icon: 'image' },
+  { type: 'image', label: 'Real Architecture',  verdict: 'HUMAN', confidence: 96, color: '#10b981',
+    img: 'https://images.unsplash.com/photo-1431274172761-fcdab704a0ef?w=320&h=220&fit=crop&fm=webp&q=75',
+    tag: 'Authentic', icon: 'image' },
+  { type: 'text', label: 'AI Product Desc.',    verdict: 'AI',    confidence: 91, color: '#f43f5e',
+    preview: 'Experience unparalleled innovation with our cutting-edge solution that seamlessly integrates advanced AI-powered functionality to deliver exceptional results...',
+    tag: 'GPT-3.5', icon: 'text' },
+  { type: 'text', label: 'Real Review',         verdict: 'HUMAN', confidence: 89, color: '#10b981',
+    preview: "shipped faster than expected, packaging was a bit beat up but the actual item inside was totally fine. would buy again if the price drops",
+    tag: 'Authentic', icon: 'text' },
+  { type: 'image', label: 'AI Food Photo',      verdict: 'AI',    confidence: 95, color: '#f43f5e',
+    img: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=320&h=220&fit=crop&fm=webp&q=75',
+    tag: 'DALL-E 3', icon: 'image' },
+  { type: 'image', label: 'Real Food Photo',    verdict: 'HUMAN', confidence: 93, color: '#10b981',
+    img: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=320&h=220&fit=crop&fm=webp&q=75',
+    tag: 'Authentic', icon: 'image' },
+]
+
+function AIvsRealSection() {
+  return (
+    <section className="py-16 sm:py-24 px-4 overflow-hidden">
+      <div className="max-w-7xl mx-auto">
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }} className="text-center mb-12 sm:mb-16">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-rose/30 bg-rose/5 text-rose text-xs font-semibold mb-4">
+            <Scan className="w-3.5 h-3.5" /> Real-World Detection Examples
+          </div>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black mb-4">
+            AI vs <span className="gradient-text">Authentic</span>
+          </h2>
+          <p className="text-text-muted text-base sm:text-lg max-w-2xl mx-auto">
+            See how Aiscern identifies AI-generated content versus authentic human-created work across text and images.
+          </p>
+        </motion.div>
+
+        {/* Scrolling row 1 */}
+        <div className="relative mb-4 overflow-hidden">
+          <div className="flex gap-4 animate-scroll-left" style={{ width: 'max-content' }}>
+            {[...COMPARISON_CARDS.slice(0, 10), ...COMPARISON_CARDS.slice(0, 10)].map((card, i) => (
+              <ComparisonCard key={i} card={card} />
+            ))}
+          </div>
+          <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+        </div>
+
+        {/* Scrolling row 2 (reverse) */}
+        <div className="relative overflow-hidden">
+          <div className="flex gap-4 animate-scroll-right" style={{ width: 'max-content' }}>
+            {[...COMPARISON_CARDS.slice(10), ...COMPARISON_CARDS.slice(10)].map((card, i) => (
+              <ComparisonCard key={i} card={card} />
+            ))}
+          </div>
+          <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+        </div>
+
+        <p className="text-center text-xs text-text-disabled mt-6">
+          Photos: <a href="https://unsplash.com/license" target="_blank" rel="noopener noreferrer" className="hover:text-text-muted underline">Unsplash free license</a> · Results shown are illustrative detections
+        </p>
+      </div>
+    </section>
+  )
+}
+
+function ComparisonCard({ card }: { card: { type: string; label: string; verdict: string; confidence: number; color: string; tag: string; icon: string; preview?: string; img?: string } }) {
+  const isAI = card.verdict === 'AI'
+  return (
+    <div className="flex-shrink-0 w-72 bg-surface border border-border rounded-2xl overflow-hidden hover:border-primary/30 transition-all duration-300 group">
+      {/* Image or text preview */}
+      {card.type === 'image' && card.img ? (
+        <div className="relative h-44 overflow-hidden bg-surface-active">
+          <img src={card.img} alt={card.label}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            loading="lazy" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          {/* Verdict overlay */}
+          <div className={`absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold text-white backdrop-blur-sm ${isAI ? 'bg-rose/80' : 'bg-emerald/80'}`}>
+            {isAI ? <AlertTriangle className="w-3 h-3" /> : <CheckCircle className="w-3 h-3" />}
+            {card.verdict}
+          </div>
+        </div>
+      ) : (
+        <div className="h-44 p-4 bg-surface-active flex flex-col justify-center relative overflow-hidden">
+          <div className={`absolute top-0 left-0 w-1 h-full ${isAI ? 'bg-rose' : 'bg-emerald'}`} />
+          <p className="text-sm text-text-muted leading-relaxed line-clamp-4 italic pl-3">
+            "{card.preview}"
+          </p>
+          <div className={`absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${isAI ? 'bg-rose/10 text-rose border border-rose/20' : 'bg-emerald/10 text-emerald border border-emerald/20'}`}>
+            {isAI ? <AlertTriangle className="w-3 h-3" /> : <CheckCircle className="w-3 h-3" />}
+            {card.verdict}
+          </div>
+        </div>
+      )}
+
+      {/* Card footer */}
+      <div className="p-3.5 flex items-center justify-between">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-text-primary truncate">{card.label}</p>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <span className={`text-xs px-1.5 py-0.5 rounded-md font-medium ${isAI ? 'bg-rose/10 text-rose' : 'bg-emerald/10 text-emerald'}`}>
+              {card.tag}
+            </span>
+          </div>
+        </div>
+        <div className="text-right flex-shrink-0 ml-2">
+          <div className={`text-lg font-black ${isAI ? 'text-rose' : 'text-emerald'}`}>{card.confidence}%</div>
+          <div className="text-[10px] text-text-disabled">confidence</div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Main Page ───────────────────────────────────────────────────────────────
 export default function HomePage() {
   const { user, loading } = useAuth()
@@ -362,8 +539,12 @@ export default function HomePage() {
 
           <div className="flex items-center gap-2 sm:gap-3">
             {user ? (
-              <Link href="/dashboard" className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all">
-                Dashboard →
+              <Link href="/dashboard" className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/20 transition-all group">
+                <span className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white text-xs font-black flex-shrink-0 ring-2 ring-primary/30">
+                  {(user.displayName?.charAt(0) || user.email?.charAt(0) || 'U').toUpperCase()}
+                </span>
+                <span className="hidden sm:inline">Dashboard</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
               </Link>
             ) : (
               <>
@@ -445,13 +626,34 @@ export default function HomePage() {
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-12 sm:mb-16">
-            <Link href={user ? '/dashboard' : '/detect/text'} className="btn-primary w-full sm:w-auto px-6 sm:px-8 py-3.5 text-base font-bold flex items-center justify-center gap-2 shadow-xl shadow-primary/30" title="Start Detecting AI Content Free">
-              {user ? 'Open Dashboard' : 'Start Detecting AI Content Free'}
-              <ArrowRight className="w-5 h-5" />
-            </Link>
-            <Link href={user ? "/chat" : "/signup"} className="btn-secondary w-full sm:w-auto px-6 sm:px-8 py-3.5 text-base flex items-center justify-center gap-2" title="AI Detection Assistant">
-              <MessageSquare className="w-5 h-5 text-emerald" />Try AI Assistant
-            </Link>
+            {user ? (
+              <>
+                <Link href="/dashboard"
+                  className="group relative w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-base font-bold flex items-center justify-center gap-3 shadow-2xl shadow-violet-500/40 hover:shadow-violet-500/60 hover:scale-[1.02] transition-all duration-200 overflow-hidden"
+                  title="Go to your Aiscern dashboard">
+                  <span className="absolute inset-0 bg-gradient-to-r from-violet-500/0 via-white/10 to-violet-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                  <span className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center font-black text-sm flex-shrink-0">
+                    {(user.displayName?.charAt(0) || user.email?.charAt(0) || 'U').toUpperCase()}
+                  </span>
+                  <span>Go to Dashboard</span>
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Link>
+                <Link href="/chat"
+                  className="w-full sm:w-auto px-8 py-4 rounded-2xl border border-border bg-surface/60 backdrop-blur-sm text-base font-semibold flex items-center justify-center gap-2 hover:border-primary/50 hover:bg-surface transition-all duration-200"
+                  title="AI Detection Assistant">
+                  <MessageSquare className="w-5 h-5 text-emerald" />ARIA Assistant
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/detect/text" className="btn-primary w-full sm:w-auto px-6 sm:px-8 py-3.5 text-base font-bold flex items-center justify-center gap-2 shadow-xl shadow-primary/30" title="Start Detecting AI Content Free">
+                  Start Detecting Free <ArrowRight className="w-5 h-5" />
+                </Link>
+                <Link href="/signup" className="btn-secondary w-full sm:w-auto px-6 sm:px-8 py-3.5 text-base flex items-center justify-center gap-2" title="Create free account">
+                  <Zap className="w-5 h-5 text-amber" />Create Free Account
+                </Link>
+              </>
+            )}
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
@@ -485,6 +687,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ── AI VS REAL COMPARISON CARDS ── */}
+      <AIvsRealSection />
 
       {/* ── TOOLS GRID ── */}
       <section id="tools" className="py-16 sm:py-24 px-4">
