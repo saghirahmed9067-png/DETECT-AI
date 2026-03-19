@@ -151,7 +151,7 @@ export default function HistoryPage() {
     ]
     const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n')
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
-    a.download = `detectai-history-${Date.now()}.csv`; a.click()
+    a.download = `aiscern-history-${Date.now()}.csv`; a.click()
   }
 
   let filtered = scans.filter(s => {

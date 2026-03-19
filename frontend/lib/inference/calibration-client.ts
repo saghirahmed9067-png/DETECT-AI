@@ -1,5 +1,5 @@
 /**
- * DETECTAI — Calibration Client v3
+ * Aiscern — Calibration Client v3
  *
  * Reads live calibration stats from Supabase (written weekly by GitHub Actions).
  * Falls back to hardcoded baselines derived from 1000 DiffusionDB + 1000 Unsplash.

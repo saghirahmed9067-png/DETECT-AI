@@ -1,5 +1,5 @@
 /**
- * DETECTAI Pipeline v6 — Universal Worker
+ * Aiscern Pipeline v6 — Universal Worker
  * WORKER_NUM (1–19): scraper | WORKER_NUM 20: HF push + cleanup
  *
  * New in v6:

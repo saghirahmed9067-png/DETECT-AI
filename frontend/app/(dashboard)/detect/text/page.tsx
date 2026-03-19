@@ -127,7 +127,7 @@ export default function TextDetectionPage() {
 
   const copyResult = () => {
     if (!result) return
-    const out = `DETECTAI Text Analysis Report
+    const out = `Aiscern Text Analysis Report
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Verdict:    ${result.verdict === 'AI' ? 'AI GENERATED' : result.verdict === 'HUMAN' ? 'HUMAN WRITTEN' : 'UNCERTAIN'}
 Confidence: ${Math.round((result.confidence <= 1 ? result.confidence * 100 : result.confidence))}%
@@ -144,9 +144,9 @@ Analyzed: ${new Date().toLocaleString()}`
 
   const exportReport = () => {
     if (!result) return
-    const blob = new Blob([`DETECTAI Text Analysis\n\nVerdict: ${result.verdict}\nConfidence: ${result.confidence}%\nSummary: ${result.summary}\n\nText analyzed:\n${text}`], { type: 'text/plain' })
+    const blob = new Blob([`Aiscern Text Analysis\n\nVerdict: ${result.verdict}\nConfidence: ${result.confidence}%\nSummary: ${result.summary}\n\nText analyzed:\n${text}`], { type: 'text/plain' })
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob)
-    a.download = `detectai-text-analysis-${Date.now()}.txt`; a.click()
+    a.download = `aiscern-text-analysis-${Date.now()}.txt`; a.click()
   }
 
   const verdictStyles: Record<Verdict, string> = {

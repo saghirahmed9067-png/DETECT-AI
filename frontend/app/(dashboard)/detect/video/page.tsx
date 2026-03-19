@@ -241,7 +241,7 @@ export default function VideoDetectionPage() {
     ).join('\n') ?? ''
 
     const text = [
-      'DETECTAI Video Analysis Report',
+      'Aiscern Video Analysis Report',
       '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
       `File:       ${file.name}`,
       `Size:       ${formatFileSize(file.size)}`,
@@ -264,7 +264,7 @@ export default function VideoDetectionPage() {
 
     const a = document.createElement('a')
     a.href = URL.createObjectURL(new Blob([text], { type: 'text/plain' }))
-    a.download = `detectai-video-${Date.now()}.txt`; a.click()
+    a.download = `aiscern-video-${Date.now()}.txt`; a.click()
   }
 
   const reset = () => {

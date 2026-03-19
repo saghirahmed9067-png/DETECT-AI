@@ -1,5 +1,5 @@
 /**
- * DETECTAI — Advanced Image Signal Engine v4.0
+ * Aiscern — Advanced Image Signal Engine v4.0
  *
  * Detects AI-generated images from ALL major platforms:
  *   - Stable Diffusion / SDXL / Flux

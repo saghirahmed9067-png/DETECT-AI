@@ -12,7 +12,7 @@ export default function ContactPage() {
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
               <Shield className="w-3.5 h-3.5 text-white" />
             </div>
-            <span className="font-black gradient-text">DETECTAI</span>
+            <span className="font-black gradient-text">Aiscern</span>
           </Link>
           <Link href="/" className="flex items-center gap-1.5 text-sm text-text-muted hover:text-text-primary transition-colors">
             <ArrowLeft className="w-4 h-4" /> Back to Home
@@ -27,14 +27,14 @@ export default function ContactPage() {
         </div>
 
         <div className="grid gap-4">
-          <a href="mailto:contact@detectai.app"
+          <a href="mailto:contact@aiscern.com"
             className="card hover:border-primary/30 transition-all flex items-center gap-4 group">
             <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors">
               <Mail className="w-6 h-6 text-primary" />
             </div>
             <div>
               <div className="font-semibold text-text-primary mb-0.5">Email</div>
-              <div className="text-sm text-text-muted">contact@detectai.app</div>
+              <div className="text-sm text-text-muted">contact@aiscern.com</div>
             </div>
           </a>
 
@@ -56,7 +56,7 @@ export default function ContactPage() {
             </div>
             <div>
               <div className="font-semibold text-text-primary mb-0.5">AI Chat</div>
-              <div className="text-sm text-text-muted">Ask our AI assistant anything about DETECTAI</div>
+              <div className="text-sm text-text-muted">Ask our AI assistant anything about Aiscern</div>
             </div>
           </Link>
         </div>

@@ -1,5 +1,5 @@
 /**
- * DETECTAI — NVIDIA NIM Vision Client
+ * Aiscern — NVIDIA NIM Vision Client
  * Uses meta/llama-3.2-11b-vision-instruct for per-frame deepfake analysis.
  * Endpoint: https://integrate.api.nvidia.com/v1/chat/completions
  */

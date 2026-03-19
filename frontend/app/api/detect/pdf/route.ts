@@ -224,7 +224,7 @@ export async function POST(req: NextRequest) {
     const aggregatedResult = {
       verdict:      finalVerdict,
       confidence:   Math.round(aiScore),
-      model_used:   'DETECTAI-TextEnsemble(ChunkedPDF)',
+      model_used:   'Aiscern-TextEnsemble(ChunkedPDF)',
       model_version:'4.0.0',
       summary: finalVerdict === 'AI'
         ? `Document shows ${Math.round(aiScore)}% AI-generation probability across ${chunkResults.length} analyzed segments.`

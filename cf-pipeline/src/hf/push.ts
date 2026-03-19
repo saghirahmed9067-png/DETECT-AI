@@ -1,5 +1,5 @@
 /**
- * DETECTAI Pipeline v6 — HuggingFace Push
+ * Aiscern Pipeline v6 — HuggingFace Push
  *
  * Pushes to properly sharded paths:
  *   data/{media_type}/{language}/part-NNNN.jsonl

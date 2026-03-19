@@ -75,7 +75,7 @@ export default function ImageDetectionPage() {
 
   const exportReport = () => {
     if (!result || !file) return
-    const text = `DETECTAI Image Analysis Report
+    const text = `Aiscern Image Analysis Report
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 File:       ${file.name}
 Size:       ${formatFileSize(file.size)}
@@ -91,7 +91,7 @@ Model: ${result.model_used} · ${result.processing_time}ms
 Analyzed: ${new Date().toLocaleString()}`
     const blob = new Blob([text], { type: 'text/plain' })
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob)
-    a.download = `detectai-image-${Date.now()}.txt`; a.click()
+    a.download = `aiscern-image-${Date.now()}.txt`; a.click()
   }
 
   const reset = () => { setFile(null); setPreview(null); setResult(null); setError(null); setImgDims(null); setZoomed(false) }

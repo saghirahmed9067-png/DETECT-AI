@@ -1,5 +1,5 @@
 /**
- * DETECTAI — Video Signal Aggregator
+ * Aiscern — Video Signal Aggregator
  * Combines NVIDIA NIM frame scores with temporal analysis signals.
  */
 
@@ -105,6 +105,6 @@ export function buildVideoSignals(nim: NIMVideoResult): VideoEnsembleResult {
       ai_score:      f.ai_score,
       face_detected: f.face_detected,
     })),
-    model_used: `DETECTAI-Video(NVIDIA-NIM/${nim.model.split('/').pop()}+TemporalAnalysis)`,
+    model_used: `Aiscern-Video(NVIDIA-NIM/${nim.model.split('/').pop()}+TemporalAnalysis)`,
   }
 }

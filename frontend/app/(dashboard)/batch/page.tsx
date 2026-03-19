@@ -180,7 +180,7 @@ export default function BatchPage() {
     ]
     const csv = rows.map(r => r.map(v => `"${v.replace(/"/g, '""')}"`).join(',')).join('\n')
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
-    a.download = `detectai-batch-${Date.now()}.csv`; a.click()
+    a.download = `aiscern-batch-${Date.now()}.csv`; a.click()
   }
 
   const filteredFiles = files.filter(bf => {
@@ -205,7 +205,7 @@ export default function BatchPage() {
       doc.setFillColor(10, 10, 20); doc.rect(0, 0, pageW, pageH, 'F')
       doc.setFillColor(60, 20, 100); doc.rect(0, 0, pageW, 60, 'F')
       doc.setFontSize(28); doc.setTextColor(255,255,255); doc.setFont('helvetica','bold')
-      doc.text('DETECTAI', margin, 35)
+      doc.text('Aiscern', margin, 35)
       doc.setFontSize(14); doc.setTextColor(180,150,255)
       doc.text('Batch Analysis Report', margin, 47)
       doc.setFontSize(10); doc.setTextColor(160,160,160); doc.setFont('helvetica','normal')
@@ -246,10 +246,10 @@ export default function BatchPage() {
       for (let i = 1; i <= total; i++) {
         doc.setPage(i)
         doc.setFontSize(8); doc.setTextColor(60,60,80); doc.setFont('helvetica','normal')
-        doc.text(`DETECTAI · AI Content Detection Platform · Page ${i}/${total}`, pageW/2, pageH-8, {align:'center'})
+        doc.text(`Aiscern · AI Content Detection Platform · Page ${i}/${total}`, pageW/2, pageH-8, {align:'center'})
       }
 
-      doc.save(`detectai-batch-report-${Date.now()}.pdf`)
+      doc.save(`aiscern-batch-report-${Date.now()}.pdf`)
     } catch (e) { console.error('PDF export failed', e) }
     setExportingPdf(false)
   }

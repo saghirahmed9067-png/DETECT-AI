@@ -15,7 +15,7 @@ const STATS = [
 const VALUES = [
   { icon: Target, title: 'Accuracy First',   desc: 'We prioritize detection precision above all. Every model update is benchmarked against independent test sets to ensure reliable, bias-free results.' },
   { icon: Lock,   title: 'Privacy by Design', desc: 'Your data is never stored beyond what is needed for analysis. Scans are ephemeral, results belong to you, and we never sell your data.' },
-  { icon: Globe,  title: 'Universal Access',  desc: 'AI-generated media disinformation is a global problem. DETECTAI is built to be accessible to journalists, researchers, and everyday users worldwide.' },
+  { icon: Globe,  title: 'Universal Access',  desc: 'AI-generated media disinformation is a global problem. Aiscern is built to be accessible to journalists, researchers, and everyday users worldwide.' },
   { icon: Brain,  title: 'AI-Powered',        desc: 'Our detection system combines advanced vision models, linguistic analysis, and proprietary signal extractors across all content types.' },
 ]
 
@@ -38,7 +38,7 @@ export default function AboutPage() {
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
               <Shield className="w-3.5 h-3.5 text-white" />
             </div>
-            <span className="font-black gradient-text">DETECTAI</span>
+            <span className="font-black gradient-text">Aiscern</span>
           </Link>
           <Link href="/" className="flex items-center gap-1.5 text-sm text-text-muted hover:text-text-primary transition-colors">
             <ArrowLeft className="w-4 h-4" /> Back to Home
@@ -53,13 +53,13 @@ export default function AboutPage() {
           <div className="max-w-3xl mx-auto text-center relative z-10">
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-6">
-                <Shield className="w-4 h-4" /> About DETECTAI
+                <Shield className="w-4 h-4" /> About Aiscern
               </div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black mb-6">
                 Defending Truth in the<br /><span className="gradient-text">Age of Synthetic Media</span>
               </h1>
               <p className="text-text-muted text-lg sm:text-xl leading-relaxed max-w-2xl mx-auto">
-                DETECTAI is an enterprise-grade, multi-modal AI content detection platform.
+                Aiscern is an enterprise-grade, multi-modal AI content detection platform.
                 We help organizations, journalists, and individuals verify the authenticity
                 of media before it spreads.
               </p>
@@ -94,7 +94,7 @@ export default function AboutPage() {
                   <div className="w-32 h-32 sm:w-44 sm:h-44 rounded-2xl overflow-hidden ring-4 ring-primary/20 shadow-xl shadow-primary/20">
                     <Image
                       src="/anas-ali.jpg"
-                      alt="Anas Ali — Founder & CEO of DETECTAI"
+                      alt="Anas Ali — Founder & CEO of Aiscern"
                       width={176} height={176}
                       className="w-full h-full object-cover"
                       priority
@@ -111,7 +111,7 @@ export default function AboutPage() {
                   <p className="text-text-muted text-sm mb-4">Islamabad, Pakistan · AI Engineer &amp; Full-Stack Developer</p>
 
                   <p className="text-text-muted text-sm leading-relaxed mb-4">
-                    Anas Ali is the founder and lead engineer behind DETECTAI. A self-taught developer from Islamabad,
+                    Anas Ali is the founder and lead engineer behind Aiscern. A self-taught developer from Islamabad,
                     he began building AI detection tools after noticing how rapidly deepfake and synthetic media
                     technology outpaced any publicly available verification solution.
                   </p>
@@ -129,7 +129,7 @@ export default function AboutPage() {
                   </div>
 
                   <div className="flex items-center gap-3 justify-center sm:justify-start">
-                    <a href="mailto:anas@detectai.io"
+                    <a href="mailto:anas@aiscern.com"
                       className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-surface border border-border hover:border-primary/50 text-sm font-medium transition-all">
                       <Mail className="w-4 h-4" /> Contact
                     </a>
@@ -151,7 +151,7 @@ export default function AboutPage() {
                 The tools to create this content are becoming faster and cheaper every month.
               </p>
               <p className="text-text-muted text-base leading-relaxed">
-                DETECTAI was founded to fight back. We build the most accurate, fastest, and most accessible
+                Aiscern was founded to fight back. We build the most accurate, fastest, and most accessible
                 multi-modal AI detection platform on the market — and we make it free for individuals, students,
                 and journalists who need it most.
               </p>
@@ -211,7 +211,7 @@ export default function AboutPage() {
               </div>
               <h2 className="text-3xl font-black mb-4">Start <span className="gradient-text">Detecting</span></h2>
               <p className="text-text-muted mb-8 max-w-xl mx-auto">
-                Join thousands of journalists, researchers, and organizations using DETECTAI to
+                Join thousands of journalists, researchers, and organizations using Aiscern to
                 verify media authenticity every day.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">

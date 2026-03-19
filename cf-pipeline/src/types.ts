@@ -1,5 +1,5 @@
 /**
- * DETECTAI Pipeline v6 — Shared Types
+ * Aiscern Pipeline v6 — Shared Types
  * Central type definitions for all pipeline modules.
  */
 

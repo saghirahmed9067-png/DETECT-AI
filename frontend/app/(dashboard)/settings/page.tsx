@@ -120,7 +120,7 @@ export default function SettingsPage() {
     const data = { exported_at: new Date().toISOString(), preferences: { emailNotif, batchAlerts, autoSave, aiThreshold, publicProfile } }
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
-    const a = document.createElement('a'); a.href = url; a.download = 'detectai-settings.json'; a.click()
+    const a = document.createElement('a'); a.href = url; a.download = 'aiscern-settings.json'; a.click()
     toast.success('Settings exported!')
   }
 
@@ -129,7 +129,7 @@ export default function SettingsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-black text-text-primary">Settings</h1>
-          <p className="text-text-muted text-sm mt-0.5">Customize your DETECTAI experience</p>
+          <p className="text-text-muted text-sm mt-0.5">Customize your Aiscern experience</p>
         </div>
         <button onClick={save} disabled={saving}
           className="btn-primary flex items-center gap-2 px-5 py-2.5 text-sm disabled:opacity-50">
@@ -189,7 +189,7 @@ export default function SettingsPage() {
         {[
           { label: 'Public profile',        sub: 'Allow others to see your scan statistics',                value: publicProfile, toggle: () => setPublicProfile(v => !v) },
           { label: 'Save scan history',     sub: 'Store past detection results in your account',            value: saveHistory,   toggle: () => setSaveHistory(v => !v) },
-          { label: 'Usage analytics',       sub: 'Help improve DETECTAI by sharing anonymous usage data',   value: analytics,     toggle: () => setAnalytics(v => !v) },
+          { label: 'Usage analytics',       sub: 'Help improve Aiscern by sharing anonymous usage data',   value: analytics,     toggle: () => setAnalytics(v => !v) },
         ].map((item, ii, arr) => (
           <div key={ii} className={`flex items-center justify-between py-3 ${ii < arr.length - 1 ? 'border-b border-border' : ''}`}>
             <div><p className="text-sm font-medium text-text-primary">{item.label}</p><p className="text-xs text-text-muted mt-0.5">{item.sub}</p></div>
@@ -204,7 +204,7 @@ export default function SettingsPage() {
           <div className="w-9 h-9 rounded-xl text-cyan bg-cyan/10 flex items-center justify-center"><Key className="w-4 h-4" /></div>
           <h3 className="font-semibold text-text-primary">API Access</h3>
         </div>
-        <p className="text-sm text-text-muted mb-4">Use your API key to access DETECTAI detection endpoints programmatically.</p>
+        <p className="text-sm text-text-muted mb-4">Use your API key to access Aiscern detection endpoints programmatically.</p>
         <div className="flex items-center gap-2 p-3 rounded-xl bg-surface border border-border font-mono text-sm">
           <span className="flex-1 truncate text-text-secondary">
             {showKey && currentUser?.uid ? `dtai_${currentUser.uid.replace(/-/g,'').slice(0, 28)}` : 'dtai_••••••••••••••••••••••••••••'}

@@ -57,7 +57,7 @@ export async function fetchHFRows(
   hfToken?: string,
 ): Promise<HFRowsResponse> {
   const headers: Record<string, string> = {
-    'User-Agent': 'DETECTAI-Pipeline/6.0',
+    'User-Agent': 'Aiscern-Pipeline/6.0',
   }
   if (hfToken) headers['Authorization'] = `Bearer ${hfToken}`
 

@@ -1,5 +1,5 @@
 /**
- * DETECTAI — Structured Logger
+ * Aiscern — Structured Logger
  * Provides consistent log format across all API routes.
  * In production: sends to Vercel logs + optionally Supabase error_logs table.
  */

@@ -1,5 +1,5 @@
 /**
- * DETECTAI Calibration — Pixel Signal Extractors (CF Workers / Web API compatible)
+ * Aiscern Calibration — Pixel Signal Extractors (CF Workers / Web API compatible)
  * No Node.js Buffer — uses Uint8Array + Web APIs only.
  */
 
@@ -117,7 +117,7 @@ function base64ToBytes(b64: string): Uint8Array {
 export async function signalsFromUrl(url: string, hfToken?: string): Promise<SignalSet | null> {
   try {
     if (!url.startsWith('http')) return null  // reject data: and other non-HTTP URLs
-    const headers: Record<string,string> = { 'User-Agent': 'DETECTAI-Cal/1.0' }
+    const headers: Record<string,string> = { 'User-Agent': 'Aiscern-Cal/1.0' }
     if (hfToken) headers['Authorization'] = `Bearer ${hfToken}`
     const res = await fetch(url, { headers, signal: AbortSignal.timeout(15_000) })
     if (!res.ok) return null
@@ -152,7 +152,7 @@ export async function signalsFromHFDataset(
     ].join('')
 
     const res = await fetch(apiUrl, {
-      headers: { 'Authorization': `Bearer ${hfToken}`, 'User-Agent': 'DETECTAI-Cal/1.0' },
+      headers: { 'Authorization': `Bearer ${hfToken}`, 'User-Agent': 'Aiscern-Cal/1.0' },
       signal:  AbortSignal.timeout(20_000),
     })
     if (!res.ok) return null

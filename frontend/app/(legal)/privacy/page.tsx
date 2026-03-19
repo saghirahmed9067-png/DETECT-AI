@@ -20,7 +20,7 @@ export default function PrivacyPage() {
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
               <Shield className="w-3.5 h-3.5 text-white" />
             </div>
-            <span className="font-black gradient-text">DETECTAI</span>
+            <span className="font-black gradient-text">Aiscern</span>
           </Link>
           <Link href="/" className="flex items-center gap-1.5 text-sm text-text-muted hover:text-text-primary transition-colors">
             <ArrowLeft className="w-4 h-4" /> Back to Home
@@ -37,12 +37,12 @@ export default function PrivacyPage() {
         <div className="prose-detectai space-y-8">
           <Section title="1. Introduction">
             <p>
-              Welcome to DETECTAI (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;), operated by Anas Ali. This Privacy Policy explains how we collect,
+              Welcome to Aiscern (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;), operated by Anas Ali. This Privacy Policy explains how we collect,
               use, disclose, and safeguard your information when you use our AI content detection platform at{' '}
-              <a href="https://detect-ai-nu.vercel.app" className="text-primary hover:underline">detect-ai-nu.vercel.app</a>.
+              <a href="https://aiscern.com" className="text-primary hover:underline">aiscern.com</a>.
             </p>
             <p>
-              By using DETECTAI, you agree to the collection and use of information as described in this policy. If you do not
+              By using Aiscern, you agree to the collection and use of information as described in this policy. If you do not
               agree, please discontinue use of our services.
             </p>
           </Section>
@@ -68,7 +68,7 @@ export default function PrivacyPage() {
 
           <Section title="3. How We Use Your Information">
             <ul>
-              <li>Providing and improving the DETECTAI detection service</li>
+              <li>Providing and improving the Aiscern detection service</li>
               <li>Processing your submitted content through AI models to generate detection results</li>
               <li>Maintaining your account and authentication</li>
               <li>Storing your scan history for your reference</li>
@@ -115,7 +115,7 @@ export default function PrivacyPage() {
           </Section>
 
           <Section title="7. Cookies">
-            <p>DETECTAI uses strictly necessary cookies for:</p>
+            <p>Aiscern uses strictly necessary cookies for:</p>
             <ul>
               <li>Authentication session management (Supabase auth tokens)</li>
               <li>Security CSRF protection</li>
@@ -142,13 +142,13 @@ export default function PrivacyPage() {
               <li><strong>Objection:</strong> Object to processing of your data</li>
             </ul>
             <p>
-              To exercise these rights, contact us at <a href="mailto:privacy@detectai.app" className="text-primary hover:underline">privacy@detectai.app</a>.
+              To exercise these rights, contact us at <a href="mailto:privacy@aiscern.com" className="text-primary hover:underline">privacy@aiscern.com</a>.
             </p>
           </Section>
 
           <Section title="10. Children's Privacy">
             <p>
-              DETECTAI is not intended for users under 13 years of age. We do not knowingly collect data from children.
+              Aiscern is not intended for users under 13 years of age. We do not knowingly collect data from children.
               If you believe a child has provided us with personal information, please contact us immediately.
             </p>
           </Section>
@@ -156,7 +156,7 @@ export default function PrivacyPage() {
           <Section title="11. Changes to This Policy">
             <p>
               We may update this Privacy Policy from time to time. We will notify users of significant changes via email
-              or a prominent notice on the platform. Continued use of DETECTAI after changes constitutes acceptance.
+              or a prominent notice on the platform. Continued use of Aiscern after changes constitutes acceptance.
             </p>
           </Section>
 
@@ -164,8 +164,8 @@ export default function PrivacyPage() {
             <p>
               For privacy-related questions or requests, contact:<br />
               <strong>Anas Ali</strong> — Developer &amp; Data Controller<br />
-              Email: <a href="mailto:privacy@detectai.app" className="text-primary hover:underline">privacy@detectai.app</a><br />
-              GitHub: <a href="https://github.com/saghirahmed9067-png/DETECT-AI" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">github.com/saghirahmed9067-png/DETECT-AI</a>
+              Email: <a href="mailto:privacy@aiscern.com" className="text-primary hover:underline">privacy@aiscern.com</a><br />
+              Website: <a href="https://aiscern.com" className="text-primary hover:underline">aiscern.com</a>
             </p>
           </Section>
         </div>

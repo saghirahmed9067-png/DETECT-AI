@@ -119,10 +119,10 @@ export default function AudioDetectionPage() {
 
   const exportReport = () => {
     if (!result || !file) return
-    const text = `DETECTAI Audio Analysis Report\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nFile: ${file.name}\nSize: ${formatFileSize(file.size)}${duration ? `\nDuration: ${formatDuration(duration)}` : ''}\n\nVerdict: ${result.verdict}\nConfidence: ${result.confidence}%\nSummary: ${result.summary}\n\nSignals:\n${result.signals.map((s: any) => `  • ${s.name} — ${s.weight}%`).join('\n')}\n\nModel: ${result.model_used}\nAnalyzed: ${new Date().toLocaleString()}`
+    const text = `Aiscern Audio Analysis Report\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nFile: ${file.name}\nSize: ${formatFileSize(file.size)}${duration ? `\nDuration: ${formatDuration(duration)}` : ''}\n\nVerdict: ${result.verdict}\nConfidence: ${result.confidence}%\nSummary: ${result.summary}\n\nSignals:\n${result.signals.map((s: any) => `  • ${s.name} — ${s.weight}%`).join('\n')}\n\nModel: ${result.model_used}\nAnalyzed: ${new Date().toLocaleString()}`
     const blob = new Blob([text], { type: 'text/plain' })
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob)
-    a.download = `detectai-audio-${Date.now()}.txt`; a.click()
+    a.download = `aiscern-audio-${Date.now()}.txt`; a.click()
   }
 
   const reset = () => { setFile(null); setResult(null); setError(null); setPlaying(false); setProgress(0); setDuration(0); setCurrentTime(0) }

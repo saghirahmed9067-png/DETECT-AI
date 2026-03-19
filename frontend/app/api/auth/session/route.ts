@@ -1,5 +1,5 @@
 /**
- * DETECTAI — Session API
+ * Aiscern — Session API
  * With Clerk, session management is handled automatically by the SDK.
  * This route is kept for backward compatibility but does nothing.
  * Clerk sets __session cookie via its own middleware.

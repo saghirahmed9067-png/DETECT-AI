@@ -1,5 +1,5 @@
 /**
- * DETECTAI Pipeline v6 — Core Orchestration
+ * Aiscern Pipeline v6 — Core Orchestration
  * Thin module that re-exports everything workers need.
  */
 

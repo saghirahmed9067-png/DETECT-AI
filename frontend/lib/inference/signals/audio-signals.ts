@@ -1,5 +1,5 @@
 /**
- * DETECTAI — Audio Signal Engine v2.0
+ * Aiscern — Audio Signal Engine v2.0
  * Deterministic spectral + file-level signals for TTS/voice-clone detection.
  * Runs alongside HF model — catches what wav2vec2 misses.
  */

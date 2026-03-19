@@ -1,5 +1,5 @@
 /**
- * DETECTAI — Advanced Text Signal Extractors
+ * Aiscern — Advanced Text Signal Extractors
  * Pure deterministic algorithms. No ML required — fast, always available.
  *
  * Signals:

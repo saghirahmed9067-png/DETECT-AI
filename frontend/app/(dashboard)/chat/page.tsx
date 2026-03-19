@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { ReviewSuggestion } from '@/components/ReviewSuggestion'
 
 
-const STORAGE_KEY = 'detectai_chats_v2'
+const STORAGE_KEY = 'aiscern_chats_v2'
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 const Ico = {
@@ -359,7 +359,7 @@ const SUGGESTIONS = [
   { Ic: Ico.FileText, text: 'Paste text to check if it was written by AI',                   cat: 'Text'  },
   { Ic: Ico.Music,    text: 'How do forensic tools detect voice cloning?',                    cat: 'Audio' },
   { Ic: Ico.Brain,    text: 'Explain GAN fingerprinting and diffusion model artifacts',        cat: 'Learn' },
-  { Ic: Ico.Shield,   text: 'What makes DETECTAI different from GPTZero and Turnitin?',        cat: 'Compare'},
+  { Ic: Ico.Shield,   text: 'What makes Aiscern different from GPTZero and Turnitin?',        cat: 'Compare'},
   { Ic: Ico.DB,       text: 'Show me Aiscern\'s current detection statistics',                 cat: 'Data'  },
 ]
 
@@ -645,7 +645,7 @@ export default function ChatPage() {
               <Ico.Brain />
             </div>
             <div className="min-w-0">
-              <div className="text-sm font-bold text-white leading-none truncate">ARIA by DETECTAI</div>
+              <div className="text-sm font-bold text-white leading-none truncate">ARIA by Aiscern</div>
               <div className="text-xs text-gray-600 mt-0.5 hidden sm:block">
                 {activeChat ? `${activeChat.messages.length} messages · ${activeChat.title.slice(0,40)}` : 'Multi-modal · Tool-enabled · General knowledge'}
               </div>
@@ -679,9 +679,9 @@ export default function ChatPage() {
               <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-blue-600 flex items-center justify-center mb-5 shadow-2xl shadow-violet-500/25">
                 <Ico.Brain />
               </div>
-              <h1 className="text-xl sm:text-2xl font-black text-white mb-2 tracking-tight">ARIA — DETECTAI Assistant</h1>
+              <h1 className="text-xl sm:text-2xl font-black text-white mb-2 tracking-tight">ARIA — Aiscern Assistant</h1>
               <p className="text-gray-600 text-sm text-center mb-6 sm:mb-8 max-w-sm leading-relaxed">
-                Your AI-powered analyst. Ask any question, upload media for deepfake detection, or explore DETECTAI's capabilities.
+                Your AI-powered analyst. Ask any question, upload media for deepfake detection, or explore Aiscern's capabilities.
               </p>
 
               <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2 mb-6 sm:mb-8">

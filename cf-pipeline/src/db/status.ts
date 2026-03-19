@@ -41,7 +41,7 @@ export async function getStatus(db: D1Database) {
   ])
 
   return {
-    pipeline:     'DETECTAI Neural Pipeline v6 — Modular 20-Worker Edition',
+    pipeline:     'Aiscern Neural Pipeline v6 — Modular 20-Worker Edition',
     version:      'v6.0',
     data_mode:    'REAL (HuggingFace Datasets API)',
     hf_structure: 'data/{media_type}/{language}/part-NNNN.jsonl',

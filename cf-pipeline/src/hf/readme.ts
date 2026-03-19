@@ -54,7 +54,7 @@ configs:
     data_files: "data/**/*.jsonl"
 ---
 
-# DETECTAI Dataset
+# Aiscern Dataset
 
 **Multi-modal AI vs Human detection dataset** scraped from 57 real HuggingFace sources.
 

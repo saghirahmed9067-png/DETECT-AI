@@ -17,7 +17,7 @@ async function fetchPageContent(url: string): Promise<{
   imageUrls:  string[]
 }> {
   const res = await fetch(url, {
-    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; DETECTAI-Scanner/1.0)' },
+    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Aiscern-Scanner/1.0)' },
     signal: AbortSignal.timeout(10_000),
   })
   if (!res.ok) throw new Error(`Failed to fetch page: ${res.status}`)

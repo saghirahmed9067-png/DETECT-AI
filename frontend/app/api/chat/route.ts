@@ -10,12 +10,12 @@ const CHAT_FALLBACK  = 'meta/llama-3.3-70b-instruct'           // fallback
 const VISION_MODEL   = 'meta/llama-3.2-90b-vision-instruct'
 const VISION_FALLBACK = 'meta/llama-3.2-11b-vision-instruct'
 
-// ─── Cloudflare D1 (internal — shown as "DETECTAI Pipeline" to users) ─────────
+// ─── Cloudflare D1 (internal — shown as "Aiscern Pipeline" to users) ─────────
 const CF_ACCOUNT = process.env.CLOUDFLARE_ACCOUNT_ID || ''
 const D1_DB      = process.env.CLOUDFLARE_D1_DATABASE_ID || ''
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PIPELINE STATS  — referred to as "DETECTAI Pipeline" externally
+// PIPELINE STATS  — referred to as "Aiscern Pipeline" externally
 // ─────────────────────────────────────────────────────────────────────────────
 async function fetchPipelineStats(cfToken: string): Promise<Record<string, any>> {
   try {
@@ -43,7 +43,7 @@ async function fetchPipelineStats(cfToken: string): Promise<Record<string, any>>
       by_modality:     Object.fromEntries(byType.map(r => [r.media_type, r.count])),
       sources:         104,
       daily_capacity:  '~2,450,000 samples/day',
-      pipeline:        'DETECTAI Neural Pipeline v3',
+      pipeline:        'Aiscern Neural Pipeline v3',
     }
   } catch {
     return {
@@ -51,13 +51,13 @@ async function fetchPipelineStats(cfToken: string): Promise<Record<string, any>>
       last_updated: 'recently', publish_rate: 88, sources: 104,
       by_modality: { text: 441000, image: 83000, audio: 59000, video: 1500 },
       daily_capacity: '~2,450,000 samples/day',
-      pipeline: 'DETECTAI Neural Pipeline v3', note: '(cached)'
+      pipeline: 'Aiscern Neural Pipeline v3', note: '(cached)'
     }
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// VISION ANALYSIS — referred to as "DETECTAI Vision Engine" externally
+// VISION ANALYSIS — referred to as "Aiscern Vision Engine" externally
 // ─────────────────────────────────────────────────────────────────────────────
 async function analyzeImage(
   imageBase64: string, mediaType: string, userContext: string, apiKey: string
@@ -136,7 +136,7 @@ RECOMMENDATION: [What the user should do with this information]`
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TEXT ANALYSIS — calls /api/detect/text (referred to as "DETECTAI Text Engine")
+// TEXT ANALYSIS — calls /api/detect/text (referred to as "Aiscern Text Engine")
 // ─────────────────────────────────────────────────────────────────────────────
 async function analyzeText(text: string, baseUrl: string): Promise<Record<string, any> | null> {
   try {
@@ -167,7 +167,7 @@ type Intent = {
 function detectIntent(message: string, history: any[]): Intent {
   const lower = message.toLowerCase()
 
-  // Pipeline stat keywords — masked to "DETECTAI pipeline/data" framing
+  // Pipeline stat keywords — masked to "Aiscern pipeline/data" framing
   const pipelineKw = ['pipeline', 'how much data', 'dataset', 'total sample', 'total data',
     'how many item', 'data collect', 'training data', 'how much item', 'how many sample',
     'data stat', 'scraped', 'processed', 'detection engine']
@@ -499,11 +499,11 @@ export async function POST(req: NextRequest) {
         confidence_pct: result.confidence_pct,
         key_findings:   result.details.key_findings || [],
         recommendation: result.details.recommendation || '',
-        engine:         'DETECTAI Vision Engine',
+        engine:         'Aiscern Vision Engine',
       }})
 
       contextParts.push(
-        `[IMAGE ANALYSIS — DETECTAI Vision Engine]\n` +
+        `[IMAGE ANALYSIS — Aiscern Vision Engine]\n` +
         `Verdict: ${result.verdict}\n` +
         `Confidence: ${result.confidence_pct}%\n` +
         (result.details.key_findings?.length
@@ -519,7 +519,7 @@ export async function POST(req: NextRequest) {
       const stats = await fetchPipelineStats(cfToken)
       toolEvents.push({ tool: 'get_pipeline_stats', result: stats })
       contextParts.push(
-        `[DETECTAI PIPELINE STATUS]\n` +
+        `[Aiscern PIPELINE STATUS]\n` +
         `Total samples in training system: ${stats.total_samples?.toLocaleString()}\n` +
         `Published to detection engine: ${stats.published?.toLocaleString()}\n` +
         `Pending processing: ${stats.pending?.toLocaleString()}\n` +
@@ -538,11 +538,11 @@ export async function POST(req: NextRequest) {
         toolEvents.push({ tool: 'detect_text', result: {
           verdict:        result.verdict,
           confidence_pct: Math.round(result.confidence * 100),
-          engine:         'DETECTAI Text Engine',
+          engine:         'Aiscern Text Engine',
           signals:        result.signals?.slice(0, 4),
         }})
         contextParts.push(
-          `[TEXT ANALYSIS — DETECTAI Text Engine]\n` +
+          `[TEXT ANALYSIS — Aiscern Text Engine]\n` +
           `Verdict: ${result.verdict}\n` +
           `Confidence: ${Math.round(result.confidence * 100)}%\n` +
           `Summary: ${result.summary || 'Analysis complete.'}\n` +

@@ -1,5 +1,5 @@
 /**
- * DETECTAI — Adaptive Multi-Modal Detection Engine v3
+ * Aiscern — Adaptive Multi-Modal Detection Engine v3
  *
  * Architecture:
  *   Text  → 3 HF models + 7 deterministic linguistic signals → adaptive ensemble
@@ -173,7 +173,7 @@ export async function analyzeText(text: string): Promise<DetectionResult> {
   return {
     verdict,
     confidence:    Math.round(aiScore * 1000) / 1000,
-    model_used:    `DETECTAI-TextEnsemble(${modelStr}+7LinguisticSignals)`,
+    model_used:    `Aiscern-TextEnsemble(${modelStr}+7LinguisticSignals)`,
     model_version: '3.0.0',
     signals,
     summary: verdict === 'AI'
@@ -249,7 +249,7 @@ export async function analyzeImage(imageBuffer: Buffer, mimeType: string, fileNa
   return {
     verdict,
     confidence:    Math.round(aiScore * 1000) / 1000,
-    model_used:    `DETECTAI-ImageEnsemble(${mlCount ? mlScores.map((s: {model:string;aiScore:number;weight:number}) => s.model.split('/').pop()).join('+') + '+' : ''}10PixelSignals+DiffusionDB)`,
+    model_used:    `Aiscern-ImageEnsemble(${mlCount ? mlScores.map((s: {model:string;aiScore:number;weight:number}) => s.model.split('/').pop()).join('+') + '+' : ''}10PixelSignals+DiffusionDB)`,
     model_version: '4.0.0',
     signals: [
       {
@@ -334,8 +334,8 @@ export async function analyzeAudio(
     : sigScore
 
   const modelUsed = mlScores.length > 0
-    ? `DETECTAI-AudioEnsemble(${mlScores.length}HFModels+5AudioSignals)`
-    : 'DETECTAI-AudioSignals(HeuristicFallback)'
+    ? `Aiscern-AudioEnsemble(${mlScores.length}HFModels+5AudioSignals)`
+    : 'Aiscern-AudioSignals(HeuristicFallback)'
 
   const verdict  = toVerdict(aiScore)
   const segCount = Math.max(3, Math.min(10, Math.ceil(durationEst / 5)))
@@ -448,7 +448,7 @@ function analyzeVideoFallback(
   return {
     verdict,
     confidence:    Math.round(aiScore * 1000) / 1000,
-    model_used:    'DETECTAI-VideoHeuristic-v3(NoFrames)',
+    model_used:    'Aiscern-VideoHeuristic-v3(NoFrames)',
     model_version: '3.0.0',
     signals: [
       { name: 'Upload frames for analysis', category: 'Visual',      description: 'Frame extraction unavailable — upload with frames for NVIDIA NIM analysis', weight: 50, value: aiScore, flagged: false },
