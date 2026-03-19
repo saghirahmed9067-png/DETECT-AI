@@ -8,6 +8,7 @@ import { useAuth } from '@/components/auth-provider'
 import type { DetectionResult, Verdict } from '@/types'
 import { formatConfidence } from '@/lib/utils/helpers'
 import { ReviewSuggestion } from '@/components/ReviewSuggestion'
+import { FeedbackBar } from '@/components/FeedbackBar'
 import { SignupGate, incrementGlobalScanCount } from '@/components/SignupGate'
 
 
@@ -44,6 +45,7 @@ export default function TextDetectionPage() {
   const [pdfLoading, setPdfLoading] = useState(false)
   const [pdfMode, setPdfMode] = useState(false)
   const [paragraphScores, setParagraphScores] = useState<{text:string;confidence:number;verdict:string}[]>([])
+  const [scanId, setScanId] = useState<string | null>(null)
 
   const wordCount = text.trim().split(/\s+/).filter(Boolean).length
   const charCount = text.length
@@ -68,8 +70,8 @@ export default function TextDetectionPage() {
       const res  = await fetch('/api/detect/pdf', { method: 'POST', body: form })
       const data = await res.json()
       if (!data.success) throw new Error(data.error?.message || 'PDF analysis failed')
-      setResult(data.data)
-      if (data.data.paragraph_scores) setParagraphScores(data.data.paragraph_scores)
+      setResult(data.result)
+      if (data.result?.paragraph_scores) setParagraphScores(data.result?.paragraph_scores)
       incrementGlobalScanCount()
       window.dispatchEvent(new Event('aiscern:scan'))
       window.dispatchEvent(new Event('aiscern:scan'))
@@ -77,8 +79,8 @@ export default function TextDetectionPage() {
         await (supabase as any).from('scans').insert({
           user_id: currentUser.uid, media_type: 'text',
           content_preview: `[PDF: ${file.name}]`,
-          verdict: data.data.verdict, confidence_score: data.data.confidence,
-          model_used: data.data.model_used, processing_time: data.data.processing_time, status: 'complete'
+          verdict: data.result?.verdict, confidence_score: data.result?.confidence,
+          model_used: data.result?.model_used, processing_time: data.result?.processing_time, status: 'complete'
         })
       }
     } catch (err: unknown) {
@@ -99,16 +101,16 @@ export default function TextDetectionPage() {
       })
       const data = await res.json()
       if (!data.success) throw new Error(data.error?.message || 'Detection failed')
-      setResult(data.data)
+      setResult(data.result)
       incrementGlobalScanCount()
       window.dispatchEvent(new Event('aiscern:scan'))
       if (currentUser?.uid) {
         await (supabase as any).from('scans').insert({
           user_id: currentUser.uid, media_type: 'text',
           content_preview: text.substring(0, 200),
-          verdict: data.data.verdict, confidence_score: data.data.confidence,
-          signals: data.data.signals, model_used: data.data.model_used,
-          processing_time: data.data.processing_time, status: 'complete'
+          verdict: data.result?.verdict, confidence_score: data.result?.confidence,
+          signals: data.result?.signals, model_used: data.result?.model_used,
+          processing_time: data.result?.processing_time, status: 'complete'
         })
       }
     } catch (err: unknown) {
@@ -457,6 +459,7 @@ Analyzed: ${new Date().toLocaleString()}`
     <div className="px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto pb-6">
       
       <ReviewSuggestion toolName="AI Text Detector" />
+      {result && <div className="px-4 pb-4"><FeedbackBar scanId={scanId} verdict={result.verdict} /></div>}
     </div>
   </>
   )

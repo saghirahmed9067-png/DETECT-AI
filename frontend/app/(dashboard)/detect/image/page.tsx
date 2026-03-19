@@ -10,6 +10,7 @@ import type { DetectionResult, Verdict } from '@/types'
 import { formatConfidence, formatFileSize } from '@/lib/utils/helpers'
 import { SignupGate, incrementGlobalScanCount } from '@/components/SignupGate'
 import { ReviewSuggestion } from '@/components/ReviewSuggestion'
+import { FeedbackBar } from '@/components/FeedbackBar'
 
 
 
@@ -25,6 +26,7 @@ export default function ImageDetectionPage() {
   const [preview, setPreview] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<DetectionResult | null>(null)
+  const [scanId, setScanId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [zoomed, setZoomed] = useState(false)
   const [imgDims, setImgDims] = useState<{w:number,h:number}|null>(null)
@@ -59,13 +61,14 @@ export default function ImageDetectionPage() {
       const res = await fetch('/api/detect/image', { method: 'POST', body: formData })
       const data = await res.json()
       if (!data.success) throw new Error(data.error?.message || 'Detection failed')
-      setResult(data.data)
+      setResult(data.result)
+      setScanId(data.scan_id ?? null)
       if (currentUser?.uid) {
         await (supabase as any).from('scans').insert({
           user_id: currentUser.uid, media_type: 'image', file_name: file.name,
-          file_size: file.size, verdict: data.data.verdict,
-          confidence_score: data.data.confidence, signals: data.data.signals,
-          model_used: data.data.model_used, status: 'complete'
+          file_size: file.size, verdict: data.result?.verdict,
+          confidence_score: data.result?.confidence, signals: data.result?.signals,
+          model_used: data.result?.model_used, status: 'complete'
         })
       }
     } catch (e: unknown) {
@@ -313,6 +316,7 @@ Analyzed: ${new Date().toLocaleString()}`
     <div className="px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto pb-6">
       
       <ReviewSuggestion toolName="Image Detector" />
+      {result && <div className="px-4 pb-4"><FeedbackBar scanId={scanId} verdict={result.verdict} /></div>}
     </div>
   </>
   )

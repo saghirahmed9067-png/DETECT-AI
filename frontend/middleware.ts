@@ -1,70 +1,44 @@
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextRequest, NextResponse } from 'next/server'
 
-// ALL routes that require authentication
-const PROTECTED_PREFIXES = [
-  '/dashboard',
-  '/batch',
-  '/history',
-  '/profile',
-  '/settings',
-  '/chat',
-  '/scraper',
-  '/pipeline',
-  '/api/admin',
-]
+const PROTECTED = createRouteMatcher([
+  '/dashboard(.*)',
+  '/batch(.*)',
+  '/history(.*)',
+  '/profile(.*)',
+  '/settings(.*)',
+  '/chat(.*)',
+  '/scraper(.*)',
+  '/pipeline(.*)',
+  '/api/admin(.*)',
+])
 
-function isProtectedPath(pathname: string): boolean {
-  return PROTECTED_PREFIXES.some(p => pathname === p || pathname.startsWith(p + '/'))
-}
+const pubKey    = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || ''
+const secretKey = process.env.CLERK_SECRET_KEY || ''
+const hasClerk  = pubKey.startsWith('pk_') && secretKey.startsWith('sk_')
 
-let _clerkHandler: ((req: NextRequest, evt: any) => Promise<NextResponse>) | null = null
-
-async function getClerkHandler() {
-  if (_clerkHandler) return _clerkHandler
-  const { clerkMiddleware, createRouteMatcher } = await import('@clerk/nextjs/server')
-  const isProtected = createRouteMatcher(PROTECTED_PREFIXES.map(p => `${p}(.*)`))
-  _clerkHandler = clerkMiddleware(async (auth, req) => {
-    if (isProtected(req)) {
-      const { userId } = await auth()
-      if (!userId) {
-        const url = new URL('/login', req.url)
-        url.searchParams.set('redirect_url', req.nextUrl.pathname)
-        return NextResponse.redirect(url)
-      }
-    }
-  }) as any
-  return _clerkHandler!
-}
-
-export default async function middleware(req: NextRequest) {
+// If Clerk keys are not configured, fall back to simple redirect
+function fallbackMiddleware(req: NextRequest) {
   const { pathname } = req.nextUrl
-
-  const pubKey    = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-  const secretKey = process.env.CLERK_SECRET_KEY
-  const hasKeys   = !!(
-    pubKey && (pubKey.startsWith('pk_live_') || pubKey.startsWith('pk_test_')) &&
-    secretKey && (secretKey.startsWith('sk_live_') || secretKey.startsWith('sk_test_'))
-  )
-
-  if (!hasKeys) {
-    if (isProtectedPath(pathname)) {
-      return NextResponse.redirect(new URL('/login', req.url))
-    }
-    return NextResponse.next()
+  const protectedPaths = ['/dashboard','/batch','/history','/profile','/settings','/chat','/scraper','/pipeline','/api/admin']
+  if (protectedPaths.some(p => pathname === p || pathname.startsWith(p + '/'))) {
+    return NextResponse.redirect(new URL('/login', req.url))
   }
-
-  try {
-    const handler = await getClerkHandler()
-    const result  = await handler(req, {})
-    return result ?? NextResponse.next()
-  } catch (err) {
-    console.error('[Middleware] Clerk error:', (err as any)?.message)
-    if (isProtectedPath(pathname)) {
-      return NextResponse.redirect(new URL('/login', req.url))
-    }
-    return NextResponse.next()
-  }
+  return NextResponse.next()
 }
+
+export default hasClerk
+  ? clerkMiddleware(async (auth, req) => {
+      if (PROTECTED(req)) {
+        const { userId } = await auth()
+        if (!userId) {
+          const url = new URL('/login', req.url)
+          url.searchParams.set('redirect_url', req.nextUrl.pathname)
+          return NextResponse.redirect(url)
+        }
+      }
+    })
+  : fallbackMiddleware
 
 export const config = {
   matcher: [

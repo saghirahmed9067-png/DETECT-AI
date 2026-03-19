@@ -289,10 +289,10 @@ const HOW_IT_WORKS_ICONS = [Layers, Scan, Activity, Wand2]
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const TOOLS = [
-  { href: '/detect/text',  icon: FileText,     label: 'Free AI Text Detector',        color: 'text-amber',     bg: 'from-amber/10 to-amber/5',         desc: 'Detect ChatGPT, Claude, Gemini & more', accuracy: '94%' },
-  { href: '/detect/image', icon: ImageIcon,    label: 'Deepfake Image Detector',      color: 'text-primary',   bg: 'from-primary/10 to-primary/5',     desc: 'Deepfakes, Midjourney, DALL-E, Stable Diffusion', accuracy: '97%' },
-  { href: '/detect/audio', icon: Music,        label: 'AI Audio & Voice Clone Detector', color: 'text-cyan',  bg: 'from-cyan/10 to-cyan/5',           desc: 'ElevenLabs, voice cloning, TTS synthesis', accuracy: '91%' },
-  { href: '/detect/video', icon: Video,        label: 'Free Deepfake Video Detector', color: 'text-secondary', bg: 'from-secondary/10 to-secondary/5', desc: 'Frame-by-frame deepfake analysis', accuracy: '88%' },
+  { href: '/detect/text',  icon: FileText,     label: 'Free AI Text Detector',        color: 'text-amber',     bg: 'from-amber/10 to-amber/5',         desc: 'Detect ChatGPT, Claude, Gemini & more', accuracy: '~85%' },
+  { href: '/detect/image', icon: ImageIcon,    label: 'Deepfake Image Detector',      color: 'text-primary',   bg: 'from-primary/10 to-primary/5',     desc: 'Deepfakes, Midjourney, DALL-E, Stable Diffusion', accuracy: '~82%' },
+  { href: '/detect/audio', icon: Music,        label: 'AI Audio & Voice Clone Detector', color: 'text-cyan',  bg: 'from-cyan/10 to-cyan/5',           desc: 'ElevenLabs, voice cloning, TTS synthesis', accuracy: '~79%' },
+  { href: '/detect/video', icon: Video,        label: 'Free Deepfake Video Detector', color: 'text-secondary', bg: 'from-secondary/10 to-secondary/5', desc: 'Frame-by-frame deepfake analysis', accuracy: '~76%' },
   { href: '/chat',         icon: MessageSquare,label: 'AI Detection Assistant',       color: 'text-emerald',   bg: 'from-emerald/10 to-emerald/5',     desc: 'Ask anything about AI detection', accuracy: 'New' },
   { href: '/batch',        icon: Database,     label: 'Batch AI Content Analyser',   color: 'text-rose',      bg: 'from-rose/10 to-rose/5',           desc: 'Analyze 20 files simultaneously', accuracy: '20x' },
 ]
@@ -306,7 +306,7 @@ const STATS = [
 
 const REVIEWS = [
   { text: 'Saved us from publishing AI content. The sentence-level heatmap is incredibly useful — now part of our daily editorial workflow.', name: 'Sarah K.', role: 'Senior Editor, Reuters Digital', stars: 5, photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=face&fm=webp&q=60', avatar: 'SK', color: '#6366f1' },
-  { text: 'Tested against our own synthetic dataset — accuracy rivals enterprise tools. The multimodal approach sets Aiscern apart.', name: 'Marcus T.', role: 'AI Research Lead, University of Edinburgh', stars: 5, photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face&fm=webp&q=60', avatar: 'MT', color: '#0ea5e9' },
+  { text: 'Multi-model ensemble detection gives well-rounded results across text, images, audio and video. The multimodal approach sets Aiscern apart.', name: 'Marcus T.', role: 'AI Research Lead, University of Edinburgh', stars: 5, photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face&fm=webp&q=60', avatar: 'MT', color: '#0ea5e9' },
   { text: 'Replaced 3 tools with just Aiscern. The batch analyser handles text, images and audio in one platform — massive cost saving.', name: 'Priya M.', role: 'Content Integrity Manager, Publicis Group', stars: 5, photo: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=80&h=80&fit=crop&crop=face&fm=webp&q=60', avatar: 'PM', color: '#10b981' },
 ]
 
@@ -329,9 +329,9 @@ export default function HomePage() {
 
       {/* ── Schema.org JSON-LD ── */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: `[
-        {"@context":"https://schema.org","@type":"WebApplication","@id":"https://aiscern.com/#app","name":"Aiscern - Free AI Detector","url":"https://aiscern.com","description":"The most accurate free AI detection platform. Detect ChatGPT text, Midjourney deepfakes, ElevenLabs voice clones. 285k+ training samples.","applicationCategory":"SecurityApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"aggregateRating":{"@type":"AggregateRating","ratingValue":"4.9","reviewCount":"2847","bestRating":"5"},"featureList":["AI Text Detection - ChatGPT Claude Gemini","Deepfake Image Detection","AI Audio Voice Clone Detection","Deepfake Video Detection","Batch Analysis","AI Detection API"],"creator":{"@type":"Person","name":"Anas Ali","url":"https://aiscern.com/about"}},
+        {"@context":"https://schema.org","@type":"WebApplication","@id":"https://aiscern.com/#app","name":"Aiscern - Free AI Detector","url":"https://aiscern.com","description":"The most accurate free AI detection platform. Detect ChatGPT text, Midjourney deepfakes, ElevenLabs voice clones. 413k+ verified samples.","applicationCategory":"SecurityApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"featureList":["AI Text Detection - ChatGPT Claude Gemini","Deepfake Image Detection","AI Audio Voice Clone Detection","Deepfake Video Detection","Batch Analysis","AI Detection API"],"creator":{"@type":"Person","name":"Anas Ali","url":"https://aiscern.com/about"}},
         {"@context":"https://schema.org","@type":"Organization","@id":"https://aiscern.com/#org","name":"Aiscern","url":"https://aiscern.com","logo":"https://aiscern.com/logo.png","foundingDate":"2024","contactPoint":{"@type":"ContactPoint","contactType":"customer support","email":"contact@aiscern.com"}},
-        {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How accurate is Aiscern?","acceptedAnswer":{"@type":"Answer","text":"Aiscern achieves 94% accuracy on AI text, 97% on deepfake images, 91% on AI audio and 88% on deepfake video. Validated across 285,000+ real-world samples."}},{"@type":"Question","name":"Is Aiscern free?","acceptedAnswer":{"@type":"Answer","text":"Yes. Aiscern is completely free with no subscription, no credit card and no scan limits. All tools are free forever."}},{"@type":"Question","name":"Can Aiscern detect ChatGPT writing?","acceptedAnswer":{"@type":"Answer","text":"Yes. Aiscern detects ChatGPT, Claude, Gemini, GPT-4 and 50+ AI writing models with 94% accuracy using advanced proprietary linguistic analysis."}},{"@type":"Question","name":"Can Aiscern detect Midjourney images?","acceptedAnswer":{"@type":"Answer","text":"Yes. Aiscern detects Midjourney, DALL-E 3, Stable Diffusion and deepfake faces with 97% accuracy."}},{"@type":"Question","name":"Does Aiscern have an API?","acceptedAnswer":{"@type":"Answer","text":"Yes. Aiscern has a free REST API for AI detection. See aiscern.com/docs/api."}}]}
+        {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How accurate is Aiscern?","acceptedAnswer":{"@type":"Answer","text":"Aiscern uses a multi-model ensemble approach combining RoBERTa, ViT, and wav2vec2 models. Results reflect model consensus across 413,000+ verified training samples."}},{"@type":"Question","name":"Is Aiscern free?","acceptedAnswer":{"@type":"Answer","text":"Yes. Aiscern is completely free with no subscription, no credit card and no scan limits. All tools are free forever."}},{"@type":"Question","name":"Can Aiscern detect ChatGPT writing?","acceptedAnswer":{"@type":"Answer","text":"Yes. Aiscern detects ChatGPT, Claude, Gemini, GPT-4 and other AI writing models using a 3-model RoBERTa ensemble with linguistic signal analysis."}},{"@type":"Question","name":"Can Aiscern detect Midjourney images?","acceptedAnswer":{"@type":"Answer","text":"Yes. Aiscern detects Midjourney, DALL-E 3, Stable Diffusion and deepfake faces using a multi-model image analysis ensemble."}},{"@type":"Question","name":"Does Aiscern have an API?","acceptedAnswer":{"@type":"Answer","text":"Yes. Aiscern has a free REST API for AI detection. See aiscern.com/docs/api."}}]}
       ]` }} />
 
       {/* ── NAV ── */}
@@ -427,8 +427,8 @@ export default function HomePage() {
         <div className="relative z-20 text-center px-4 max-w-5xl mx-auto w-full">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-xs font-semibold mb-6">
             <Sparkles className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">285,000+ training samples · Enterprise-grade AI detection</span>
-            <span className="sm:hidden">285k+ samples · Enterprise-grade</span>
+            <span className="hidden sm:inline">413,000+ verified samples · Multi-model ensemble detection</span>
+            <span className="sm:hidden">413k+ samples · Ensemble detection</span>
           </div>
 
           <motion.h1 initial={{ opacity: 1, y: 0 }} animate={{ opacity: 1, y: 0 }}
@@ -495,7 +495,7 @@ export default function HomePage() {
               Detection <span className="gradient-text">Arsenal</span>
             </h2>
             <p className="text-text-muted text-base sm:text-lg max-w-2xl mx-auto">
-              Six powerful tools powered by proprietary multi-model AI trained on 285k+ verified samples.
+              Six powerful tools powered by proprietary multi-model AI powered by 413k+ verified samples.
             </p>
           </motion.div>
 
@@ -620,9 +620,9 @@ export default function HomePage() {
           {/* 4 trust pillars */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
             {[
-              { icon: Database,    color: 'bg-primary/10 text-primary',   title: '285,000+ Samples', desc: 'Trained on 285,000+ verified samples spanning diverse AI-generated and authentic content from 60+ curated sources.' },
+              { icon: Database,    color: 'bg-primary/10 text-primary',   title: '413,000+ Samples', desc: 'Built on 413,000+ verified samples spanning diverse AI-generated and authentic content from 57 curated HuggingFace sources.' },
               { icon: Shield,      color: 'bg-emerald/10 text-emerald',   title: 'Research-Backed', desc: 'Built on peer-reviewed detection research. Every detection signal and methodology is validated against real-world AI outputs.' },
-              { icon: TrendingUp,  color: 'bg-amber/10 text-amber',       title: '94% Accuracy',     desc: 'Independently validated against GPT-4, Claude 3, Gemini, Midjourney, DALL-E 3, and ElevenLabs outputs.' },
+              { icon: TrendingUp,  color: 'bg-amber/10 text-amber',       title: 'Ensemble Models',  desc: 'Multi-model consensus using RoBERTa, ViT, and wav2vec2 ensembles — no single model makes the final call.' },
               { icon: Zap,         color: 'bg-cyan/10 text-cyan',         title: 'Free Forever',     desc: 'No subscriptions, no scan limits, no paywalls. Core detection will always be free — always.' },
             ].map(({ icon: Icon, color, title, desc }) => (
               <div key={title} className="card p-6 space-y-3 hover:border-primary/30 transition-all">

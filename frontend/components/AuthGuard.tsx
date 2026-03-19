@@ -25,7 +25,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter()
 
   useEffect(() => {
-    const t = setTimeout(() => setChecked(true), 400)
+    const t = setTimeout(() => setChecked(true), 150)
     return () => clearTimeout(t)
   }, [])
 

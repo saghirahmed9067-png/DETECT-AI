@@ -47,9 +47,10 @@ export async function POST(req: NextRequest) {
     const processingTime = Date.now() - start
 
     // Save scan to Supabase only for real signed-in users (not anon_, not internal)
+    let scanId: string | null = null
     if (userId !== 'internal' && !userId.startsWith('anon_')) {
       try {
-        await getSupabaseAdmin().from('scans').insert({
+        const { data: scanRow } = await getSupabaseAdmin().from('scans').insert({
           user_id:          userId,
           media_type:       'text',
           content_preview:  text.substring(0, 500),
@@ -61,11 +62,12 @@ export async function POST(req: NextRequest) {
           model_version:    result.model_version,
           status:           'complete',
           metadata:         { char_count: text.length, word_count: text.split(/\s+/).length },
-        })
+        }).select('id').single()
+        scanId = scanRow?.id ?? null
       } catch { /* non-fatal */ }
     }
 
-    return NextResponse.json({ success: true, data: { ...result, processing_time: processingTime } })
+    return NextResponse.json({ success: true, scan_id: scanId, result: { ...result, processing_time: processingTime } })
   } catch (err) {
     return NextResponse.json(
       { success: false, error: { code: 'ANALYSIS_FAILED', message: err instanceof Error ? err.message : 'Analysis failed' } },

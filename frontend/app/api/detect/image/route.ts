@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     const processingTime = Date.now() - start
 
     if (userId && !userId.startsWith('anon_')) {
-      await getSupabaseAdmin().from('scans').insert({
+      const { data: _scanRow } = await getSupabaseAdmin().from('scans').insert({
         user_id:          userId,
         media_type:       'image',
         file_name:        file.name,
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    return NextResponse.json({ success: true, data: { ...result, processing_time: processingTime, file_name: file.name, file_size: file.size } })
+    return NextResponse.json({ success: true, scan_id: scanId ?? null, result: { ...result, processing_time: processingTime, file_name: file.name, file_size: file.size } })
   } catch (err) {
     return NextResponse.json({ success: false, error: { code: 'ANALYSIS_FAILED', message: err instanceof Error ? err.message : 'Analysis failed' } }, { status: 500 })
   }

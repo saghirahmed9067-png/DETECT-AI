@@ -1,268 +1,227 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Brain, Eye, FileText, Mic, BarChart3, TrendingUp, Clock, Zap } from 'lucide-react'
+import Link from 'next/link'
+import {
+  Brain, Eye, FileText, Mic, BarChart3, Clock,
+  Zap, ArrowRight, Shield, CheckCircle, AlertTriangle,
+  HelpCircle, Image as ImageIcon, Video, Music
+} from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/auth-provider'
-import type { UserStats, Scan } from '@/types'
-import { formatRelativeTime, getVerdictColor } from '@/lib/utils/helpers'
 
-function StatCard({ icon: Icon, label, value, color, sub }: {
-  icon: React.ElementType, label: string, value: string | number, color: string, sub?: string
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="card flex items-start gap-4 group hover:border-primary/40 transition-all"
-    >
-      <div className={`w-12 h-12 rounded-xl ${color} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}>
-        <Icon className="w-6 h-6" />
-      </div>
-      <div>
-        <p className="text-text-muted text-sm mb-1">{label}</p>
-        <p className="text-3xl font-black text-text-primary">{value}</p>
-        {sub && <p className="text-xs text-text-muted mt-1">{sub}</p>}
-      </div>
-    </motion.div>
-  )
+const TOOLS = [
+  { href: '/detect/text',  icon: FileText,  label: 'Text',  color: 'from-amber/20 to-amber/5',     iconColor: 'text-amber',     desc: 'Detect AI-written content'    },
+  { href: '/detect/image', icon: ImageIcon, label: 'Image', color: 'from-violet-500/20 to-violet-500/5', iconColor: 'text-violet-400', desc: 'Deepfake & AI image detection' },
+  { href: '/detect/audio', icon: Mic,       label: 'Audio', color: 'from-cyan/20 to-cyan/5',        iconColor: 'text-cyan',      desc: 'Voice clone detection'         },
+  { href: '/detect/video', icon: Video,     label: 'Video', color: 'from-rose/20 to-rose/5',        iconColor: 'text-rose',      desc: 'Deepfake video analysis'       },
+  { href: '/batch',        icon: Brain,     label: 'Batch', color: 'from-emerald/20 to-emerald/5',  iconColor: 'text-emerald',   desc: 'Scan 20 files at once'         },
+  { href: '/chat',         icon: Zap,       label: 'ARIA',  color: 'from-indigo-500/20 to-indigo-500/5', iconColor: 'text-indigo-400', desc: 'AI detection assistant'   },
+]
+
+function VerdictIcon({ verdict }: { verdict: string }) {
+  if (verdict === 'AI')        return <AlertTriangle className="w-3.5 h-3.5 text-rose flex-shrink-0" />
+  if (verdict === 'HUMAN')     return <CheckCircle   className="w-3.5 h-3.5 text-emerald flex-shrink-0" />
+  return                              <HelpCircle    className="w-3.5 h-3.5 text-amber flex-shrink-0" />
 }
 
 function VerdictBadge({ verdict }: { verdict: string }) {
-  const styles: Record<string, string> = {
-    AI: 'badge-ai',
-    HUMAN: 'badge-human',
-    UNCERTAIN: 'badge-uncertain',
-  }
-  return <span className={styles[verdict] || 'badge-uncertain'}>{verdict}</span>
+  const s = verdict === 'AI' ? 'text-rose bg-rose/10 border-rose/20'
+          : verdict === 'HUMAN' ? 'text-emerald bg-emerald/10 border-emerald/20'
+          : 'text-amber bg-amber/10 border-amber/20'
+  return <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-bold tracking-wider ${s}`}>{verdict}</span>
+}
+
+function timeAgo(ts: string) {
+  const diff = Date.now() - new Date(ts).getTime()
+  const m = Math.floor(diff / 60000)
+  if (m < 1)  return 'just now'
+  if (m < 60) return `${m}m ago`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h}h ago`
+  return `${Math.floor(h / 24)}d ago`
+}
+
+function mediaIcon(type: string) {
+  const icons: Record<string, any> = { text: FileText, image: ImageIcon, audio: Music, video: Video }
+  const Icon = icons[type] ?? Brain
+  return <Icon className="w-3.5 h-3.5 flex-shrink-0" />
 }
 
 export default function DashboardPage() {
-  const { user: currentUser } = useAuth()
-  const [stats, setStats] = useState<UserStats | null>(null)
-  const [scans, setScans] = useState<Scan[]>([])
+  const { user } = useAuth()
+  const [stats,   setStats]   = useState<any>(null)
+  const [scans,   setScans]   = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
+  const name = user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || 'there'
 
   useEffect(() => {
-    // Don't wait for currentUser — read UID from cookie immediately via
-    // a lightweight decode. Dashboard renders skeleton instantly, data loads fast.
-    if (!currentUser?.uid) return
-    const uid = currentUser.uid
-    async function loadData() {
-      // Run all queries in parallel — no sequential fallback
-      const [rpcResult, scansResult, allScansResult] = await Promise.all([
-        supabase.rpc('get_user_stats', { p_user_id: uid }),
-        (supabase as any).from('scans').select('*').eq('user_id', uid).order('created_at', { ascending: false }).limit(10),
-        (supabase as any).from('scans').select('verdict,confidence_score,media_type').eq('user_id', uid),
+    if (!user?.uid) return
+    async function load() {
+      const [rpcRes, scansRes] = await Promise.all([
+        supabase.rpc('get_user_stats', { p_user_id: user!.uid }),
+        (supabase as any).from('scans').select('id,media_type,verdict,confidence_score,created_at,content_preview')
+          .eq('user_id', user!.uid).order('created_at', { ascending: false }).limit(8),
       ])
 
-      if (rpcResult.data && !rpcResult.error) { const d = rpcResult.data as any;
-        const avgConf = (d.avg_confidence ?? 0) <= 1
-          ? Math.round(d.avg_confidence * 100)
-          : Math.round(d.avg_confidence)
-        setStats({ ...d, avg_confidence: avgConf })
-      } else if (allScansResult.data) {
-        const allScans = allScansResult.data
-        const total = allScans.length
+      if (rpcRes.data && !rpcRes.error) {
+        const d = rpcRes.data as any
+        const avg = (d.avg_confidence ?? 0) <= 1 ? Math.round(d.avg_confidence * 100) : Math.round(d.avg_confidence)
+        setStats({ ...d, avg_confidence: avg })
+      } else if (scansRes.data) {
+        const rows = scansRes.data
         setStats({
-          total_scans:    total,
-          ai_detected:    allScans.filter((s: any) => s.verdict === 'AI').length,
-          human_detected: allScans.filter((s: any) => s.verdict === 'HUMAN').length,
-          avg_confidence: total > 0 ? Math.round(allScans.reduce((s: number, r: any) => s + (r.confidence_score ?? 0), 0) / total * 100) : 0,
-          image_scans:    allScans.filter((s: any) => s.media_type === 'image').length,
-          video_scans:    allScans.filter((s: any) => s.media_type === 'video').length,
-          audio_scans:    allScans.filter((s: any) => s.media_type === 'audio').length,
-          text_scans:     allScans.filter((s: any) => s.media_type === 'text').length,
-          uncertain:      allScans.filter((s: any) => s.verdict === 'UNCERTAIN').length,
+          total_scans: rows.length, ai_detected: rows.filter((r: any) => r.verdict === 'AI').length,
+          human_detected: rows.filter((r: any) => r.verdict === 'HUMAN').length,
+          avg_confidence: rows.length ? Math.round(rows.reduce((a: number, r: any) => a + (r.confidence_score ?? 0), 0) / rows.length * 100) : 0,
         })
       }
-      if (scansResult.data) setScans(scansResult.data)
+      if (scansRes.data) setScans(scansRes.data)
       setLoading(false)
     }
-    loadData()
+    load()
+  }, [user?.uid]) // eslint-disable-line
 
-    // Realtime disabled (Supabase auth off) - data loads on mount
-    return () => {}
-  }, [currentUser?.uid])
-
-  if (loading) {
-    return (
-      <div className="p-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="card h-28 skeleton" />
-          ))}
-        </div>
-        <div className="card h-96 skeleton" />
-      </div>
-    )
-  }
+  const totalScans = stats?.total_scans ?? 0
+  const aiCount    = stats?.ai_detected  ?? 0
+  const humanCount = stats?.human_detected ?? 0
+  const avgConf    = stats?.avg_confidence ?? 0
+  const aiPct      = totalScans > 0 ? Math.round(aiCount / totalScans * 100) : 0
+  const humanPct   = totalScans > 0 ? Math.round(humanCount / totalScans * 100) : 0
 
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-black text-text-primary mb-1">Dashboard</h1>
-        <p className="text-text-muted">Real-time AI detection analytics</p>
-      </div>
+    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto space-y-6">
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-        <StatCard
-          icon={BarChart3} label="Total Scans"
-          value={stats?.total_scans ?? 0}
-          color="bg-primary/10 text-primary"
-          sub="All time"
-        />
-        <StatCard
-          icon={Brain} label="AI Detected"
-          value={stats?.ai_detected ?? 0}
-          color="bg-rose/10 text-rose"
-          sub={stats ? `${Math.round((stats.ai_detected / Math.max(stats.total_scans, 1)) * 100)}% of total` : ''}
-        />
-        <StatCard
-          icon={TrendingUp} label="Human Content"
-          value={stats?.human_detected ?? 0}
-          color="bg-emerald/10 text-emerald"
-          sub="Verified human"
-        />
-        <StatCard
-          icon={Zap} label="Avg Confidence"
-          value={`${stats?.avg_confidence ?? 0}%`}
-          color="bg-cyan/10 text-cyan"
-          sub="Detection accuracy"
-        />
-      </div>
+      {/* ── Welcome ── */}
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+        <h1 className="text-2xl sm:text-3xl font-black text-text-primary">
+          Welcome back, <span className="gradient-text">{name}</span> 👋
+        </h1>
+        <p className="text-text-muted text-sm mt-1">
+          {totalScans === 0 ? 'Run your first scan below.' : `You've run ${totalScans.toLocaleString()} scan${totalScans !== 1 ? 's' : ''} so far.`}
+        </p>
+      </motion.div>
 
-      {/* Media type breakdown */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      {/* ── Stats row ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { icon: Eye, label: 'Images', count: stats?.image_scans ?? 0, color: 'text-primary bg-primary/10' },
-          { icon: Zap, label: 'Videos', count: stats?.video_scans ?? 0, color: 'text-secondary bg-secondary/10' },
-          { icon: Mic, label: 'Audio', count: stats?.audio_scans ?? 0, color: 'text-cyan bg-cyan/10' },
-          { icon: FileText, label: 'Text', count: stats?.text_scans ?? 0, color: 'text-amber bg-amber/10' },
-        ].map(m => (
-          <div key={m.label} className="card py-4 text-center">
-            <div className={`w-10 h-10 rounded-xl ${m.color} flex items-center justify-center mx-auto mb-2`}>
-              <m.icon className="w-5 h-5" />
+          { label: 'Total Scans',    value: loading ? '—' : totalScans.toLocaleString(), icon: Brain,    color: 'bg-primary/10 text-primary' },
+          { label: 'AI Detected',    value: loading ? '—' : `${aiPct}%`,                icon: AlertTriangle, color: 'bg-rose/10 text-rose' },
+          { label: 'Human Detected', value: loading ? '—' : `${humanPct}%`,             icon: CheckCircle,   color: 'bg-emerald/10 text-emerald' },
+          { label: 'Avg Confidence', value: loading ? '—' : `${avgConf}%`,              icon: BarChart3, color: 'bg-amber/10 text-amber' },
+        ].map((s, i) => (
+          <motion.div key={s.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05 }}
+            className="bg-surface border border-border rounded-2xl p-4 sm:p-5 flex items-center gap-3 hover:border-primary/30 transition-all">
+            <div className={`w-10 h-10 rounded-xl ${s.color} flex items-center justify-center flex-shrink-0`}>
+              <s.icon className="w-5 h-5" />
             </div>
-            <div className="text-2xl font-bold text-text-primary">{m.count}</div>
-            <div className="text-xs text-text-muted">{m.label}</div>
-          </div>
+            <div className="min-w-0">
+              <p className="text-xl sm:text-2xl font-black text-text-primary">{s.value}</p>
+              <p className="text-xs text-text-muted truncate">{s.label}</p>
+            </div>
+          </motion.div>
         ))}
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
-        {[
-          { href: '/detect/image', label: 'Detect Image',  color: 'from-primary/20 to-primary/5   border-primary/20   text-primary',   icon: Eye   },
-          { href: '/detect/text',  label: 'Analyze Text',  color: 'from-amber/20  to-amber/5    border-amber/20    text-amber',    icon: FileText },
-          { href: '/detect/audio', label: 'Check Audio',   color: 'from-cyan/20   to-cyan/5     border-cyan/20     text-cyan',     icon: Mic   },
-          { href: '/batch',        label: 'Batch Scan',    color: 'from-secondary/20 to-secondary/5 border-secondary/20 text-secondary', icon: Zap },
-        ].map(({ href, label, color, icon: Icon }) => (
-          <a key={href} href={href}
-            className={`card bg-gradient-to-br ${color} border py-4 flex flex-col items-center gap-2 text-center hover:scale-[1.02] transition-all group cursor-pointer`}>
-            <Icon className="w-6 h-6 group-hover:scale-110 transition-transform" />
-            <span className="text-xs font-semibold">{label}</span>
-          </a>
-        ))}
-      </div>
-
-      {/* Detection breakdown bar */}
-      {stats && stats.total_scans > 0 && (
-        <div className="card mb-8">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-text-primary">Detection Breakdown</h3>
-            <span className="text-xs text-text-muted">{stats.total_scans} total</span>
-          </div>
-          <div className="h-3 bg-border rounded-full overflow-hidden flex">
-            {stats.ai_detected > 0 && (
-              <div className="h-full bg-rose transition-all rounded-l-full"
-                style={{ width: `${(stats.ai_detected / stats.total_scans) * 100}%` }}
-                title={`AI: ${stats.ai_detected}`} />
-            )}
-            {stats.human_detected > 0 && (
-              <div className="h-full bg-emerald transition-all"
-                style={{ width: `${(stats.human_detected / stats.total_scans) * 100}%` }}
-                title={`Human: ${stats.human_detected}`} />
-            )}
-            {(stats.uncertain ?? 0) > 0 && (
-              <div className="h-full bg-amber transition-all rounded-r-full"
-                style={{ width: `${((stats.uncertain ?? 0) / stats.total_scans) * 100}%` }}
-                title={`Uncertain: ${stats.uncertain}`} />
-            )}
-          </div>
-          <div className="flex items-center gap-4 mt-2 text-xs text-text-muted">
-            <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-rose" />AI ({stats.ai_detected})</div>
-            <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald" />Human ({stats.human_detected})</div>
-            {(stats.uncertain ?? 0) > 0 && <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber" />Uncertain ({stats.uncertain})</div>}
-          </div>
+      {/* ── Tools grid ── */}
+      <div>
+        <div className="flex items-center justify-between mb-3 px-0.5">
+          <h2 className="text-sm font-semibold text-text-muted uppercase tracking-widest">Detection Tools</h2>
         </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {TOOLS.map((t, i) => (
+            <motion.div key={t.href} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: i * 0.04 }} whileHover={{ y: -2, scale: 1.02 }}>
+              <Link href={t.href}
+                className={`flex flex-col items-center gap-2.5 p-4 rounded-2xl bg-gradient-to-br ${t.color} border border-border hover:border-primary/30 transition-all text-center group`}>
+                <div className={`w-10 h-10 rounded-xl bg-background/80 flex items-center justify-center ${t.iconColor} group-hover:scale-110 transition-transform`}>
+                  <t.icon className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-text-primary">{t.label}</p>
+                  <p className="text-[10px] text-text-muted mt-0.5 leading-tight">{t.desc}</p>
+                </div>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── AI/Human balance bar ── */}
+      {totalScans > 0 && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          className="bg-surface border border-border rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-text-primary">Detection Balance</h2>
+            <span className="text-xs text-text-muted">{totalScans} total scans</span>
+          </div>
+          <div className="flex rounded-full overflow-hidden h-3 gap-0.5">
+            <div className="bg-rose transition-all duration-700" style={{ width: `${aiPct}%` }} />
+            <div className="bg-amber/60 transition-all duration-700" style={{ width: `${100 - aiPct - humanPct}%` }} />
+            <div className="bg-emerald transition-all duration-700" style={{ width: `${humanPct}%` }} />
+          </div>
+          <div className="flex items-center gap-4 mt-2.5 text-xs text-text-muted">
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-rose" />{aiPct}% AI</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber/60" />{100-aiPct-humanPct}% Uncertain</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald" />{humanPct}% Human</span>
+          </div>
+        </motion.div>
       )}
 
-      {/* Recent Scans */}
-      <div className="card">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2">
-            <Clock className="w-5 h-5 text-primary" /> Recent Scans
-            <span className="w-2 h-2 rounded-full bg-emerald animate-pulse ml-1" />
-          </h2>
+      {/* ── Recent scans ── */}
+      <div>
+        <div className="flex items-center justify-between mb-3 px-0.5">
+          <h2 className="text-sm font-semibold text-text-muted uppercase tracking-widest">Recent Scans</h2>
+          {scans.length > 0 && (
+            <Link href="/history" className="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1">
+              View all <ArrowRight className="w-3 h-3" />
+            </Link>
+          )}
         </div>
 
-        {scans.length === 0 ? (
-          <div className="text-center py-16">
-            <Brain className="w-12 h-12 text-text-muted mx-auto mb-4" />
-            <p className="text-text-muted">No scans yet. Start detecting AI content!</p>
+        {loading ? (
+          <div className="space-y-2">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-14 bg-surface border border-border rounded-xl animate-pulse" />
+            ))}
+          </div>
+        ) : scans.length === 0 ? (
+          <div className="bg-surface border border-border rounded-2xl p-10 text-center">
+            <Shield className="w-10 h-10 text-text-disabled mx-auto mb-3" />
+            <p className="text-text-muted text-sm font-medium">No scans yet</p>
+            <p className="text-text-disabled text-xs mt-1 mb-4">Pick a tool above to run your first detection</p>
+            <Link href="/detect/text"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-all">
+              <FileText className="w-4 h-4" /> Try Text Detector
+            </Link>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="text-left text-xs text-text-muted uppercase tracking-wider border-b border-border">
-                  <th className="pb-3 pr-4">Type</th>
-                  <th className="pb-3 pr-4">Content</th>
-                  <th className="pb-3 pr-4">Verdict</th>
-                  <th className="pb-3 pr-4">Confidence</th>
-                  <th className="pb-3">Time</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/50">
-                {scans.map((scan) => (
-                  <tr key={scan.id} className="hover:bg-surface-hover/50 transition-colors">
-                    <td className="py-3 pr-4">
-                      <span className="text-xs font-medium bg-surface px-2 py-1 rounded-md text-text-secondary uppercase">
-                        {scan.media_type}
-                      </span>
-                    </td>
-                    <td className="py-3 pr-4 max-w-xs">
-                      <span className="text-sm text-text-secondary truncate block">
-                        {scan.file_name || scan.source_url || scan.content_preview?.substring(0, 40) + '...' || 'Unknown'}
-                      </span>
-                    </td>
-                    <td className="py-3 pr-4">
-                      {scan.verdict ? <VerdictBadge verdict={scan.verdict} /> : (
-                        <span className="text-xs text-text-muted">{scan.status}</span>
-                      )}
-                    </td>
-                    <td className="py-3 pr-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-16 h-1.5 bg-border rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full bg-gradient-to-r from-primary to-secondary"
-                            style={{ width: `${Math.round((scan.confidence_score ?? 0) * ((scan.confidence_score ?? 0) <= 1 ? 100 : 1))}%` }}
-                          />
-                        </div>
-                        <span className="text-xs text-text-muted">{Math.round((scan.confidence_score ?? 0) * ((scan.confidence_score ?? 0) <= 1 ? 100 : 1))}%</span>
-                      </div>
-                    </td>
-                    <td className="py-3 text-xs text-text-muted">{formatRelativeTime(scan.created_at)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="space-y-2">
+            {scans.map((scan, i) => (
+              <motion.div key={scan.id} initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.03 }}
+                className="flex items-center gap-3 bg-surface border border-border rounded-xl px-4 py-3 hover:border-primary/30 transition-all">
+                <div className="text-text-muted">{mediaIcon(scan.media_type)}</div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-text-primary truncate">
+                    {scan.content_preview?.slice(0, 60) || `${scan.media_type} scan`}
+                  </p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <VerdictIcon verdict={scan.verdict} />
+                    <span className="text-[11px] text-text-muted">{timeAgo(scan.created_at)}</span>
+                    <span className="text-[11px] text-text-disabled">·</span>
+                    <span className="text-[11px] text-text-muted">{Math.round((scan.confidence_score ?? 0) * 100)}% conf</span>
+                  </div>
+                </div>
+                <VerdictBadge verdict={scan.verdict} />
+              </motion.div>
+            ))}
           </div>
         )}
       </div>
+
     </div>
   )
 }

@@ -1,10 +1,4 @@
 'use client'
-/**
- * Aiscern — Auth Provider (Clerk)
- * Handles auth state, profile sync, and post-auth redirect.
- * The redirect here is the most reliable approach — fires the moment
- * Clerk confirms the user is signed in, regardless of Clerk dashboard settings.
- */
 import { createContext, useContext, useEffect, useRef } from 'react'
 import { useUser, useClerk } from '@clerk/nextjs'
 import { useRouter, usePathname } from 'next/navigation'
@@ -15,37 +9,31 @@ interface AuthUser {
   displayName: string | null
   photoURL:    string | null
 }
-
 interface AuthContextValue {
   user:    AuthUser | null
   loading: boolean
   signOut: () => Promise<void>
 }
 
-const AuthContext = createContext<AuthContextValue>({
-  user:    null,
-  loading: false,
-  signOut: async () => {},
-})
+const AuthContext = createContext<AuthContextValue>({ user: null, loading: false, signOut: async () => {} })
 
-// Pages where a signed-in user should be redirected to /dashboard
 const AUTH_PAGES = ['/login', '/signup']
 
 async function syncProfile(user: AuthUser) {
   try {
     await fetch('/api/profiles/create', {
-      method:  'POST',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ uid: user.uid, email: user.email, display_name: user.displayName }),
+      body: JSON.stringify({ uid: user.uid, email: user.email, display_name: user.displayName }),
     })
-  } catch { /* non-fatal */ }
+  } catch {}
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { user, isLoaded } = useUser()
   const { signOut: clerkSignOut } = useClerk()
-  const router   = useRouter()
-  const pathname = usePathname()
+  const router        = useRouter()
+  const pathname      = usePathname()
   const syncedRef     = useRef<string | null>(null)
   const redirectedRef = useRef(false)
 
@@ -56,9 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     photoURL:    user.imageUrl ?? null,
   } : null
 
-  // ── Post-auth redirect ───────────────────────────────────────────────────
-  // When user signs in/up on /login or /signup, push them to /dashboard.
-  // This fires regardless of Clerk dashboard redirect settings.
+  // Fast redirect — fires immediately when Clerk confirms sign-in on auth pages
   useEffect(() => {
     if (!isLoaded || !authUser || redirectedRef.current) return
     if (AUTH_PAGES.some(p => pathname.startsWith(p))) {
@@ -67,14 +53,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isLoaded, authUser?.uid, pathname]) // eslint-disable-line
 
-  // Reset redirect flag on sign-out
   useEffect(() => {
-    if (isLoaded && !user) {
-      redirectedRef.current = false
-    }
+    if (isLoaded && !user) redirectedRef.current = false
   }, [isLoaded, user])
 
-  // ── Supabase profile sync ─────────────────────────────────────────────
+  // Sync Supabase profile once per sign-in
   useEffect(() => {
     if (authUser && syncedRef.current !== authUser.uid) {
       syncedRef.current = authUser.uid
@@ -83,7 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [authUser?.uid]) // eslint-disable-line
 
   const handleSignOut = async () => {
-    syncedRef.current     = null
+    syncedRef.current = null
     redirectedRef.current = false
     try {
       await clerkSignOut({ redirectUrl: '/' })
@@ -99,6 +82,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
-export function useAuth() {
-  return useContext(AuthContext)
-}
+export function useAuth() { return useContext(AuthContext) }

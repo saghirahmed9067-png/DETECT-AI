@@ -35,14 +35,14 @@ export async function POST(req: NextRequest) {
     const processingTime = Date.now() - start
 
     if (userId && !userId.startsWith('anon_')) {
-      await getSupabaseAdmin().from('scans').insert({
+      const { data: _scanRow } = await getSupabaseAdmin().from('scans').insert({
         user_id: userId, media_type: 'audio', file_name: file.name, file_size: file.size,
         verdict: result.verdict, confidence_score: result.confidence, signals: result.signals,
         processing_time: processingTime, model_used: result.model_used, status: 'complete',
         metadata: { format: ext, estimated_duration_sec: Math.round(file.size / (128 * 1024 / 8)) },
       })
     }
-    return NextResponse.json({ success: true, data: { ...result, processing_time: processingTime, file_name: file.name } })
+    return NextResponse.json({ success: true, scan_id: scanId ?? null, result: { ...result, processing_time: processingTime, file_name: file.name } })
   } catch (err) {
     return NextResponse.json({ success: false, error: { code: 'ANALYSIS_FAILED', message: err instanceof Error ? err.message : 'Analysis failed' } }, { status: 500 })
   }

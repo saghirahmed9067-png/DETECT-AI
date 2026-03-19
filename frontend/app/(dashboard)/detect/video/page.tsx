@@ -12,6 +12,7 @@ import type { DetectionResult, Verdict } from '@/types'
 import { formatConfidence, formatFileSize } from '@/lib/utils/helpers'
 import { SignupGate, incrementGlobalScanCount } from '@/components/SignupGate'
 import { ReviewSuggestion } from '@/components/ReviewSuggestion'
+import { FeedbackBar } from '@/components/FeedbackBar'
 
 
 
@@ -226,7 +227,8 @@ export default function VideoDetectionPage() {
 
       const data = await res.json()
       if (!data.success) throw new Error(data.error?.message || 'Detection failed')
-      setResult(data.data)
+      setResult(data.result)
+      setScanId(data.scan_id ?? null)
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Detection failed')
     } finally {
@@ -541,6 +543,7 @@ export default function VideoDetectionPage() {
     <div className="px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto pb-6">
       
       <ReviewSuggestion toolName="Video Detector" />
+      {result && <div className="px-4 pb-4"><FeedbackBar scanId={scanId} verdict={result.verdict} /></div>}
     </div>
   </>
   )

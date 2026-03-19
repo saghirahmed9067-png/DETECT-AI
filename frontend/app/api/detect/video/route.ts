@@ -67,7 +67,8 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        data:    { ...result, processing_time: processingTime, file_name: body.fileName },
+        scan_id: scanId ?? null,
+        result:  { ...result, processing_time: processingTime, file_name: body.fileName },
       })
     }
 
