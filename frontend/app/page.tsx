@@ -79,99 +79,115 @@ function ParticleNetwork() {
 }
 
 // ─── Floating Nature Images (hero background trees/plants) ───────────────────
-// ── Hero Root Network — 10 AI cards (left) + 10 Real cards (right) ─────────
-// Portrait cards connected by animated SVG root lines, 60% opacity background
-// Image paths: /hero/ai/ai-01.jpg…ai-10.jpg | /hero/real/real-01.jpg…real-10.jpg
+// ── Hero Root Network — responsive 3-tier (mobile 3+3 / tablet 6+6 / desktop 10+10) ──
 
-// Fixed random positions for AI nodes (left half: x 0-42%)
-const AI_NODES = [
-  { x: 3,   y: 12, delay: 0.0 },
-  { x: 14,  y: 28, delay: 0.15 },
-  { x: 2,   y: 46, delay: 0.30 },
-  { x: 18,  y: 60, delay: 0.45 },
-  { x: 7,   y: 76, delay: 0.60 },
-  { x: 28,  y: 15, delay: 0.10 },
-  { x: 32,  y: 36, delay: 0.25 },
-  { x: 24,  y: 54, delay: 0.40 },
-  { x: 35,  y: 70, delay: 0.55 },
-  { x: 20,  y: 88, delay: 0.70 },
+// ── Desktop nodes (full 10+10) ──
+const AI_NODES_LG = [
+  { x: 3,  y: 12, delay: 0.00 }, { x: 14, y: 28, delay: 0.15 },
+  { x: 2,  y: 46, delay: 0.30 }, { x: 18, y: 60, delay: 0.45 },
+  { x: 7,  y: 76, delay: 0.60 }, { x: 28, y: 15, delay: 0.10 },
+  { x: 32, y: 36, delay: 0.25 }, { x: 24, y: 54, delay: 0.40 },
+  { x: 35, y: 70, delay: 0.55 }, { x: 20, y: 88, delay: 0.70 },
 ]
-// Fixed random positions for Real nodes (right half: x 58-98%)
-const REAL_NODES = [
-  { x: 96,  y: 12, delay: 0.0  },
-  { x: 83,  y: 28, delay: 0.15 },
-  { x: 97,  y: 46, delay: 0.30 },
-  { x: 79,  y: 60, delay: 0.45 },
-  { x: 91,  y: 76, delay: 0.60 },
-  { x: 68,  y: 15, delay: 0.10 },
-  { x: 64,  y: 36, delay: 0.25 },
-  { x: 73,  y: 54, delay: 0.40 },
-  { x: 62,  y: 70, delay: 0.55 },
-  { x: 77,  y: 88, delay: 0.70 },
+const REAL_NODES_LG = [
+  { x: 96, y: 12, delay: 0.00 }, { x: 83, y: 28, delay: 0.15 },
+  { x: 97, y: 46, delay: 0.30 }, { x: 79, y: 60, delay: 0.45 },
+  { x: 91, y: 76, delay: 0.60 }, { x: 68, y: 15, delay: 0.10 },
+  { x: 64, y: 36, delay: 0.25 }, { x: 73, y: 54, delay: 0.40 },
+  { x: 62, y: 70, delay: 0.55 }, { x: 77, y: 88, delay: 0.70 },
 ]
+const AI_EDGES_LG   = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[8,9],[1,6],[2,7],[3,8]]
+const REAL_EDGES_LG = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[8,9],[1,6],[2,7],[3,8]]
 
-// Connections between nearby nodes (index pairs)
-const AI_EDGES   = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[8,9],[1,6],[2,7],[3,8]]
-const REAL_EDGES = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[8,9],[1,6],[2,7],[3,8]]
+// ── Tablet nodes (6+6, avoid centre x:28-42 and x:58-72) ──
+const AI_NODES_MD = [
+  { x: 2,  y: 10, delay: 0.00 }, { x: 12, y: 28, delay: 0.15 },
+  { x: 3,  y: 50, delay: 0.30 }, { x: 15, y: 68, delay: 0.45 },
+  { x: 5,  y: 82, delay: 0.60 }, { x: 22, y: 42, delay: 0.25 },
+]
+const REAL_NODES_MD = [
+  { x: 97, y: 10, delay: 0.00 }, { x: 86, y: 28, delay: 0.15 },
+  { x: 96, y: 50, delay: 0.30 }, { x: 83, y: 68, delay: 0.45 },
+  { x: 93, y: 82, delay: 0.60 }, { x: 76, y: 42, delay: 0.25 },
+]
+const AI_EDGES_MD   = [[0,1],[1,2],[2,3],[3,4],[4,5],[0,5],[1,5]]
+const REAL_EDGES_MD = [[0,1],[1,2],[2,3],[3,4],[4,5],[0,5],[1,5]]
+
+// ── Mobile nodes (3+3, tight to edges only) ──
+const AI_NODES_SM = [
+  { x: 2,  y: 15, delay: 0.00 },
+  { x: 4,  y: 48, delay: 0.20 },
+  { x: 2,  y: 78, delay: 0.40 },
+]
+const REAL_NODES_SM = [
+  { x: 97, y: 15, delay: 0.00 },
+  { x: 95, y: 48, delay: 0.20 },
+  { x: 97, y: 78, delay: 0.40 },
+]
+const AI_EDGES_SM   = [[0,1],[1,2]]
+const REAL_EDGES_SM = [[0,1],[1,2]]
 
 const FLOAT_BADGES = [
-  { Icon: Search, label: 'AI Text',    pct: 'Detected', color: '#7c3aed', x: '22%', y: '8%',  delay: 0,   pulse: true  },
-  { Icon: Eye,    label: 'Deepfake',   pct: 'Flagged',  color: '#2563eb', x: '72%', y: '8%',  delay: 0.5, pulse: false },
+  { Icon: Search, label: 'AI Text',  pct: 'Detected', color: '#7c3aed', delay: 0,   pulse: true  },
+  { Icon: Eye,    label: 'Deepfake', pct: 'Flagged',  color: '#2563eb', delay: 0.5, pulse: false },
 ]
 
-function RootNetworkNode({ node, file, side, index }: {
+// ── Responsive hook ──────────────────────────────────────────────────────────
+function useBreakpoint() {
+  const [bp, setBp] = useState<'sm'|'md'|'lg'>('lg')
+  useEffect(() => {
+    const update = () => {
+      const w = window.innerWidth
+      setBp(w < 640 ? 'sm' : w < 1024 ? 'md' : 'lg')
+    }
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
+  return bp
+}
+
+function RootNetworkNode({ node, file, side, index, size }: {
   node: { x: number; y: number; delay: number }
   file: string; side: 'ai' | 'real'; index: number
+  size: { w: number; h: number }
 }) {
   const [loaded, setLoaded] = useState(false)
   const isAI = side === 'ai'
-  const W = 64, H = 80  // portrait card size
-
+  const { w, h } = size
   return (
     <motion.div
       className="absolute overflow-hidden rounded-lg pointer-events-none"
       style={{
-        left: `calc(${node.x}% - ${W/2}px)`,
-        top:  `calc(${node.y}% - ${H/2}px)`,
-        width: W, height: H,
-        zIndex: 2,
+        left:  `calc(${node.x}% - ${w/2}px)`,
+        top:   `calc(${node.y}% - ${h/2}px)`,
+        width: w, height: h, zIndex: 2,
       }}
       initial={{ opacity: 0, scale: 0.7 }}
-      animate={{
-        opacity: 0.6,
-        scale: 1,
-        y: [0, index % 2 === 0 ? -5 : -8, 0],
-      }}
+      animate={{ opacity: 0.6, scale: 1, y: [0, index % 2 === 0 ? -4 : -7, 0] }}
       transition={{
         opacity: { delay: node.delay + 0.4, duration: 0.8 },
         scale:   { delay: node.delay + 0.4, duration: 0.6 },
         y: { delay: node.delay, duration: 4 + (index % 4) * 0.8, repeat: Infinity, ease: 'easeInOut' },
       }}
     >
-      {/* Gradient fallback */}
       <div className="absolute inset-0" style={{
         background: isAI
-          ? 'linear-gradient(160deg, #4c1d9570, #1e1b4b50)'
-          : 'linear-gradient(160deg, #06402070, #05201050)',
+          ? 'linear-gradient(160deg,#4c1d9570,#1e1b4b50)'
+          : 'linear-gradient(160deg,#06402070,#05201050)',
       }} />
-      {/* Image */}
-      <img
-        src={file}
-        alt=""
+      <img src={file} alt=""
         className={`w-full h-full object-cover transition-opacity duration-700 ${loaded ? 'opacity-100' : 'opacity-0'}`}
         onLoad={() => setLoaded(true)}
         onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
         loading="lazy"
       />
-      {/* Bottom label */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-      <div className={`absolute bottom-1 left-1 text-[8px] font-black px-1 py-0.5 rounded ${isAI ? 'bg-rose/70 text-white' : 'bg-emerald/70 text-white'}`}>
-        {isAI ? 'AI' : 'REAL'}
+      <div className={`absolute bottom-1 left-1 text-[7px] font-black px-1 py-0.5 rounded leading-none ${isAI ? 'bg-rose/70 text-white' : 'bg-emerald/70 text-white'}`}>
+        {isAI ? 'AI' : '✓'}
       </div>
-      {/* Outer ring glow */}
-      <div className="absolute inset-0 rounded-lg ring-1 ring-inset"
-        style={{ boxShadow: isAI ? '0 0 12px #7c3aed30' : '0 0 12px #10b98130',
-                 borderColor: isAI ? '#7c3aed40' : '#10b98140' }} />
+      <div className="absolute inset-0 rounded-lg"
+        style={{ boxShadow: isAI ? 'inset 0 0 0 1px #7c3aed30' : 'inset 0 0 0 1px #10b98130' }} />
     </motion.div>
   )
 }
@@ -179,42 +195,29 @@ function RootNetworkNode({ node, file, side, index }: {
 function RootNetworkSVG({ nodes, edges, color, side }: {
   nodes: { x: number; y: number }[]
   edges: number[][]
-  color: string
-  side: 'ai' | 'real'
+  color: string; side: 'ai' | 'real'
 }) {
   return (
-    <svg className="absolute inset-0 w-full h-full pointer-events-none z-1" style={{ opacity: 0.35 }}>
+    <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: 0.3, zIndex: 1 }}>
       {edges.map(([a, b], i) => {
         const n1 = nodes[a], n2 = nodes[b]
-        // Curved bezier path for organic root look
-        const x1 = `${n1.x}%`, y1 = `${n1.y}%`
-        const x2 = `${n2.x}%`, y2 = `${n2.y}%`
-        // Control point slightly offset for natural curve
-        const cxPct = (n1.x + n2.x) / 2 + (side === 'ai' ? -4 : 4)
-        const cyPct = (n1.y + n2.y) / 2
+        const cx = (n1.x + n2.x) / 2 + (side === 'ai' ? -3 : 3)
+        const cy = (n1.y + n2.y) / 2
         return (
-          <motion.path
-            key={i}
-            d={`M ${x1} ${y1} Q ${cxPct}% ${cyPct}% ${x2} ${y2}`}
-            stroke={color}
-            strokeWidth="1"
-            fill="none"
-            strokeLinecap="round"
+          <motion.path key={i}
+            d={`M ${n1.x}% ${n1.y}% Q ${cx}% ${cy}% ${n2.x}% ${n2.y}%`}
+            stroke={color} strokeWidth="1" fill="none" strokeLinecap="round"
             initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: 0.5 }}
-            transition={{ delay: 0.3 + i * 0.06, duration: 1.2, ease: 'easeInOut' }}
+            animate={{ pathLength: 1, opacity: 0.55 }}
+            transition={{ delay: 0.4 + i * 0.07, duration: 1.4, ease: 'easeInOut' }}
           />
         )
       })}
-      {/* Node dots */}
       {nodes.map((n, i) => (
-        <motion.circle
-          key={i}
-          cx={`${n.x}%`} cy={`${n.y}%`} r="3"
-          fill={color}
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: [0.4, 0.8, 0.4], scale: 1 }}
-          transition={{ delay: 0.6 + i * 0.07, duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+        <motion.circle key={i} cx={`${n.x}%`} cy={`${n.y}%`} r="2.5" fill={color}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0.35, 0.75, 0.35] }}
+          transition={{ delay: 0.7 + i * 0.08, duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
         />
       ))}
     </svg>
@@ -222,87 +225,92 @@ function RootNetworkSVG({ nodes, edges, color, side }: {
 }
 
 function FloatingCards() {
+  const bp = useBreakpoint()
+
+  // Choose node set by breakpoint
+  const aiNodes   = bp === 'sm' ? AI_NODES_SM   : bp === 'md' ? AI_NODES_MD   : AI_NODES_LG
+  const realNodes = bp === 'sm' ? REAL_NODES_SM : bp === 'md' ? REAL_NODES_MD : REAL_NODES_LG
+  const aiEdges   = bp === 'sm' ? AI_EDGES_SM   : bp === 'md' ? AI_EDGES_MD   : AI_EDGES_LG
+  const realEdges = bp === 'sm' ? REAL_EDGES_SM : bp === 'md' ? REAL_EDGES_MD : REAL_EDGES_LG
+
+  // Card sizes per breakpoint
+  const cardSize = bp === 'sm' ? { w: 40, h: 52 } : bp === 'md' ? { w: 52, h: 66 } : { w: 64, h: 80 }
+
+  // Badge positions change per breakpoint
+  const badgePositions = bp === 'sm'
+    ? [{ x: '28%', y: '6%' }, { x: '54%', y: '6%' }]
+    : [{ x: '22%', y: '7%' }, { x: '66%', y: '7%' }]
+
   return (
     <>
-      {/* ── ROOT NETWORK BACKGROUND ── */}
-      <div className="absolute inset-0 hidden lg:block pointer-events-none z-0">
-        {/* SVG connection lines */}
-        <RootNetworkSVG nodes={AI_NODES}   edges={AI_EDGES}   color="#7c3aed" side="ai"   />
-        <RootNetworkSVG nodes={REAL_NODES} edges={REAL_EDGES} color="#10b981" side="real" />
+      {/* Root network — visible on ALL screen sizes */}
+      <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 0 }}>
+        <RootNetworkSVG nodes={aiNodes}   edges={aiEdges}   color="#7c3aed" side="ai"   />
+        <RootNetworkSVG nodes={realNodes} edges={realEdges} color="#10b981" side="real" />
 
-        {/* AI image cards — left half */}
-        {AI_NODES.map((node, i) => (
-          <RootNetworkNode
-            key={`ai-${i}`}
-            node={node}
+        {aiNodes.map((node, i) => (
+          <RootNetworkNode key={`ai-${i}`} node={node}
             file={`/hero/ai/ai-${String(i+1).padStart(2,'0')}.jpg`}
-            side="ai"
-            index={i}
-          />
+            side="ai" index={i} size={cardSize} />
         ))}
-
-        {/* Real image cards — right half */}
-        {REAL_NODES.map((node, i) => (
-          <RootNetworkNode
-            key={`real-${i}`}
-            node={node}
+        {realNodes.map((node, i) => (
+          <RootNetworkNode key={`real-${i}`} node={node}
             file={`/hero/real/real-${String(i+1).padStart(2,'0')}.jpg`}
-            side="real"
-            index={i}
-          />
+            side="real" index={i} size={cardSize} />
         ))}
 
-        {/* Left label */}
+        {/* Side labels — hide on xs phones */}
         <motion.div
-          className="absolute top-4 left-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-rose/25 bg-rose/8 backdrop-blur-sm"
-          initial={{ opacity: 0, x: -12 }} animate={{ opacity: 0.8, x: 0 }}
+          className="absolute hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-full border border-rose/25 bg-rose/8 backdrop-blur-sm"
+          style={{ top: 72, left: 8 }}
+          initial={{ opacity: 0, x: -10 }} animate={{ opacity: 0.75, x: 0 }}
           transition={{ delay: 1.4, duration: 0.6 }}
         >
-          <Bot className="w-3 h-3 text-rose" />
-          <span className="text-[9px] font-bold text-rose/80 uppercase tracking-wider">AI Generated</span>
+          <Bot className="w-2.5 h-2.5 text-rose" />
+          <span className="text-[8px] font-bold text-rose/80 uppercase tracking-wide hidden md:inline">AI Generated</span>
         </motion.div>
-
-        {/* Right label */}
         <motion.div
-          className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-emerald/25 bg-emerald/8 backdrop-blur-sm"
-          initial={{ opacity: 0, x: 12 }} animate={{ opacity: 0.8, x: 0 }}
+          className="absolute hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-full border border-emerald/25 bg-emerald/8 backdrop-blur-sm"
+          style={{ top: 72, right: 8 }}
+          initial={{ opacity: 0, x: 10 }} animate={{ opacity: 0.75, x: 0 }}
           transition={{ delay: 1.4, duration: 0.6 }}
         >
-          <CheckCircle className="w-3 h-3 text-emerald" />
-          <span className="text-[9px] font-bold text-emerald/80 uppercase tracking-wider">Authentic</span>
+          <CheckCircle className="w-2.5 h-2.5 text-emerald" />
+          <span className="text-[8px] font-bold text-emerald/80 uppercase tracking-wide hidden md:inline">Authentic</span>
         </motion.div>
       </div>
 
-      {/* ── Detection badges (minimal — only 2) ── */}
+      {/* Detection badges — 2 on desktop, 2 smaller on tablet, hidden on mobile */}
       {FLOAT_BADGES.map((item, i) => {
         const Icon = item.Icon
+        const pos  = badgePositions[i]
         return (
           <motion.div key={i}
-            className="absolute hidden 2xl:flex items-center gap-2 px-3 py-2 rounded-xl border backdrop-blur-xl z-20 select-none"
+            className="absolute hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border backdrop-blur-xl select-none"
             style={{
-              left: item.x, top: item.y,
+              left: pos.x, top: pos.y, zIndex: 10,
               background: `${item.color}12`,
               borderColor: `${item.color}30`,
             }}
             initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: [0, -6, 0] }}
+            animate={{ opacity: 1, y: [0, -5, 0] }}
             transition={{
-              opacity: { delay: item.delay + 1.2, duration: 0.5 },
-              y: { delay: item.delay, duration: 3.5, repeat: Infinity, ease: 'easeInOut' }
+              opacity: { delay: item.delay + 1.0, duration: 0.5 },
+              y: { delay: item.delay, duration: 3.5, repeat: Infinity, ease: 'easeInOut' },
             }}
           >
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+            <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
               style={{ background: `${item.color}22`, color: item.color }}>
-              <Icon className="w-3.5 h-3.5" strokeWidth={2} />
+              <Icon className="w-3 h-3" strokeWidth={2} />
             </div>
-            <div>
-              <div className="text-[9px] font-medium" style={{ color: `${item.color}bb` }}>{item.label}</div>
-              <div className="text-[11px] font-bold text-white">{item.pct}</div>
+            <div className="hidden md:block">
+              <div className="text-[8px] font-medium leading-none mb-0.5" style={{ color: `${item.color}bb` }}>{item.label}</div>
+              <div className="text-[10px] font-bold text-white leading-none">{item.pct}</div>
             </div>
             {item.pulse && (
-              <motion.div className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full"
+              <motion.div className="absolute -top-1 -right-1 w-2 h-2 rounded-full"
                 style={{ background: item.color }}
-                animate={{ scale: [1, 1.5, 1], opacity: [1, 0.4, 1] }}
+                animate={{ scale: [1, 1.6, 1], opacity: [1, 0.3, 1] }}
                 transition={{ duration: 1.8, repeat: Infinity }} />
             )}
           </motion.div>
@@ -555,7 +563,7 @@ const COMPARISON_CARDS = [
 
 function AIvsRealSection() {
   return (
-    <section className="py-16 sm:py-24 px-4 overflow-hidden">
+    <section className="py-12 sm:py-16 md:py-24 px-3 sm:px-4 overflow-hidden">
       <div className="max-w-7xl mx-auto">
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }} className="text-center mb-12 sm:mb-16">
@@ -571,25 +579,25 @@ function AIvsRealSection() {
         </motion.div>
 
         {/* Scrolling row 1 */}
-        <div className="relative mb-4 overflow-hidden">
-          <div className="flex gap-4 animate-scroll-left" style={{ width: 'max-content' }}>
+        <div className="relative mb-3 overflow-hidden">
+          <div className="flex gap-3 animate-scroll-left" style={{ width: 'max-content' }}>
             {[...COMPARISON_CARDS.slice(0, 10), ...COMPARISON_CARDS.slice(0, 10)].map((card, i) => (
               <ComparisonCard key={i} card={card} />
             ))}
           </div>
-          <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
-          <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+          <div className="absolute left-0 top-0 bottom-0 w-8 sm:w-16 md:w-24 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-8 sm:w-16 md:w-24 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
         </div>
 
         {/* Scrolling row 2 (reverse) */}
         <div className="relative overflow-hidden">
-          <div className="flex gap-4 animate-scroll-right" style={{ width: 'max-content' }}>
+          <div className="flex gap-3 animate-scroll-right" style={{ width: 'max-content' }}>
             {[...COMPARISON_CARDS.slice(10), ...COMPARISON_CARDS.slice(10)].map((card, i) => (
               <ComparisonCard key={i} card={card} />
             ))}
           </div>
-          <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
-          <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+          <div className="absolute left-0 top-0 bottom-0 w-8 sm:w-16 md:w-24 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-8 sm:w-16 md:w-24 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
         </div>
 
         <p className="text-center text-xs text-text-disabled mt-6">
@@ -603,10 +611,10 @@ function AIvsRealSection() {
 function ComparisonCard({ card }: { card: { type: string; label: string; verdict: string; confidence: number; color: string; tag: string; icon: string; preview?: string; img?: string } }) {
   const isAI = card.verdict === 'AI'
   return (
-    <div className="flex-shrink-0 w-72 bg-surface border border-border rounded-2xl overflow-hidden hover:border-primary/30 transition-all duration-300 group">
+    <div className="flex-shrink-0 w-56 sm:w-64 md:w-72 bg-surface border border-border rounded-2xl overflow-hidden hover:border-primary/30 transition-all duration-300 group">
       {/* Image or text preview */}
       {card.type === 'image' && card.img ? (
-        <div className="relative h-44 overflow-hidden bg-surface-active">
+        <div className="relative h-36 sm:h-40 md:h-44 overflow-hidden bg-surface-active">
           {/* Gradient fallback — always visible, image loads on top */}
           <div className="absolute inset-0" style={{
             background: isAI
@@ -625,7 +633,7 @@ function ComparisonCard({ card }: { card: { type: string; label: string; verdict
           </div>
         </div>
       ) : (
-        <div className="h-44 p-4 bg-surface-active flex flex-col justify-center relative overflow-hidden">
+        <div className="h-36 sm:h-40 md:h-44 p-3 sm:p-4 bg-surface-active flex flex-col justify-center relative overflow-hidden">
           <div className={`absolute top-0 left-0 w-1 h-full ${isAI ? 'bg-rose' : 'bg-emerald'}`} />
           <p className="text-sm text-text-muted leading-relaxed line-clamp-4 italic pl-3">
             "{card.preview}"
@@ -759,7 +767,7 @@ export default function HomePage() {
 
       <main id="main-content">
       {/* ── HERO ── */}
-      <section className="relative min-h-[85vh] sm:min-h-screen flex items-center justify-center overflow-hidden pt-28 sm:pt-32">
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24 sm:pt-28 lg:pt-32">
         <ParticleNetwork />
         <FloatingCards />
 
@@ -767,7 +775,7 @@ export default function HomePage() {
         <div className="absolute top-1/3 left-1/4 w-[300px] h-[300px] rounded-full bg-secondary/8 blur-[80px] pointer-events-none" />
         <div className="absolute top-1/3 right-1/4 w-[300px] h-[300px] rounded-full bg-cyan/5 blur-[80px] pointer-events-none" />
 
-        <div className="relative z-20 text-center px-4 max-w-5xl mx-auto w-full">
+        <div className="relative z-20 text-center px-8 sm:px-10 md:px-12 lg:px-4 max-w-[92vw] sm:max-w-xl md:max-w-2xl lg:max-w-5xl mx-auto w-full">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-xs font-semibold mb-6">
             <Sparkles className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">413,000+ verified samples · Multi-model ensemble detection</span>
