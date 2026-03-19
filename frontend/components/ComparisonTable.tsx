@@ -11,7 +11,7 @@ const FEATURES = [
   { name: 'Sentence-Level Heatmap',       detectai: true,  gptzero: true,  turnitin: false,       originality: true  },
   { name: 'API Access',                   detectai: true,  gptzero: true,  turnitin: true,        originality: true  },
   { name: 'Free Tier Available',          detectai: true,  gptzero: true,  turnitin: false,       originality: false },
-  { name: 'Starting Price',               detectai: '$9.99/mo', gptzero: '$10/mo', turnitin: '$30/mo', originality: '$14.95/mo' },
+  { name: 'Starting Price',               detectai: 'Free', gptzero: '$10/mo', turnitin: '$30/mo', originality: '$14.95/mo' },
   { name: 'Text Detection Accuracy',      detectai: '94%', gptzero: '98%', turnitin: '85%',       originality: '99%' },
   { name: 'Real-time Detection',          detectai: true,  gptzero: true,  turnitin: false,       originality: true  },
   { name: 'URL Scanner',                  detectai: true,  gptzero: false, turnitin: false,       originality: true  },
@@ -28,7 +28,7 @@ function Cell({ v, isDetectai }: { v: boolean | string; isDetectai?: boolean }) 
 }
 
 const COLS = [
-  { key: 'detectai',    label: 'DetectAI',     highlight: true  },
+  { key: 'detectai',    label: 'Aiscern',      highlight: true  },
   { key: 'gptzero',     label: 'GPTZero',      highlight: false },
   { key: 'turnitin',    label: 'Turnitin',     highlight: false },
   { key: 'originality', label: 'Originality',  highlight: false },
@@ -47,7 +47,7 @@ export default function ComparisonTable() {
             The <span className="gradient-text">Only Platform</span> That Detects All 4 Media Types
           </h2>
           <p className="text-text-muted max-w-xl mx-auto">
-            While others focus on text alone, DetectAI covers text, images, audio, and video — all in one platform.
+            While others focus on text alone, Aiscern covers text, images, audio, and video — all in one platform.
           </p>
         </motion.div>
 

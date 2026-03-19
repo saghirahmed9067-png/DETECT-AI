@@ -61,7 +61,7 @@ export default function SettingsPage() {
   const [timezone, setTimezone] = useState('UTC+5')
 
   // API key state
-  const [apiKey, setApiKey]         = useState('dtai_•••••••••••••••••••••••••••••')
+  const [apiKey, setApiKey]         = useState('aisc_•••••••••••••••••••••••••••••')
   const [showKey, setShowKey]       = useState(false)
   const [keyCopied, setKeyCopied]   = useState(false)
 
@@ -85,7 +85,7 @@ export default function SettingsPage() {
       if (prefs.autoDetectType!==undefined) setAutoDetectType(prefs.autoDetectType)
       if (prefs.language     !== undefined) setLanguage(prefs.language)
       // Generate deterministic API key from uid
-      if (currentUser?.uid) setApiKey(`dtai_${currentUser.uid.replace(/-/g,'').slice(0, 28)}`)
+      if (currentUser?.uid) setApiKey(`aisc_${currentUser.uid.replace(/-/g,'').slice(0, 28)}`)
     })
   }, [currentUser])
 
@@ -110,7 +110,7 @@ export default function SettingsPage() {
 
   const copyApiKey = () => {
     if (currentUser?.uid) {
-      navigator.clipboard.writeText(`dtai_${currentUser.uid.replace(/-/g,'').slice(0, 28)}`).then(() => {
+      navigator.clipboard.writeText(`aisc_${currentUser.uid.replace(/-/g,'').slice(0, 28)}`).then(() => {
         setKeyCopied(true); setTimeout(() => setKeyCopied(false), 2000)
       })
     }
@@ -207,7 +207,7 @@ export default function SettingsPage() {
         <p className="text-sm text-text-muted mb-4">Use your API key to access Aiscern detection endpoints programmatically.</p>
         <div className="flex items-center gap-2 p-3 rounded-xl bg-surface border border-border font-mono text-sm">
           <span className="flex-1 truncate text-text-secondary">
-            {showKey && currentUser?.uid ? `dtai_${currentUser.uid.replace(/-/g,'').slice(0, 28)}` : 'dtai_••••••••••••••••••••••••••••'}
+            {showKey && currentUser?.uid ? `aisc_${currentUser.uid.replace(/-/g,'').slice(0, 28)}` : 'aisc_••••••••••••••••••••••••••••'}
           </span>
           <button onClick={() => setShowKey(v => !v)} className="text-text-muted hover:text-text-primary transition-colors p-1">
             {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}

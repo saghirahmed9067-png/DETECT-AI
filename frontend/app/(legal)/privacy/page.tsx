@@ -34,7 +34,7 @@ export default function PrivacyPage() {
           <p className="text-text-muted">Last updated: {LAST_UPDATED}</p>
         </div>
 
-        <div className="prose-detectai space-y-8">
+        <div className="prose-aiscern space-y-8">
           <Section title="1. Introduction">
             <p>
               Welcome to Aiscern (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;), operated by Anas Ali. This Privacy Policy explains how we collect,
