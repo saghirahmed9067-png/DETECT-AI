@@ -87,7 +87,6 @@ export default function LoginPage() {
 
         <div className="w-full max-w-[400px]">
           <SignIn
-            routing="hash"
             forceRedirectUrl="/dashboard"
             fallbackRedirectUrl="/dashboard"
             signUpUrl="/signup"

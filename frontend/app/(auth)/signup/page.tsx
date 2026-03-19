@@ -98,7 +98,6 @@ export default function SignUpPage() {
 
         <div className="w-full max-w-[400px]">
           <SignUp
-            routing="hash"
             forceRedirectUrl="/dashboard"
             fallbackRedirectUrl="/dashboard"
             signInUrl="/login"
