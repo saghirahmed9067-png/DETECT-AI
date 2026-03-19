@@ -137,6 +137,7 @@ export default function VideoDetectionPage() {
   const [progress,    setProgress]    = useState(0)
   const [duration,    setDuration]    = useState(0)
   const [currentTime, setCurrentTime] = useState(0)
+  const [scanId,      setScanId]      = useState<string | null>(null)
   const [phase,       setPhase]       = useState<'idle' | 'extracting' | 'analyzing'>('idle')
   const [framesDone,  setFramesDone]  = useState(0)
   const [extractedFrames, setExtractedFrames] = useState<ExtractedFrame[]>([])

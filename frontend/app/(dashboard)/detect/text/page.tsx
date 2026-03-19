@@ -71,6 +71,7 @@ export default function TextDetectionPage() {
       const data = await res.json()
       if (!data.success) throw new Error(data.error?.message || 'PDF analysis failed')
       setResult(data.result)
+      setScanId(data.scan_id ?? null)
       if (data.result?.paragraph_scores) setParagraphScores(data.result?.paragraph_scores)
       incrementGlobalScanCount()
       window.dispatchEvent(new Event('aiscern:scan'))
