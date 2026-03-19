@@ -11,7 +11,7 @@
 
 import {
   Env, ALL_SOURCES, getWorkerSources,
-  scrapeSource, pushToHF, pushReadme, cleanupPushed, getStatus,
+  scrapeSource, scrapeParallel, pushToHF, pushReadme, cleanupPushed, getStatus,
 } from './core'
 
 import { log } from './types'

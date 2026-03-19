@@ -160,9 +160,9 @@ export async function pushToHF(
   // ── Also push/update dataset_infos.json ─────────────────────────────────
   const datasetInfo = buildDatasetInfo(shardMetas)
   operations.push({
-    type:    'addOrUpdate',
-    path:    'dataset_infos.json',
-    content: toBase64(JSON.stringify(datasetInfo, null, 2)),
+    type:  'addOrUpdate',
+    key:   'dataset_infos.json',
+    value: toBase64(JSON.stringify(datasetInfo, null, 2)),
   })
 
   // ── Commit all operations in one HF API call ─────────────────────────────
@@ -182,12 +182,13 @@ export async function pushToHF(
   })
 
   if (!hfRes.ok) {
-    const err = await hfRes.text().catch(() => '')
+    const errText = await hfRes.text().catch(() => '')
+    const errMsg  = `HF ${hfRes.status}: ${errText.slice(0, 300)}`
     await db.prepare(`
       INSERT INTO hf_push_log (item_count, repo, status, error, created_at)
       VALUES (0, ?, 'error', ?, datetime('now'))
-    `).bind(repo, err.slice(0, 500)).run().catch(() => {})
-    return { pushed: 0, error: `HF ${hfRes.status}: ${err.slice(0, 200)}` }
+    `).bind(repo, errMsg.slice(0, 500)).run().catch(() => {})
+    return { pushed: 0, error: errMsg }
   }
 
   const hfJson   = await hfRes.json() as any
