@@ -79,153 +79,231 @@ function ParticleNetwork() {
 }
 
 // ─── Floating Nature Images (hero background trees/plants) ───────────────────
-// ── Hero Image Tree — Left (AI Generated) / Right (Real/Authentic) ──────────
-// Images will be served from /public/hero/ai/ and /public/hero/real/
-// Filenames: ai-01.jpg … ai-20.jpg | real-01.jpg … real-20.jpg
-const AI_IMGS = Array.from({length: 20}, (_, i) => ({
-  file: `/hero/ai/ai-${String(i+1).padStart(2,'0')}.jpg`,
-  delay: i * 0.08,
-}))
-const REAL_IMGS = Array.from({length: 20}, (_, i) => ({
-  file: `/hero/real/real-${String(i+1).padStart(2,'0')}.jpg`,
-  delay: i * 0.08,
-}))
+// ── Hero Root Network — 10 AI cards (left) + 10 Real cards (right) ─────────
+// Portrait cards connected by animated SVG root lines, 60% opacity background
+// Image paths: /hero/ai/ai-01.jpg…ai-10.jpg | /hero/real/real-01.jpg…real-10.jpg
 
-const FLOAT_BADGES = [
-  { Icon: Search,      label: 'AI Text',      pct: 'Detected', color: '#7c3aed', x: '22%',  y: '12%', delay: 0,   pulse: true  },
-  { Icon: Eye,         label: 'Deepfake',      pct: 'Flagged',  color: '#2563eb', x: '72%',  y: '9%',  delay: 0.5, pulse: false },
-  { Icon: Waves,       label: 'AI Voice Clone',pct: 'AI Found', color: '#06b6d4', x: '20%',  y: '80%', delay: 1.0, pulse: false },
-  { Icon: Bot,         label: 'GPT-4 Text',    pct: 'Detected', color: '#f43f5e', x: '74%',  y: '78%', delay: 0.7, pulse: true  },
+// Fixed random positions for AI nodes (left half: x 0-42%)
+const AI_NODES = [
+  { x: 3,   y: 12, delay: 0.0 },
+  { x: 14,  y: 28, delay: 0.15 },
+  { x: 2,   y: 46, delay: 0.30 },
+  { x: 18,  y: 60, delay: 0.45 },
+  { x: 7,   y: 76, delay: 0.60 },
+  { x: 28,  y: 15, delay: 0.10 },
+  { x: 32,  y: 36, delay: 0.25 },
+  { x: 24,  y: 54, delay: 0.40 },
+  { x: 35,  y: 70, delay: 0.55 },
+  { x: 20,  y: 88, delay: 0.70 },
+]
+// Fixed random positions for Real nodes (right half: x 58-98%)
+const REAL_NODES = [
+  { x: 96,  y: 12, delay: 0.0  },
+  { x: 83,  y: 28, delay: 0.15 },
+  { x: 97,  y: 46, delay: 0.30 },
+  { x: 79,  y: 60, delay: 0.45 },
+  { x: 91,  y: 76, delay: 0.60 },
+  { x: 68,  y: 15, delay: 0.10 },
+  { x: 64,  y: 36, delay: 0.25 },
+  { x: 73,  y: 54, delay: 0.40 },
+  { x: 62,  y: 70, delay: 0.55 },
+  { x: 77,  y: 88, delay: 0.70 },
 ]
 
-// Gradient colours used as bg fallback while images load
-const AI_COLORS   = ['#7c3aed','#6d28d9','#5b21b6','#4c1d95','#7c3aed','#6366f1','#4f46e5','#4338ca','#3730a3','#312e81','#7c3aed','#8b5cf6','#7c3aed','#6d28d9','#5b21b6','#7c3aed','#6366f1','#4f46e5','#4338ca','#3730a3']
-const REAL_COLORS = ['#065f46','#047857','#059669','#10b981','#34d399','#064e3b','#065f46','#047857','#059669','#10b981','#065f46','#047857','#059669','#10b981','#34d399','#064e3b','#065f46','#047857','#059669','#10b981']
+// Connections between nearby nodes (index pairs)
+const AI_EDGES   = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[8,9],[1,6],[2,7],[3,8]]
+const REAL_EDGES = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[8,9],[1,6],[2,7],[3,8]]
 
-function HeroImageCard({ file, delay, color, side, index }: {
-  file: string; delay: number; color: string; side: 'ai'|'real'; index: number
+const FLOAT_BADGES = [
+  { Icon: Search, label: 'AI Text',    pct: 'Detected', color: '#7c3aed', x: '22%', y: '8%',  delay: 0,   pulse: true  },
+  { Icon: Eye,    label: 'Deepfake',   pct: 'Flagged',  color: '#2563eb', x: '72%', y: '8%',  delay: 0.5, pulse: false },
+]
+
+function RootNetworkNode({ node, file, side, index }: {
+  node: { x: number; y: number; delay: number }
+  file: string; side: 'ai' | 'real'; index: number
 }) {
   const [loaded, setLoaded] = useState(false)
   const isAI = side === 'ai'
+  const W = 64, H = 80  // portrait card size
+
   return (
     <motion.div
-      className="relative overflow-hidden rounded-xl flex-shrink-0 cursor-pointer group"
-      style={{ width: 140, height: 96 }}
-      initial={{ opacity: 0, scale: 0.85, y: 20 }}
-      animate={{ opacity: 1, scale: 1, y: [0, index % 2 === 0 ? -6 : -10, 0] }}
-      transition={{
-        opacity: { delay: delay + 0.3, duration: 0.5 },
-        scale:   { delay: delay + 0.3, duration: 0.5 },
-        y: { delay: delay, duration: 3.5 + (index % 5) * 0.6, repeat: Infinity, ease: 'easeInOut' },
+      className="absolute overflow-hidden rounded-lg pointer-events-none"
+      style={{
+        left: `calc(${node.x}% - ${W/2}px)`,
+        top:  `calc(${node.y}% - ${H/2}px)`,
+        width: W, height: H,
+        zIndex: 2,
       }}
-      whileHover={{ scale: 1.08, zIndex: 20 }}
+      initial={{ opacity: 0, scale: 0.7 }}
+      animate={{
+        opacity: 0.6,
+        scale: 1,
+        y: [0, index % 2 === 0 ? -5 : -8, 0],
+      }}
+      transition={{
+        opacity: { delay: node.delay + 0.4, duration: 0.8 },
+        scale:   { delay: node.delay + 0.4, duration: 0.6 },
+        y: { delay: node.delay, duration: 4 + (index % 4) * 0.8, repeat: Infinity, ease: 'easeInOut' },
+      }}
     >
-      {/* Fallback gradient background */}
-      <div className="absolute inset-0 rounded-xl" style={{ background: `linear-gradient(135deg, ${color}60, ${color}30)` }} />
-
-      {/* Actual image */}
+      {/* Gradient fallback */}
+      <div className="absolute inset-0" style={{
+        background: isAI
+          ? 'linear-gradient(160deg, #4c1d9570, #1e1b4b50)'
+          : 'linear-gradient(160deg, #06402070, #05201050)',
+      }} />
+      {/* Image */}
       <img
         src={file}
-        alt={isAI ? `AI generated image ${index+1}` : `Real authentic photo ${index+1}`}
-        className={`w-full h-full object-cover transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+        alt=""
+        className={`w-full h-full object-cover transition-opacity duration-700 ${loaded ? 'opacity-100' : 'opacity-0'}`}
         onLoad={() => setLoaded(true)}
-        onError={e => { (e.target as HTMLImageElement).style.display='none' }}
+        onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
         loading="lazy"
       />
-
-      {/* Always-visible label overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-      <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
-        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${isAI ? 'bg-rose/80 text-white' : 'bg-emerald/80 text-white'}`}>
-          {isAI ? 'AI' : 'REAL'}
-        </span>
-        <span className="text-[9px] text-white/60">{String(index+1).padStart(2,'0')}</span>
+      {/* Bottom label */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+      <div className={`absolute bottom-1 left-1 text-[8px] font-black px-1 py-0.5 rounded ${isAI ? 'bg-rose/70 text-white' : 'bg-emerald/70 text-white'}`}>
+        {isAI ? 'AI' : 'REAL'}
       </div>
-
-      {/* Hover overlay */}
-      <motion.div
-        className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-        style={{ background: `${color}40` }}
-      >
-        <span className={`text-[10px] font-black text-white px-2 py-1 rounded-full border ${isAI ? 'border-rose/60' : 'border-emerald/60'}`}>
-          {isAI ? '⚡ AI Generated' : '✓ Authentic'}
-        </span>
-      </motion.div>
+      {/* Outer ring glow */}
+      <div className="absolute inset-0 rounded-lg ring-1 ring-inset"
+        style={{ boxShadow: isAI ? '0 0 12px #7c3aed30' : '0 0 12px #10b98130',
+                 borderColor: isAI ? '#7c3aed40' : '#10b98140' }} />
     </motion.div>
+  )
+}
+
+function RootNetworkSVG({ nodes, edges, color, side }: {
+  nodes: { x: number; y: number }[]
+  edges: number[][]
+  color: string
+  side: 'ai' | 'real'
+}) {
+  return (
+    <svg className="absolute inset-0 w-full h-full pointer-events-none z-1" style={{ opacity: 0.35 }}>
+      {edges.map(([a, b], i) => {
+        const n1 = nodes[a], n2 = nodes[b]
+        // Curved bezier path for organic root look
+        const x1 = `${n1.x}%`, y1 = `${n1.y}%`
+        const x2 = `${n2.x}%`, y2 = `${n2.y}%`
+        // Control point slightly offset for natural curve
+        const cxPct = (n1.x + n2.x) / 2 + (side === 'ai' ? -4 : 4)
+        const cyPct = (n1.y + n2.y) / 2
+        return (
+          <motion.path
+            key={i}
+            d={`M ${x1} ${y1} Q ${cxPct}% ${cyPct}% ${x2} ${y2}`}
+            stroke={color}
+            strokeWidth="1"
+            fill="none"
+            strokeLinecap="round"
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: 1, opacity: 0.5 }}
+            transition={{ delay: 0.3 + i * 0.06, duration: 1.2, ease: 'easeInOut' }}
+          />
+        )
+      })}
+      {/* Node dots */}
+      {nodes.map((n, i) => (
+        <motion.circle
+          key={i}
+          cx={`${n.x}%`} cy={`${n.y}%`} r="3"
+          fill={color}
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{ opacity: [0.4, 0.8, 0.4], scale: 1 }}
+          transition={{ delay: 0.6 + i * 0.07, duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      ))}
+    </svg>
   )
 }
 
 function FloatingCards() {
   return (
     <>
-      {/* ── LEFT COLUMN — AI Generated Images ── */}
-      <div className="absolute hidden xl:flex left-2 top-20 bottom-20 z-10 flex-col gap-2.5 overflow-hidden"
-        style={{ width: 150 }}>
-        {/* Column label */}
+      {/* ── ROOT NETWORK BACKGROUND ── */}
+      <div className="absolute inset-0 hidden lg:block pointer-events-none z-0">
+        {/* SVG connection lines */}
+        <RootNetworkSVG nodes={AI_NODES}   edges={AI_EDGES}   color="#7c3aed" side="ai"   />
+        <RootNetworkSVG nodes={REAL_NODES} edges={REAL_EDGES} color="#10b981" side="real" />
+
+        {/* AI image cards — left half */}
+        {AI_NODES.map((node, i) => (
+          <RootNetworkNode
+            key={`ai-${i}`}
+            node={node}
+            file={`/hero/ai/ai-${String(i+1).padStart(2,'0')}.jpg`}
+            side="ai"
+            index={i}
+          />
+        ))}
+
+        {/* Real image cards — right half */}
+        {REAL_NODES.map((node, i) => (
+          <RootNetworkNode
+            key={`real-${i}`}
+            node={node}
+            file={`/hero/real/real-${String(i+1).padStart(2,'0')}.jpg`}
+            side="real"
+            index={i}
+          />
+        ))}
+
+        {/* Left label */}
         <motion.div
-          initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3, duration: 0.6 }}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-rose/30 bg-rose/10 backdrop-blur-sm mb-1">
-          <Bot className="w-3.5 h-3.5 text-rose flex-shrink-0" />
-          <span className="text-[10px] font-bold text-rose">AI GENERATED</span>
+          className="absolute top-4 left-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-rose/25 bg-rose/8 backdrop-blur-sm"
+          initial={{ opacity: 0, x: -12 }} animate={{ opacity: 0.8, x: 0 }}
+          transition={{ delay: 1.4, duration: 0.6 }}
+        >
+          <Bot className="w-3 h-3 text-rose" />
+          <span className="text-[9px] font-bold text-rose/80 uppercase tracking-wider">AI Generated</span>
         </motion.div>
-        {/* Scrolling images — two sets for infinite feel */}
-        <div className="flex flex-col gap-2.5 animate-scroll-up overflow-hidden flex-1">
-          {[...AI_IMGS, ...AI_IMGS].map((img, i) => (
-            <HeroImageCard key={i} file={img.file} delay={img.delay} color={AI_COLORS[i % 20]} side="ai" index={i % 20} />
-          ))}
-        </div>
+
+        {/* Right label */}
+        <motion.div
+          className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-emerald/25 bg-emerald/8 backdrop-blur-sm"
+          initial={{ opacity: 0, x: 12 }} animate={{ opacity: 0.8, x: 0 }}
+          transition={{ delay: 1.4, duration: 0.6 }}
+        >
+          <CheckCircle className="w-3 h-3 text-emerald" />
+          <span className="text-[9px] font-bold text-emerald/80 uppercase tracking-wider">Authentic</span>
+        </motion.div>
       </div>
 
-      {/* ── RIGHT COLUMN — Real/Authentic Images ── */}
-      <div className="absolute hidden xl:flex right-2 top-20 bottom-20 z-10 flex-col gap-2.5 overflow-hidden"
-        style={{ width: 150 }}>
-        <motion.div
-          initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3, duration: 0.6 }}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-emerald/30 bg-emerald/10 backdrop-blur-sm mb-1">
-          <CheckCircle className="w-3.5 h-3.5 text-emerald flex-shrink-0" />
-          <span className="text-[10px] font-bold text-emerald">AUTHENTIC</span>
-        </motion.div>
-        <div className="flex flex-col gap-2.5 animate-scroll-up-slow overflow-hidden flex-1">
-          {[...REAL_IMGS, ...REAL_IMGS].map((img, i) => (
-            <HeroImageCard key={i} file={img.file} delay={img.delay} color={REAL_COLORS[i % 20]} side="real" index={i % 20} />
-          ))}
-        </div>
-      </div>
-
-      {/* ── Detection badge overlays ── */}
+      {/* ── Detection badges (minimal — only 2) ── */}
       {FLOAT_BADGES.map((item, i) => {
         const Icon = item.Icon
         return (
           <motion.div key={i}
-            className="absolute hidden 2xl:flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border backdrop-blur-xl z-20 select-none"
+            className="absolute hidden 2xl:flex items-center gap-2 px-3 py-2 rounded-xl border backdrop-blur-xl z-20 select-none"
             style={{
               left: item.x, top: item.y,
-              background: `${item.color}18`,
-              borderColor: `${item.color}35`,
-              boxShadow: `0 0 24px ${item.color}25`,
+              background: `${item.color}12`,
+              borderColor: `${item.color}30`,
             }}
-            initial={{ opacity: 0, scale: 0.8, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: [0, -10, 0] }}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: [0, -6, 0] }}
             transition={{
-              opacity: { delay: item.delay + 0.8, duration: 0.5 },
-              y: { delay: item.delay, duration: 3 + i * 0.4, repeat: Infinity, ease: 'easeInOut' }
+              opacity: { delay: item.delay + 1.2, duration: 0.5 },
+              y: { delay: item.delay, duration: 3.5, repeat: Infinity, ease: 'easeInOut' }
             }}
           >
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-              style={{ background: `${item.color}28`, color: item.color }}>
-              <Icon className="w-4 h-4" strokeWidth={1.8} />
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+              style={{ background: `${item.color}22`, color: item.color }}>
+              <Icon className="w-3.5 h-3.5" strokeWidth={2} />
             </div>
             <div>
-              <div className="text-[10px] font-medium" style={{ color: `${item.color}cc` }}>{item.label}</div>
-              <div className="text-xs font-bold text-white">{item.pct}</div>
+              <div className="text-[9px] font-medium" style={{ color: `${item.color}bb` }}>{item.label}</div>
+              <div className="text-[11px] font-bold text-white">{item.pct}</div>
             </div>
             {item.pulse && (
-              <motion.div className="absolute -top-1.5 -right-1.5 w-3 h-3 rounded-full"
+              <motion.div className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full"
                 style={{ background: item.color }}
-                animate={{ scale: [1, 1.4, 1], opacity: [1, 0.5, 1] }}
-                transition={{ duration: 1.5, repeat: Infinity }} />
+                animate={{ scale: [1, 1.5, 1], opacity: [1, 0.4, 1] }}
+                transition={{ duration: 1.8, repeat: Infinity }} />
             )}
           </motion.div>
         )
