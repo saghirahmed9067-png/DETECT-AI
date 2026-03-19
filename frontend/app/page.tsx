@@ -563,106 +563,175 @@ const COMPARISON_CARDS = [
 
 function AIvsRealSection() {
   return (
-    <section className="py-12 sm:py-16 md:py-24 px-3 sm:px-4 overflow-hidden">
-      <div className="max-w-7xl mx-auto">
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }} className="text-center mb-12 sm:mb-16">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-rose/30 bg-rose/5 text-rose text-xs font-semibold mb-4">
-            <Scan className="w-3.5 h-3.5" /> Real-World Detection Examples
+    <section className="py-10 sm:py-16 lg:py-24 overflow-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+
+        {/* ── Header ── */}
+        <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }} className="text-center mb-8 sm:mb-12">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-rose/30 bg-rose/5 text-rose text-[11px] sm:text-xs font-semibold mb-3">
+            <Scan className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
+            Real-World Detection Examples
           </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black mb-4">
+          <h2 className="text-2xl sm:text-3xl lg:text-5xl font-black mb-3">
             AI vs <span className="gradient-text">Authentic</span>
           </h2>
-          <p className="text-text-muted text-base sm:text-lg max-w-2xl mx-auto">
-            See how Aiscern identifies AI-generated content versus authentic human-created work across text and images.
+          <p className="text-text-muted text-sm sm:text-base lg:text-lg max-w-xl mx-auto px-2">
+            See how Aiscern tells AI-generated content apart from authentic human work.
           </p>
         </motion.div>
 
-        {/* Scrolling row 1 */}
-        <div className="relative mb-3 overflow-hidden">
-          <div className="flex gap-3 animate-scroll-left" style={{ width: 'max-content' }}>
-            {[...COMPARISON_CARDS.slice(0, 10), ...COMPARISON_CARDS.slice(0, 10)].map((card, i) => (
-              <ComparisonCard key={i} card={card} />
-            ))}
-          </div>
-          <div className="absolute left-0 top-0 bottom-0 w-8 sm:w-16 md:w-24 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
-          <div className="absolute right-0 top-0 bottom-0 w-8 sm:w-16 md:w-24 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+        {/* ── Mobile: single-column stacked cards (< 640px) ── */}
+        <div className="sm:hidden space-y-3">
+          {COMPARISON_CARDS.slice(0, 6).map((card, i) => (
+            <motion.div key={i}
+              initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }} transition={{ delay: i * 0.05 }}>
+              <ComparisonCardMobile card={card} />
+            </motion.div>
+          ))}
+          <p className="text-center text-xs text-text-disabled pt-2">
+            Showing 6 of 20 examples · Results are illustrative detections
+          </p>
         </div>
 
-        {/* Scrolling row 2 (reverse) */}
-        <div className="relative overflow-hidden">
-          <div className="flex gap-3 animate-scroll-right" style={{ width: 'max-content' }}>
-            {[...COMPARISON_CARDS.slice(10), ...COMPARISON_CARDS.slice(10)].map((card, i) => (
-              <ComparisonCard key={i} card={card} />
-            ))}
+        {/* ── Tablet+: scrolling rows (≥ 640px) ── */}
+        <div className="hidden sm:block space-y-3">
+          {/* Row 1 */}
+          <div className="relative overflow-hidden">
+            <div className="flex gap-3 animate-scroll-left" style={{ width: 'max-content' }}>
+              {[...COMPARISON_CARDS.slice(0, 10), ...COMPARISON_CARDS.slice(0, 10)].map((card, i) => (
+                <ComparisonCard key={i} card={card} />
+              ))}
+            </div>
+            <div className="absolute left-0 inset-y-0 w-12 sm:w-20 lg:w-28 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
+            <div className="absolute right-0 inset-y-0 w-12 sm:w-20 lg:w-28 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
           </div>
-          <div className="absolute left-0 top-0 bottom-0 w-8 sm:w-16 md:w-24 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
-          <div className="absolute right-0 top-0 bottom-0 w-8 sm:w-16 md:w-24 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+          {/* Row 2 */}
+          <div className="relative overflow-hidden">
+            <div className="flex gap-3 animate-scroll-right" style={{ width: 'max-content' }}>
+              {[...COMPARISON_CARDS.slice(10), ...COMPARISON_CARDS.slice(10)].map((card, i) => (
+                <ComparisonCard key={i} card={card} />
+              ))}
+            </div>
+            <div className="absolute left-0 inset-y-0 w-12 sm:w-20 lg:w-28 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
+            <div className="absolute right-0 inset-y-0 w-12 sm:w-20 lg:w-28 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+          </div>
+          <p className="text-center text-xs text-text-disabled pt-2">
+            Results shown are illustrative detections
+          </p>
         </div>
 
-        <p className="text-center text-xs text-text-disabled mt-6">
-          Photos: <a href="https://unsplash.com/license" target="_blank" rel="noopener noreferrer" className="hover:text-text-muted underline">Unsplash free license</a> · Results shown are illustrative detections
-        </p>
       </div>
     </section>
   )
 }
 
-function ComparisonCard({ card }: { card: { type: string; label: string; verdict: string; confidence: number; color: string; tag: string; icon: string; preview?: string; img?: string } }) {
+// ── Mobile card: horizontal layout, full-width ──────────────────────────────
+function ComparisonCardMobile({ card }: { card: { type: string; label: string; verdict: string; confidence: number; color: string; tag: string; preview?: string; img?: string } }) {
   const isAI = card.verdict === 'AI'
   return (
-    <div className="flex-shrink-0 w-56 sm:w-64 md:w-72 bg-surface border border-border rounded-2xl overflow-hidden hover:border-primary/30 transition-all duration-300 group">
-      {/* Image or text preview */}
-      {card.type === 'image' && card.img ? (
-        <div className="relative h-36 sm:h-40 md:h-44 overflow-hidden bg-surface-active">
-          {/* Gradient fallback — always visible, image loads on top */}
+    <div className={`w-full rounded-xl border overflow-hidden flex ${isAI ? 'border-rose/20' : 'border-emerald/20'} bg-surface`}>
+      {/* Left colour strip */}
+      <div className={`w-1 flex-shrink-0 ${isAI ? 'bg-rose' : 'bg-emerald'}`} />
+
+      {/* Thumbnail (image cards only) */}
+      {card.type === 'image' && card.img && (
+        <div className="relative w-20 h-20 flex-shrink-0 bg-surface-active self-stretch">
           <div className="absolute inset-0" style={{
-            background: isAI
-              ? 'linear-gradient(135deg, #4c1d9580 0%, #1e1b4b80 100%)'
-              : 'linear-gradient(135deg, #064e3b80 0%, #052e1680 100%)',
+            background: isAI ? 'linear-gradient(135deg,#4c1d9560,#1e1b4b40)' : 'linear-gradient(135deg,#06402060,#05201040)',
           }} />
           <img src={card.img} alt={card.label}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 relative z-10"
+            className="w-full h-full object-cover"
             loading="lazy"
-            onError={e => { (e.target as HTMLImageElement).style.display='none' }}
+            onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent z-20" />
-          <div className={`absolute top-3 right-3 z-30 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold text-white backdrop-blur-sm ${isAI ? 'bg-rose/80 border border-rose/40' : 'bg-emerald/80 border border-emerald/40'}`}>
-            {isAI ? <AlertTriangle className="w-3 h-3" /> : <CheckCircle className="w-3 h-3" />}
-            {card.verdict}
-          </div>
-        </div>
-      ) : (
-        <div className="h-36 sm:h-40 md:h-44 p-3 sm:p-4 bg-surface-active flex flex-col justify-center relative overflow-hidden">
-          <div className={`absolute top-0 left-0 w-1 h-full ${isAI ? 'bg-rose' : 'bg-emerald'}`} />
-          <p className="text-sm text-text-muted leading-relaxed line-clamp-4 italic pl-3">
-            "{card.preview}"
-          </p>
-          <div className={`absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${isAI ? 'bg-rose/10 text-rose border border-rose/20' : 'bg-emerald/10 text-emerald border border-emerald/20'}`}>
-            {isAI ? <AlertTriangle className="w-3 h-3" /> : <CheckCircle className="w-3 h-3" />}
-            {card.verdict}
-          </div>
         </div>
       )}
 
-      {/* Card footer */}
-      <div className="p-3.5 flex items-center justify-between">
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-text-primary truncate">{card.label}</p>
-          <div className="flex items-center gap-1.5 mt-0.5">
-            <span className={`text-xs px-1.5 py-0.5 rounded-md font-medium ${isAI ? 'bg-rose/10 text-rose' : 'bg-emerald/10 text-emerald'}`}>
-              {card.tag}
-            </span>
-          </div>
+      {/* Text preview (text cards) */}
+      {card.type === 'text' && (
+        <div className="w-20 flex-shrink-0 bg-surface-active self-stretch flex items-center justify-center p-1.5">
+          <span className="text-[9px] text-text-disabled leading-tight text-center line-clamp-4 italic">
+            {card.preview?.slice(0, 55)}…
+          </span>
         </div>
-        <div className="text-right flex-shrink-0 ml-2">
-          <div className={`text-lg font-black ${isAI ? 'text-rose' : 'text-emerald'}`}>{card.confidence}%</div>
-          <div className="text-[10px] text-text-disabled">confidence</div>
+      )}
+
+      {/* Content */}
+      <div className="flex-1 min-w-0 p-3 flex flex-col justify-between">
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-sm font-semibold text-text-primary leading-tight">{card.label}</p>
+          <span className={`flex-shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${isAI ? 'bg-rose/10 text-rose border border-rose/20' : 'bg-emerald/10 text-emerald border border-emerald/20'}`}>
+            {isAI ? <AlertTriangle className="w-2.5 h-2.5" /> : <CheckCircle className="w-2.5 h-2.5" />}
+            {card.verdict}
+          </span>
+        </div>
+        <div className="flex items-center justify-between mt-2">
+          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${isAI ? 'bg-rose/10 text-rose' : 'bg-emerald/10 text-emerald'}`}>
+            {card.tag}
+          </span>
+          <span className={`text-base font-black ${isAI ? 'text-rose' : 'text-emerald'}`}>
+            {card.confidence}%
+            <span className="text-[9px] text-text-disabled font-normal ml-0.5">conf</span>
+          </span>
         </div>
       </div>
     </div>
   )
 }
+
+// ── Desktop / tablet scrolling card ─────────────────────────────────────────
+function ComparisonCard({ card }: { card: { type: string; label: string; verdict: string; confidence: number; color: string; tag: string; preview?: string; img?: string } }) {
+  const isAI = card.verdict === 'AI'
+  return (
+    <div className="flex-shrink-0 w-60 sm:w-64 lg:w-72 bg-surface border border-border rounded-xl sm:rounded-2xl overflow-hidden hover:border-primary/30 transition-all duration-300 group">
+      {/* Top — image or text */}
+      {card.type === 'image' && card.img ? (
+        <div className="relative h-36 sm:h-40 lg:h-44 overflow-hidden bg-surface-active">
+          <div className="absolute inset-0" style={{
+            background: isAI ? 'linear-gradient(135deg,#4c1d9580,#1e1b4b50)' : 'linear-gradient(135deg,#064e3b80,#052e1650)',
+          }} />
+          <img src={card.img} alt={card.label}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 relative z-10"
+            loading="lazy"
+            onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent z-20" />
+          <div className={`absolute top-2.5 right-2.5 z-30 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold text-white backdrop-blur-sm ${isAI ? 'bg-rose/80 border border-rose/40' : 'bg-emerald/80 border border-emerald/40'}`}>
+            {isAI ? <AlertTriangle className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> : <CheckCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3" />}
+            {card.verdict}
+          </div>
+        </div>
+      ) : (
+        <div className="h-36 sm:h-40 lg:h-44 p-3 sm:p-4 bg-surface-active flex flex-col justify-center relative overflow-hidden">
+          <div className={`absolute top-0 left-0 w-1 h-full ${isAI ? 'bg-rose' : 'bg-emerald'}`} />
+          <p className="text-xs sm:text-sm text-text-muted leading-relaxed line-clamp-4 italic pl-3">
+            "{card.preview}"
+          </p>
+          <div className={`absolute top-2.5 right-2.5 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${isAI ? 'bg-rose/10 text-rose border border-rose/20' : 'bg-emerald/10 text-emerald border border-emerald/20'}`}>
+            {isAI ? <AlertTriangle className="w-2.5 h-2.5" /> : <CheckCircle className="w-2.5 h-2.5" />}
+            {card.verdict}
+          </div>
+        </div>
+      )}
+      {/* Footer */}
+      <div className="p-3 flex items-center justify-between">
+        <div className="min-w-0">
+          <p className="text-xs sm:text-sm font-semibold text-text-primary truncate">{card.label}</p>
+          <span className={`inline-block text-[10px] px-1.5 py-0.5 rounded font-medium mt-0.5 ${isAI ? 'bg-rose/10 text-rose' : 'bg-emerald/10 text-emerald'}`}>
+            {card.tag}
+          </span>
+        </div>
+        <div className="text-right flex-shrink-0 ml-2">
+          <div className={`text-base sm:text-lg font-black ${isAI ? 'text-rose' : 'text-emerald'}`}>{card.confidence}%</div>
+          <div className="text-[9px] text-text-disabled">confidence</div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 
 // ─── Main Page ───────────────────────────────────────────────────────────────
 export default function HomePage() {
