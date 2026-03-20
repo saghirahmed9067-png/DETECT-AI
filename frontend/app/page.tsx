@@ -79,6 +79,17 @@ function ParticleNetwork() {
 }
 
 // ─── Floating Nature Images (hero background trees/plants) ───────────────────
+// ── Deferred Particle Network — only starts after LCP ──────────────────────
+function DeferredParticleNetwork() {
+  const [show, setShow] = useState(false)
+  useEffect(() => {
+    // Defer until after first meaningful paint (~800ms)
+    const t = setTimeout(() => setShow(true), 800)
+    return () => clearTimeout(t)
+  }, [])
+  return show ? <ParticleNetwork /> : null
+}
+
 // ── Hero Root Network — responsive 3-tier (mobile 3+3 / tablet 6+6 / desktop 10+10) ──
 
 // ── Desktop nodes (full 10+10) ──
@@ -194,7 +205,8 @@ function RootNetworkNode({ node, file, side, index, size }: {
         style={{ display: 'block' }}
         onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
         decoding="async"
-        fetchPriority={index < 3 ? 'high' : 'low' as 'high'|'auto'|'low'}
+        loading={index < 2 ? 'eager' : 'lazy'}
+        fetchPriority={index < 2 ? 'high' : 'auto' as 'high'|'auto'|'low'}
       />
 
       {/* Bottom fade */}
@@ -270,12 +282,12 @@ function FloatingCards() {
 
         {aiNodes.map((node, i) => (
           <RootNetworkNode key={`ai-${i}`} node={node}
-            file={`/hero/ai/ai-${String(i+1).padStart(2,'0')}.jpg`}
+            file={`/hero/ai/ai-${String(i+1).padStart(2,'0')}.webp`}
             side="ai" index={i} size={cardSize} />
         ))}
         {realNodes.map((node, i) => (
           <RootNetworkNode key={`real-${i}`} node={node}
-            file={`/hero/real/real-${String(i+1).padStart(2,'0')}.jpg`}
+            file={`/hero/real/real-${String(i+1).padStart(2,'0')}.webp`}
             side="real" index={i} size={cardSize} />
         ))}
 
@@ -530,22 +542,22 @@ const COMPARISON_CARDS = [
     tag: 'Authentic', icon: 'text' },
   // Image AI vs Real
   { type: 'image', label: 'AI-Generated Portrait', verdict: 'AI',    confidence: 98, color: '#f43f5e',
-    img: '/compare/ai-portrait-01.jpg',
+    img: '/compare/ai-portrait-01.webp',
     tag: 'Midjourney', icon: 'image' },
   { type: 'image', label: 'Authentic Photo',        verdict: 'HUMAN', confidence: 97, color: '#10b981',
-    img: '/compare/real-portrait-01.jpg',
+    img: '/compare/real-portrait-01.webp',
     tag: 'Authentic', icon: 'image' },
   { type: 'image', label: 'DALL-E 3 Landscape',    verdict: 'AI',    confidence: 95, color: '#f43f5e',
-    img: '/compare/ai-city-01.jpg',
+    img: '/compare/ai-city-01.webp',
     tag: 'DALL-E 3', icon: 'image' },
   { type: 'image', label: 'Real Landscape',         verdict: 'HUMAN', confidence: 93, color: '#10b981',
-    img: '/compare/real-mountain-01.jpg',
+    img: '/compare/real-mountain-01.webp',
     tag: 'Authentic', icon: 'image' },
   { type: 'image', label: 'Stable Diffusion Art',  verdict: 'AI',    confidence: 99, color: '#f43f5e',
-    img: '/compare/ai-abstract-01.jpg',
+    img: '/compare/ai-abstract-01.webp',
     tag: 'SD XL', icon: 'image' },
   { type: 'image', label: 'Real Urban Photo',       verdict: 'HUMAN', confidence: 91, color: '#10b981',
-    img: '/compare/real-street-01.jpg',
+    img: '/compare/real-street-01.webp',
     tag: 'Authentic', icon: 'image' },
   // More text
   { type: 'text', label: 'AI Essay',            verdict: 'AI',    confidence: 93, color: '#f43f5e',
@@ -556,22 +568,22 @@ const COMPARISON_CARDS = [
     tag: 'Authentic', icon: 'text' },
   // More images
   { type: 'image', label: 'AI Nature Scene',    verdict: 'AI',    confidence: 97, color: '#f43f5e',
-    img: '/compare/ai-nature-01.jpg',
+    img: '/compare/ai-nature-01.webp',
     tag: 'Firefly', icon: 'image' },
   { type: 'image', label: 'Real Forest',        verdict: 'HUMAN', confidence: 95, color: '#10b981',
-    img: '/compare/real-forest-01.jpg',
+    img: '/compare/real-forest-01.webp',
     tag: 'Authentic', icon: 'image' },
   { type: 'image', label: 'AI Portrait',        verdict: 'AI',    confidence: 99, color: '#f43f5e',
-    img: '/compare/ai-face-01.jpg',
+    img: '/compare/ai-face-01.webp',
     tag: 'ThisPersonDoesNotExist', icon: 'image' },
   { type: 'image', label: 'Real Portrait',      verdict: 'HUMAN', confidence: 92, color: '#10b981',
-    img: '/compare/real-face-01.jpg',
+    img: '/compare/real-face-01.webp',
     tag: 'Authentic', icon: 'image' },
   { type: 'image', label: 'AI Architecture',    verdict: 'AI',    confidence: 94, color: '#f43f5e',
-    img: '/compare/ai-architecture-01.jpg',
+    img: '/compare/ai-architecture-01.webp',
     tag: 'Midjourney', icon: 'image' },
   { type: 'image', label: 'Real Architecture',  verdict: 'HUMAN', confidence: 96, color: '#10b981',
-    img: '/compare/real-architecture-01.jpg',
+    img: '/compare/real-architecture-01.webp',
     tag: 'Authentic', icon: 'image' },
   { type: 'text', label: 'AI Product Desc.',    verdict: 'AI',    confidence: 91, color: '#f43f5e',
     preview: 'Experience unparalleled innovation with our cutting-edge solution that seamlessly integrates advanced AI-powered functionality to deliver exceptional results...',
@@ -580,12 +592,30 @@ const COMPARISON_CARDS = [
     preview: "shipped faster than expected, packaging was a bit beat up but the actual item inside was totally fine. would buy again if the price drops",
     tag: 'Authentic', icon: 'text' },
   { type: 'image', label: 'AI Food Photo',      verdict: 'AI',    confidence: 95, color: '#f43f5e',
-    img: '/compare/ai-food-01.jpg',
+    img: '/compare/ai-food-01.webp',
     tag: 'DALL-E 3', icon: 'image' },
   { type: 'image', label: 'Real Food Photo',    verdict: 'HUMAN', confidence: 93, color: '#10b981',
-    img: '/compare/real-food-01.jpg',
+    img: '/compare/real-food-01.webp',
     tag: 'Authentic', icon: 'image' },
 ]
+
+function LazyAIvsRealSection() {
+  const [visible, setVisible] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setVisible(true); observer.disconnect() } },
+      { rootMargin: '400px' }  // start loading 400px before it enters viewport
+    )
+    if (ref.current) observer.observe(ref.current)
+    return () => observer.disconnect()
+  }, [])
+  return (
+    <div ref={ref} style={{ minHeight: visible ? 'auto' : '400px' }}>
+      {visible && <AIvsRealSection />}
+    </div>
+  )
+}
 
 function AIvsRealSection() {
   return (
@@ -850,7 +880,7 @@ export default function HomePage() {
       <main id="main-content">
       {/* ── HERO ── */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24 sm:pt-28 lg:pt-32">
-        <ParticleNetwork />
+        <DeferredParticleNetwork />
         <FloatingCards />
 
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-primary/8 blur-[120px] pointer-events-none" />
@@ -940,8 +970,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── AI VS REAL COMPARISON CARDS ── */}
-      <AIvsRealSection />
+      {/* ── AI VS REAL COMPARISON CARDS — lazy loaded below fold ── */}
+      <LazyAIvsRealSection />
 
       {/* ── TOOLS GRID ── */}
       <section id="tools" className="py-16 sm:py-24 px-4">

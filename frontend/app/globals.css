@@ -226,31 +226,47 @@ h1 {
 
 
 /* ── Hero root network card animations (CSS-only — no hydration flash) ── */
-@keyframes node-bob-a {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-6px); }
+/* ── Hero node card animations — single composite animation per element ──
+   Merged fade-in + bob into ONE animation to avoid non-composited conflicts.
+   GPU-composited: only `transform` + `opacity` used, no layout properties. */
+
+@keyframes node-in-bob-a {
+  /* 0-16%: fade in from scale 0.85 */
+  0%   { opacity: 0;    transform: translateY(0px)  scale(0.85); }
+  16%  { opacity: 0.68; transform: translateY(0px)  scale(1);    }
+  /* 16-58%: bob down */
+  37%  { opacity: 0.68; transform: translateY(-6px) scale(1);    }
+  /* 58-100%: bob back + repeat */
+  58%  { opacity: 0.68; transform: translateY(0px)  scale(1);    }
+  79%  { opacity: 0.68; transform: translateY(-6px) scale(1);    }
+  100% { opacity: 0.68; transform: translateY(0px)  scale(1);    }
 }
-@keyframes node-bob-b {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-9px); }
+@keyframes node-in-bob-b {
+  0%   { opacity: 0;    transform: translateY(0px)  scale(0.85); }
+  14%  { opacity: 0.68; transform: translateY(0px)  scale(1);    }
+  35%  { opacity: 0.68; transform: translateY(-9px) scale(1);    }
+  56%  { opacity: 0.68; transform: translateY(0px)  scale(1);    }
+  77%  { opacity: 0.68; transform: translateY(-9px) scale(1);    }
+  100% { opacity: 0.68; transform: translateY(0px)  scale(1);    }
 }
-@keyframes node-fadein {
-  from { opacity: 0; transform: scale(0.82); }
-  to   { opacity: 0.68; transform: scale(1); }
-}
+
 .node-card {
   opacity: 0;
-  animation: node-fadein 0.7s ease-out forwards;
+  will-change: transform, opacity;
+  animation: node-in-bob-a 5s ease-in-out infinite;
+  animation-fill-mode: forwards;
 }
 .node-card-bob-a {
-  animation:
-    node-fadein 0.7s ease-out forwards,
-    node-bob-a 4.2s ease-in-out infinite;
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: node-in-bob-a 5s ease-in-out infinite;
+  animation-fill-mode: forwards;
 }
 .node-card-bob-b {
-  animation:
-    node-fadein 0.7s ease-out forwards,
-    node-bob-b 5.1s ease-in-out infinite;
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: node-in-bob-b 6s ease-in-out infinite;
+  animation-fill-mode: forwards;
 }
 
 /* ── Mobile: faster scroll animations so cards are visible ── */

@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {},
   env: {
     NEXT_PUBLIC_SUPABASE_URL:      process.env.NEXT_PUBLIC_SUPABASE_URL      || '',
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
@@ -10,6 +11,10 @@ const nextConfig = {
     NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: '/dashboard',
   },
   images: {
+    formats: ['image/webp', 'image/avif'],
+    deviceSizes: [360, 480, 640, 750, 828, 1080, 1200],
+    imageSizes: [16, 32, 64, 96, 128, 256],
+    minimumCacheTTL: 31536000,
     remotePatterns: [
       { protocol: 'https', hostname: '*.supabase.co'             },
       { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
