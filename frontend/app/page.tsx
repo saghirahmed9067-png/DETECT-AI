@@ -156,46 +156,48 @@ function RootNetworkNode({ node, file, side, index, size }: {
   const isAI = side === 'ai'
   const { w, h } = size
 
-  // Safe left: clamp cards so they never go off-screen
+  // Clamp to never go off-screen
   const safeLeft = node.x < 10
     ? `max(4px, calc(${node.x}% - ${w / 2}px))`
     : node.x > 90
     ? `min(calc(100% - ${w + 4}px), calc(${node.x}% - ${w / 2}px))`
     : `calc(${node.x}% - ${w / 2}px)`
 
-  return (
-    <motion.div
-      className="absolute rounded-lg pointer-events-none overflow-hidden"
-      style={{ left: safeLeft, top: `calc(${node.y}% - ${h / 2}px)`, width: w, height: h, zIndex: 2 }}
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 0.68, scale: 1 }}
-      transition={{ delay: node.delay + 0.2, duration: 0.8, ease: 'easeOut' }}
-    >
-      {/* Solid gradient fallback — always shows, image paints on top */}
-      <div
-        className="absolute inset-0"
-        style={{ background: isAI ? 'linear-gradient(160deg,#5b21b6,#1e1b4b)' : 'linear-gradient(160deg,#065f46,#052e16)' }}
-      />
+  // Alternate bob speed/height for organic look
+  const bobClass = index % 2 === 0 ? 'node-card-bob-a' : 'node-card-bob-b'
 
-      {/* Image — always opacity 1, no state, no race condition */}
+  return (
+    <div
+      className={`absolute rounded-lg pointer-events-none overflow-hidden ${bobClass}`}
+      style={{
+        left:  safeLeft,
+        top:   `calc(${node.y}% - ${h / 2}px)`,
+        width: w,
+        height: h,
+        zIndex: 2,
+        // Stagger each card's animation start by its delay
+        animationDelay: `${node.delay}s, ${node.delay}s`,
+      }}
+    >
+      {/* Solid colour fallback — always visible */}
+      <div className="absolute inset-0" style={{
+        background: isAI
+          ? 'linear-gradient(160deg,#5b21b6,#1e1b4b)'
+          : 'linear-gradient(160deg,#065f46,#052e16)',
+      }} />
+
+      {/* Image sits on top — opacity:1, no JS state, no race */}
       <img
         src={file}
         alt=""
-        width={w}
-        height={h}
         className="absolute inset-0 w-full h-full object-cover"
+        style={{ display: 'block' }}
         onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
         decoding="async"
+        fetchPriority={index < 3 ? 'high' : 'low' as 'high'|'auto'|'low'}
       />
 
-      {/* Float animation as separate child so opacity is independent */}
-      <motion.div
-        className="absolute inset-0"
-        animate={{ y: [0, index % 2 === 0 ? -5 : -8, 0] }}
-        transition={{ delay: node.delay, duration: 4 + (index % 4) * 0.9, repeat: Infinity, ease: 'easeInOut' }}
-      />
-
-      {/* Bottom gradient */}
+      {/* Bottom fade */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
 
       {/* Label */}
@@ -203,10 +205,10 @@ function RootNetworkNode({ node, file, side, index, size }: {
         {isAI ? 'AI' : '✓'}
       </div>
 
-      {/* Border glow */}
+      {/* Border */}
       <div className="absolute inset-0 rounded-lg"
         style={{ boxShadow: isAI ? 'inset 0 0 0 1px #7c3aed50' : 'inset 0 0 0 1px #10b98150' }} />
-    </motion.div>
+    </div>
   )
 }
 

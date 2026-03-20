@@ -224,3 +224,31 @@ h1 {
   animation-play-state: paused;
 }
 
+
+/* ── Hero root network card animations (CSS-only — no hydration flash) ── */
+@keyframes node-bob-a {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-6px); }
+}
+@keyframes node-bob-b {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-9px); }
+}
+@keyframes node-fadein {
+  from { opacity: 0; transform: scale(0.82); }
+  to   { opacity: 0.68; transform: scale(1); }
+}
+.node-card {
+  opacity: 0;
+  animation: node-fadein 0.7s ease-out forwards;
+}
+.node-card-bob-a {
+  animation:
+    node-fadein 0.7s ease-out forwards,
+    node-bob-a 4.2s ease-in-out infinite;
+}
+.node-card-bob-b {
+  animation:
+    node-fadein 0.7s ease-out forwards,
+    node-bob-b 5.1s ease-in-out infinite;
+}
