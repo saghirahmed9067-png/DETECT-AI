@@ -134,7 +134,8 @@ const FLOAT_BADGES = [
 
 // ── Responsive hook ──────────────────────────────────────────────────────────
 function useBreakpoint() {
-  const [bp, setBp] = useState<'sm'|'md'|'lg'>('lg')
+  // Start null to avoid SSR/hydration mismatch
+  const [bp, setBp] = useState<'sm'|'md'|'lg'|null>(null)
   useEffect(() => {
     const update = () => {
       const w = window.innerWidth
@@ -144,7 +145,7 @@ function useBreakpoint() {
     window.addEventListener('resize', update)
     return () => window.removeEventListener('resize', update)
   }, [])
-  return bp
+  return bp ?? 'lg'  // fallback to lg until client detects real size
 }
 
 function RootNetworkNode({ node, file, side, index, size }: {
@@ -152,70 +153,56 @@ function RootNetworkNode({ node, file, side, index, size }: {
   file: string; side: 'ai' | 'real'; index: number
   size: { w: number; h: number }
 }) {
-  const imgRef = useRef<HTMLImageElement>(null)
-  const [loaded, setLoaded] = useState(false)
   const isAI = side === 'ai'
   const { w, h } = size
 
-  // Fix: cached images fire onLoad before React attaches handlers.
-  // useEffect catches both fresh loads and already-cached images.
-  useEffect(() => {
-    const img = imgRef.current
-    if (!img) return
-    if (img.complete && img.naturalWidth > 0) {
-      setLoaded(true)   // already in cache — show immediately
-    }
-  }, [file])
-
-  // Clamp left so card never goes off-screen left/right edge
-  const leftVal  = `max(4px, calc(${node.x}% - ${w/2}px))`
-  const rightMax = `min(calc(100% - ${w + 4}px), calc(${node.x}% - ${w/2}px))`
-  // Simple: use left but ensure minimum 4px from edge
+  // Safe left: clamp cards so they never go off-screen
   const safeLeft = node.x < 10
-    ? `max(4px, calc(${node.x}% - ${w/2}px))`
+    ? `max(4px, calc(${node.x}% - ${w / 2}px))`
     : node.x > 90
-    ? `min(calc(100% - ${w + 4}px), calc(${node.x}% - ${w/2}px))`
-    : `calc(${node.x}% - ${w/2}px)`
+    ? `min(calc(100% - ${w + 4}px), calc(${node.x}% - ${w / 2}px))`
+    : `calc(${node.x}% - ${w / 2}px)`
 
   return (
     <motion.div
-      className="absolute rounded-lg pointer-events-none"
-      style={{
-        left:     safeLeft,
-        top:      `calc(${node.y}% - ${h/2}px)`,
-        width: w, height: h, zIndex: 2,
-        overflow: 'hidden',
-      }}
-      initial={{ opacity: 0, scale: 0.7 }}
-      animate={{ opacity: 0.65, scale: 1, y: [0, index % 2 === 0 ? -4 : -7, 0] }}
-      transition={{
-        opacity: { delay: node.delay + 0.3, duration: 0.7 },
-        scale:   { delay: node.delay + 0.3, duration: 0.5 },
-        y: { delay: node.delay, duration: 4 + (index % 4) * 0.8, repeat: Infinity, ease: 'easeInOut' },
-      }}
+      className="absolute rounded-lg pointer-events-none overflow-hidden"
+      style={{ left: safeLeft, top: `calc(${node.y}% - ${h / 2}px)`, width: w, height: h, zIndex: 2 }}
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 0.68, scale: 1 }}
+      transition={{ delay: node.delay + 0.2, duration: 0.8, ease: 'easeOut' }}
     >
-      {/* Gradient fallback — always visible behind image */}
-      <div className="absolute inset-0" style={{
-        background: isAI
-          ? 'linear-gradient(160deg,#5b21b6,#1e1b4b)'
-          : 'linear-gradient(160deg,#065f46,#052e16)',
-      }} />
-      {/* Image — no lazy loading so it loads immediately in viewport */}
+      {/* Solid gradient fallback — always shows, image paints on top */}
+      <div
+        className="absolute inset-0"
+        style={{ background: isAI ? 'linear-gradient(160deg,#5b21b6,#1e1b4b)' : 'linear-gradient(160deg,#065f46,#052e16)' }}
+      />
+
+      {/* Image — always opacity 1, no state, no race condition */}
       <img
-        ref={imgRef}
         src={file}
         alt=""
-        className="w-full h-full object-cover transition-opacity duration-500"
-        style={{ opacity: loaded ? 1 : 0 }}
-        onLoad={() => setLoaded(true)}
-        onError={() => setLoaded(false)}
+        width={w}
+        height={h}
+        className="absolute inset-0 w-full h-full object-cover"
+        onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+        decoding="async"
       />
-      {/* Bottom gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-      {/* Label badge */}
-      <div className={`absolute bottom-1 left-1 text-[7px] font-black px-1 py-0.5 rounded leading-none ${isAI ? 'bg-rose/80 text-white' : 'bg-emerald/80 text-white'}`}>
+
+      {/* Float animation as separate child so opacity is independent */}
+      <motion.div
+        className="absolute inset-0"
+        animate={{ y: [0, index % 2 === 0 ? -5 : -8, 0] }}
+        transition={{ delay: node.delay, duration: 4 + (index % 4) * 0.9, repeat: Infinity, ease: 'easeInOut' }}
+      />
+
+      {/* Bottom gradient */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
+
+      {/* Label */}
+      <div className={`absolute bottom-1 left-1 text-[7px] font-black px-1 py-0.5 rounded leading-none z-10 ${isAI ? 'bg-rose/80 text-white' : 'bg-emerald/80 text-white'}`}>
         {isAI ? 'AI' : '✓'}
       </div>
+
       {/* Border glow */}
       <div className="absolute inset-0 rounded-lg"
         style={{ boxShadow: isAI ? 'inset 0 0 0 1px #7c3aed50' : 'inset 0 0 0 1px #10b98150' }} />
