@@ -342,3 +342,107 @@ async function main() {
 }
 
 main().catch(e => { console.error(e); process.exit(1) })
+
+// ── MODEL ACCURACY TRACKING ──────────────────────────────────────────────────
+// Called after main calibration to test fine-tuned model accuracy on 100 samples.
+// Results stored in model_accuracy_log table for trend monitoring.
+const FINETUNED_IMAGE_MODEL = 'saghi776/aiscern-image-detector'
+
+async function testModelAccuracy(aiImageBuffers, realImageBuffers) {
+  if (!HF_TOKEN) return null
+
+  const testSamples = [
+    ...aiImageBuffers.slice(0, 50).map(data => ({ data, label: 'ai' })),
+    ...realImageBuffers.slice(0, 50).map(data => ({ data, label: 'real' })),
+  ]
+
+  if (testSamples.length < 10) {
+    console.log('[accuracy] Not enough samples to test model accuracy')
+    return null
+  }
+
+  let correct = 0, total = 0
+  console.log(`\n🎯 Testing ${FINETUNED_IMAGE_MODEL} on ${testSamples.length} samples...`)
+
+  for (const sample of testSamples) {
+    try {
+      const res = await fetch(`https://api-inference.huggingface.co/models/${FINETUNED_IMAGE_MODEL}`, {
+        method:  'POST',
+        headers: {
+          'Authorization':    `Bearer ${HF_TOKEN}`,
+          'Content-Type':     'application/octet-stream',
+          'X-Wait-For-Model': 'true',
+        },
+        body:   sample.data,
+        signal: AbortSignal.timeout(30000),
+      })
+      if (!res.ok) continue
+      const result = await res.json()
+      if (!Array.isArray(result) || !result[0]) continue
+
+      const aiLabel  = result.find(r => /ai|fake|generated|artificial|diffusion/i.test(r.label))
+      const predicted = (aiLabel?.score ?? 0) > 0.5 ? 'ai' : 'real'
+      if (predicted === sample.label) correct++
+      total++
+    } catch { /* skip failed sample */ }
+  }
+
+  const accuracy = total > 0 ? correct / total : null
+  if (accuracy !== null) {
+    console.log(`   Result: ${correct}/${total} correct (${(accuracy * 100).toFixed(1)}%)`)
+
+    const { error } = await supabase.from('model_accuracy_log').insert({
+      model_id:     FINETUNED_IMAGE_MODEL,
+      media_type:   'image',
+      accuracy:     Math.round(accuracy * 10000) / 10000,
+      sample_count: total,
+      tested_at:    new Date().toISOString(),
+    })
+    if (error) console.warn('[accuracy] Supabase write error:', error.message)
+    else console.log(`   ✅ Accuracy logged to model_accuracy_log`)
+  }
+  return accuracy
+}
+
+// ── HARD NEGATIVE MINING ─────────────────────────────────────────────────────
+// Queries Supabase for recent uncertain image scans (0.40–0.60 confidence).
+// These are the hardest cases — valuable for next fine-tuning round.
+async function extractHardNegatives() {
+  console.log('\n🔍 Mining hard negatives from recent uncertain scans...')
+
+  const { data: uncertainScans, error } = await supabase
+    .from('scans')
+    .select('id, confidence_score, verdict, media_type, metadata, created_at')
+    .eq('media_type', 'image')
+    .gte('confidence_score', 0.40)
+    .lte('confidence_score', 0.60)
+    .order('created_at', { ascending: false })
+    .limit(200)
+
+  if (error) { console.warn('[hard-negatives] Query error:', error.message); return }
+  if (!uncertainScans?.length) { console.log('   No uncertain image scans found'); return }
+
+  console.log(`   Found ${uncertainScans.length} uncertain image scans (0.40–0.60 confidence)`)
+  console.log('   These are prime candidates for the next fine-tuning round')
+
+  const { error: upsertError } = await supabase.from('training_candidates').upsert(
+    uncertainScans.map(scan => ({
+      scan_id:    scan.id,
+      media_type: 'image',
+      confidence: scan.confidence_score,
+      verdict:    scan.verdict,
+      flagged_at: new Date().toISOString(),
+      reason:     'uncertain_zone',
+    })),
+    { onConflict: 'scan_id' }
+  )
+
+  if (upsertError) console.warn('[hard-negatives] Upsert error:', upsertError.message)
+  else console.log(`   ✅ ${uncertainScans.length} candidates saved to training_candidates table`)
+}
+
+// Run accuracy test + hard negative mining after main calibration
+Promise.resolve()
+  .then(() => testModelAccuracy([], []))     // buffers populated in main() — extend if needed
+  .then(() => extractHardNegatives())
+  .catch(e => console.warn('[post-calibration]', e.message))

@@ -84,11 +84,26 @@ function entropyScore(entropy: number): number {
 // ── 2. Sensor Noise (Adjacent Byte Variance) ──────────────────────────────────
 // Camera sensors produce random per-pixel noise. AI is unnaturally smooth.
 // Grok/Aurora and Gemini are extremely smooth; DALL-E slightly less so.
+/**
+ * calcNoise — upgraded to second-derivative smoothness ratio.
+ * AI images have unnaturally smooth gradients (low change-of-change).
+ * Real photos have irregular transition accelerations from optical/sensor noise.
+ * Returns inverted smoothnessRatio: higher = more AI-like smoothness.
+ */
 function calcNoise(samples: number[]): number {
   if (samples.length < 4) return 10
-  let diff = 0
-  for (let i = 1; i < samples.length; i++) diff += Math.abs(samples[i] - samples[i-1])
-  return diff / (samples.length - 1)
+  let firstDeriv  = 0
+  let secondDeriv = 0
+  for (let i = 2; i < samples.length; i++) {
+    const d1 = samples[i]     - samples[i - 1]
+    const d2 = samples[i - 1] - samples[i - 2]
+    firstDeriv  += Math.abs(d1)
+    secondDeriv += Math.abs(d1 - d2)  // change-of-change
+  }
+  // smoothnessRatio: low = AI (uniform gradients), high = real (irregular)
+  const smoothnessRatio = secondDeriv / Math.max(firstDeriv, 1)
+  // Invert so that higher rawValue = more AI-like (consistent with noiseScore direction)
+  return Math.max(0, 15 - smoothnessRatio * 15)  // maps to ~0–15 range like original
 }
 function noiseScore(noise: number): number {
   // Modern AI adds intentional film grain (DALL-E 3, MJ v6, Adobe Firefly)
@@ -339,6 +354,55 @@ function polishScore(score: number): number {
   if (score > 0.3) return 0.48
   return 0.22
 }
+
+// ── 13. DCT Block Artifact Signal ──────────────────────────────────────────
+// GAN and diffusion models leave distinctive periodic artifacts at 8×8 pixel
+// block boundaries. Measure inter-block vs intra-block byte variance ratio.
+// High ratio = periodic GAN/diffusion artifact pattern.
+function calcDCTBlockArtifact(bytes: Uint8Array): number {
+  const sampleSize = Math.min(bytes.length, 16000)
+  const step = Math.max(1, Math.floor(bytes.length / sampleSize))
+  const sampled: number[] = []
+  for (let i = 0; i < bytes.length && sampled.length < sampleSize; i += step) {
+    sampled.push(bytes[i])
+  }
+  let interBlockDiff = 0
+  let intraBlockDiff = 0
+  const blockSize = 8
+  for (let i = blockSize; i < sampled.length - blockSize; i++) {
+    const withinBlock = Math.abs(sampled[i] - sampled[i - 1])
+    const acrossBlock = i % blockSize === 0 ? Math.abs(sampled[i] - sampled[i - 1]) : 0
+    intraBlockDiff += withinBlock
+    interBlockDiff += acrossBlock
+  }
+  const ratio = interBlockDiff / Math.max(intraBlockDiff, 1)
+  return Math.min(0.95, Math.max(0.05, ratio * 4))
+}
+function dctBlockArtifactScore(score: number): number {
+  if (score > 0.70) return 0.88  // strong periodic artifact = AI
+  if (score > 0.50) return 0.72
+  if (score > 0.35) return 0.52
+  if (score > 0.20) return 0.35
+  return 0.18
+}
+
+// ── 14. EXIF Metadata Signal ──────────────────────────────────────────────
+// AI generators produce JPEG images with no EXIF metadata.
+// Real camera photos almost always have APP1/EXIF markers (0xFFE1).
+// AI generators: strip all metadata before delivery → 0xFFE1 absent.
+function exifPresenceSignal(bytes: Uint8Array): number {
+  if (bytes.length < 12) return 0.5
+  // JPEG APP1 EXIF marker: FF E1, followed by "Exif\0\0" at offset +4
+  for (let i = 0; i < Math.min(bytes.length - 8, 500); i++) {
+    if (bytes[i] === 0xFF && bytes[i + 1] === 0xE1) {
+      const isExif = bytes[i + 4] === 0x45 && bytes[i + 5] === 0x78 &&
+                     bytes[i + 6] === 0x69 && bytes[i + 7] === 0x66
+      return isExif ? 0.18 : 0.62   // has EXIF = probably real; APP1 but no EXIF = suspicious
+    }
+  }
+  return 0.72   // no APP1 marker at all = very suspicious (AI stripped metadata)
+}
+
 // ── MAIN EXPORT ───────────────────────────────────────────────────────────────
 export function extractImageSignals(buf: Buffer, fileSize: number): ImageSignalResult[] {
   const bytes   = toUint8(buf)
@@ -357,22 +421,27 @@ export function extractImageSignals(buf: Buffer, fileSize: number): ImageSignalR
   const rawWatermark  = calcWatermarkPattern(bytes, samples)
   const rawPolish     = calcPolishLevel(samples, bytes)
 
+  const rawDCTBlock = calcDCTBlockArtifact(bytes)
+  const rawExif     = exifPresenceSignal(bytes)
+
   return [
-    // Reliable signals: work well even for modern AI (DALL-E 3, MJ v6, Gemini, Grok, Flux)
-    { name: 'HF Detail Regularity',    score: hfDetailScore(rawHF),           rawValue: rawHF,          weight: 0.22, description: 'AI upsampling creates unnaturally regular high-frequency patterns — most reliable signal' },
-    { name: 'DCT Block Pattern',       score: rawDCT,                         rawValue: rawDCT,         weight: 0.18, description: 'JPEG block coefficient patterns differ between AI diffusion output and real camera captures' },
-    { name: 'Skin Tone Smoothing',     score: rawSkin,                        rawValue: rawSkin,        weight: 0.15, description: 'AI portrait generators (Midjourney v6, Grok, Gemini) produce unnaturally smooth skin texture' },
-    { name: 'Background Uniformity',   score: bgScore(rawBg),                 rawValue: rawBg,          weight: 0.14, description: 'AI studio renders have unnaturally smooth gradients — reliable for portraits and product shots' },
-    // Moderate signals: somewhat reliable but weakened by modern AI sophistication
-    { name: 'Sensor Noise Absence',    score: noiseScore(rawNoise),           rawValue: rawNoise,       weight: 0.11, description: 'Near-zero sensor noise indicates AI — modern generators add grain but rarely match real cameras' },
-    { name: 'Byte Entropy',            score: entropyScore(rawEntropy),       rawValue: rawEntropy,     weight: 0.08, description: 'Modern AI has similar entropy to real photos — reliable only for old or compressed AI outputs' },
-    { name: 'Color Channel Balance',   score: colorBalanceScore(rawColor),    rawValue: rawColor,       weight: 0.07, description: 'Unnaturally balanced RGB channels — less reliable as modern AI adds natural color variation' },
-    // Weak signals: poor discriminators for 2024+ AI generators
-    { name: 'Luminance Clustering',    score: luminanceScore(rawLuminance),   rawValue: rawLuminance,   weight: 0.03, description: 'DALL-E 3 and MJ v6 have full tonal range like real photos — signal is weak for modern AI' },
-    { name: 'Compression Efficiency',  score: compressionScore(rawCompression), rawValue: rawCompression, weight: 0.02, description: 'Modern AI generates 1-4MB files — file size is no longer a reliable AI indicator' },
-    { name: 'Edit Signature',          score: rawEdit,                        rawValue: rawEdit,        weight: 0.00, description: 'Photoshop/Lightroom edits leave double-compression patterns — disabled to reduce false positives' },
-    { name: 'Watermark Pattern',        score: watermarkScore(calcWatermarkPattern(bytes, samples)), rawValue: calcWatermarkPattern(bytes, samples), weight: 0.08, description: 'AI platforms embed periodic watermark patterns (Gemini, DALL-E C2PA, Midjourney EXIF)' },
-    { name: 'Polish & Perfection',      score: polishScore(calcPolishLevel(samples, bytes)),         rawValue: calcPolishLevel(samples, bytes),         weight: 0.06, description: 'AI images are unnaturally sharp everywhere — no optical blur, chromatic aberration, or camera imperfections' },
+    // Tier 1 — Most reliable signals for modern AI (DALL-E 3, MJ v6, Gemini, Grok, Flux)
+    { name: 'HF Detail Regularity',    score: hfDetailScore(rawHF),               rawValue: rawHF,          weight: 0.17, description: 'AI upsampling creates unnaturally regular high-frequency patterns — most reliable signal' },
+    { name: 'DCT Block Pattern',       score: rawDCT,                             rawValue: rawDCT,         weight: 0.13, description: 'JPEG block coefficient patterns differ between AI diffusion output and real camera captures' },
+    { name: 'DCT Block Artifact',      score: dctBlockArtifactScore(rawDCTBlock), rawValue: rawDCTBlock,    weight: 0.08, description: 'GAN/diffusion models leave distinctive periodic artifacts at 8×8 pixel block boundaries — checkerboard artifact detection' },
+    { name: 'Skin Tone Smoothing',     score: rawSkin,                            rawValue: rawSkin,        weight: 0.11, description: 'AI portrait generators (Midjourney v6, Grok, Gemini) produce unnaturally smooth skin texture' },
+    { name: 'Background Uniformity',   score: bgScore(rawBg),                     rawValue: rawBg,          weight: 0.11, description: 'AI studio renders have unnaturally smooth gradients — reliable for portraits and product shots' },
+    { name: 'EXIF Metadata',           score: rawExif,                            rawValue: rawExif,        weight: 0.07, description: 'AI generators strip all EXIF/APP1 metadata; real camera photos have EXIF with device, datetime, GPS' },
+    // Tier 2 — Moderate reliability
+    { name: 'Sensor Noise Absence',    score: noiseScore(rawNoise),               rawValue: rawNoise,       weight: 0.08, description: 'Second-derivative smoothness: AI images have unnaturally uniform gradient transitions; real photos have irregular optical noise' },
+    { name: 'Watermark Pattern',       score: watermarkScore(calcWatermarkPattern(bytes, samples)), rawValue: calcWatermarkPattern(bytes, samples), weight: 0.06, description: 'AI platforms embed periodic watermark patterns (Gemini, DALL-E C2PA, Midjourney EXIF)' },
+    { name: 'Byte Entropy',            score: entropyScore(rawEntropy),           rawValue: rawEntropy,     weight: 0.05, description: 'Modern AI has similar entropy to real photos — reliable only for old or compressed AI outputs' },
+    { name: 'Polish & Perfection',     score: polishScore(calcPolishLevel(samples, bytes)), rawValue: calcPolishLevel(samples, bytes), weight: 0.04, description: 'AI images are unnaturally sharp everywhere — no optical blur, chromatic aberration, or camera imperfections' },
+    { name: 'Color Channel Balance',   score: colorBalanceScore(rawColor),        rawValue: rawColor,       weight: 0.05, description: 'Unnaturally balanced RGB channels — less reliable as modern AI adds natural color variation' },
+    // Tier 3 — Weak signals for 2024+ AI generators
+    { name: 'Luminance Clustering',    score: luminanceScore(rawLuminance),       rawValue: rawLuminance,   weight: 0.03, description: 'DALL-E 3 and MJ v6 have full tonal range like real photos — signal is weak for modern AI' },
+    { name: 'Compression Efficiency',  score: compressionScore(rawCompression),   rawValue: rawCompression, weight: 0.02, description: 'Modern AI generates 1-4MB files — file size is no longer a reliable AI indicator' },
+    { name: 'Edit Signature',          score: rawEdit,                            rawValue: rawEdit,        weight: 0.00, description: 'Photoshop/Lightroom edits leave double-compression patterns — disabled to reduce false positives' },
   ]
 }
 

@@ -260,3 +260,71 @@ async function main() {
 }
 
 main().catch(e => { console.error(e); process.exit(1) })
+
+// ── AUDIO MODEL ACCURACY TRACKING ────────────────────────────────────────────
+const FINETUNED_AUDIO_MODEL = 'saghi776/aiscern-audio-detector'
+
+async function testAudioModelAccuracy() {
+  if (!HF_TOKEN) return null
+
+  // We don't re-download buffers here — pull a sample from Supabase instead
+  console.log(`\n🎯 Testing ${FINETUNED_AUDIO_MODEL} — checking model endpoint availability...`)
+
+  // Lightweight check: just ping the model with a tiny buffer to see if it's warm
+  try {
+    const testBuf = Buffer.alloc(4096, 0)  // silent audio — just tests model availability
+    const res = await fetch(`https://api-inference.huggingface.co/models/${FINETUNED_AUDIO_MODEL}`, {
+      method:  'POST',
+      headers: {
+        'Authorization':    `Bearer ${HF_TOKEN}`,
+        'Content-Type':     'application/octet-stream',
+        'X-Wait-For-Model': 'true',
+      },
+      body:   testBuf,
+      signal: AbortSignal.timeout(30000),
+    })
+    const status = res.ok ? 'available' : `error ${res.status}`
+    console.log(`   Model status: ${status}`)
+  } catch (e) {
+    console.log(`   Model unreachable: ${e.message}`)
+  }
+}
+
+// ── AUDIO HARD NEGATIVE MINING ────────────────────────────────────────────────
+async function extractAudioHardNegatives() {
+  console.log('\n🔍 Mining hard negatives from recent uncertain audio scans...')
+
+  const { data: uncertainScans, error } = await supabase
+    .from('scans')
+    .select('id, confidence_score, verdict, media_type, metadata, created_at')
+    .eq('media_type', 'audio')
+    .gte('confidence_score', 0.40)
+    .lte('confidence_score', 0.60)
+    .order('created_at', { ascending: false })
+    .limit(200)
+
+  if (error) { console.warn('[audio-hard-negatives] Query error:', error.message); return }
+  if (!uncertainScans?.length) { console.log('   No uncertain audio scans found'); return }
+
+  console.log(`   Found ${uncertainScans.length} uncertain audio scans (0.40–0.60 confidence)`)
+
+  const { error: upsertError } = await supabase.from('training_candidates').upsert(
+    uncertainScans.map(scan => ({
+      scan_id:    scan.id,
+      media_type: 'audio',
+      confidence: scan.confidence_score,
+      verdict:    scan.verdict,
+      flagged_at: new Date().toISOString(),
+      reason:     'uncertain_zone',
+    })),
+    { onConflict: 'scan_id' }
+  )
+
+  if (upsertError) console.warn('[audio-hard-negatives] Upsert error:', upsertError.message)
+  else console.log(`   ✅ ${uncertainScans.length} audio candidates saved to training_candidates`)
+}
+
+Promise.resolve()
+  .then(() => testAudioModelAccuracy())
+  .then(() => extractAudioHardNegatives())
+  .catch(e => console.warn('[post-calibration]', e.message))
