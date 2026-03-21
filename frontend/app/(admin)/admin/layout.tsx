@@ -35,7 +35,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Logo */}
       <div className={`flex items-center gap-2 px-4 py-5 border-b border-border ${collapsed ? 'justify-center' : ''}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo.png" alt="Aiscern" width={32} height={32} className="rounded-lg shrink-0" />
+        <img src="/logo.png" alt="Aiscern" width={32} height={32} className="rounded-lg shrink-0 object-contain" />
         {!collapsed && <span className="font-black text-sm gradient-text">Aiscern Admin</span>}
       </div>
 

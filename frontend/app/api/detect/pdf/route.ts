@@ -95,7 +95,6 @@ export async function POST(req: NextRequest) {
       const bytes  = await file.arrayBuffer()
       const buffer = Buffer.from(bytes)
       // Dynamic import to avoid build issues
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const pdfParse = require('pdf-parse')
       const pdfData  = await pdfParse(buffer, {
         max: 0,  // parse all pages

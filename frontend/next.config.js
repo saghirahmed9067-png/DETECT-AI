@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: true,       // catch double-render bugs in dev
+  poweredByHeader: false,       // don't leak "X-Powered-By: Next.js" header
   experimental: {},
 
   // Suppress webpack cache serialization warning for large strings

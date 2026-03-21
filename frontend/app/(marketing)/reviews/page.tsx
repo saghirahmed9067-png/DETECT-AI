@@ -2,6 +2,7 @@
 export const dynamic = 'force-dynamic'
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import Image from 'next/image'
 import Link from 'next/link'
 import { Star, ThumbsUp, CheckCircle, PenLine, Filter, ChevronLeft, ChevronRight, User, EyeOff, Loader2 } from 'lucide-react'
 import { SiteFooter } from '@/components/site-footer'
@@ -108,7 +109,7 @@ export default function ReviewsPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-border/50 bg-background/80 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto h-full px-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <img src="/logo.png" alt="Aiscern" className="w-8 h-6 object-contain" />
+            <Image src="/logo.png" alt="Aiscern" width={32} height={22} className="object-contain" />
             <span className="font-black text-lg gradient-text">Aiscern</span>
           </Link>
           <div className="flex items-center gap-3">

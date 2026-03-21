@@ -5,32 +5,32 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: '*',
-        allow: [
-          '/',
-          '/pricing',
-          '/docs/',
-          '/about',
-          '/contact',
-          '/reviews',
-          '/detect/',
-          '/privacy',
-          '/terms',
-        ],
+        allow: '/',
         disallow: [
-          '/dashboard',
-          '/history',
-          '/profile',
+          '/api/',
+          '/dashboard/',
+          '/detect/',
           '/settings',
+          '/profile',
+          '/history',
           '/batch',
           '/scraper',
-          '/pipeline',
-          '/admin',
-          '/api/',
-          '/unauthorized',
+          '/admin/',
+          '/login',
+          '/signup',
+          '/offline',
         ],
+      },
+      {
+        // Block AI training scrapers from the whole site
+        userAgent: [
+          'GPTBot', 'ChatGPT-User', 'CCBot', 'anthropic-ai',
+          'Claude-Web', 'Google-Extended', 'PerplexityBot',
+        ],
+        disallow: '/',
       },
     ],
     sitemap: 'https://aiscern.com/sitemap.xml',
-    host:    'https://aiscern.com',
+    host: 'https://aiscern.com',
   }
 }

@@ -40,7 +40,7 @@ export interface DetectionResult {
   frame_scores?:    { frame: number; time_sec: number; ai_score: number; face_detected?: boolean }[]
 }
 
-const HF_TOKEN = process.env.HUGGINGFACE_API_TOKEN || process.env.HF_TOKEN
+const HF_TOKEN = process.env.HUGGINGFACE_API_TOKEN
 const HF_API   = 'https://api-inference.huggingface.co/models'
 
 // ── Model Registry — best available HF models as of 2026 ──────────────────

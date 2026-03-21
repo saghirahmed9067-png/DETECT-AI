@@ -9,7 +9,7 @@ import { auth } from '@clerk/nextjs/server'
 export const dynamic    = 'force-dynamic'
 export const maxDuration = 60
 
-const HF_TOKEN   = process.env.HUGGINGFACE_API_TOKEN || process.env.HF_TOKEN || ''
+const HF_TOKEN   = process.env.HUGGINGFACE_API_TOKEN || ''
 const HF_REPO    = process.env.HF_DATASET_REPO       || 'saghi776/detectai-dataset'
 const CF_ACCOUNT = process.env.CLOUDFLARE_ACCOUNT_ID     || ''
 const D1_DB      = process.env.CLOUDFLARE_D1_DATABASE_ID || ''
