@@ -25,6 +25,8 @@ export default function ImageDetectionPage() {
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploadPhase, setUploadPhase] = useState<'idle'|'uploading'|'analyzing'|'done'>('idle')
   const [result, setResult] = useState<DetectionResult | null>(null)
   const [scanId, setScanId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -55,12 +57,27 @@ export default function ImageDetectionPage() {
 
   const handleDetect = async () => {
     if (!file) return
-    setLoading(true); setError(null); setResult(null)
+    setLoading(true); setError(null); setResult(null); setUploadProgress(0); setUploadPhase('uploading')
     try {
-      const formData = new FormData(); formData.append('file', file)
-      const res = await fetch('/api/detect/image', { method: 'POST', body: formData })
-      const data = await res.json()
+      const data: any = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest()
+        const formData = new FormData(); formData.append('file', file)
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            setUploadProgress(Math.round((e.loaded / e.total) * 100))
+          }
+        }
+        xhr.onload = () => {
+          setUploadPhase('analyzing')
+          setUploadProgress(100)
+          try { resolve(JSON.parse(xhr.responseText)) } catch { reject(new Error('Parse error')) }
+        }
+        xhr.onerror = () => reject(new Error('Upload failed'))
+        xhr.open('POST', '/api/detect/image')
+        xhr.send(formData)
+      })
       if (!data.success) throw new Error(data.error?.message || 'Detection failed')
+      setUploadPhase('done')
       setResult(data.result)
       setScanId(data.scan_id ?? null)
       if (currentUser?.uid) {
@@ -69,9 +86,10 @@ export default function ImageDetectionPage() {
           file_size: file.size, verdict: data.result?.verdict,
           confidence_score: data.result?.confidence, signals: data.result?.signals,
           model_used: data.result?.model_used, status: 'complete'
-        })
+        }).catch(() => {})
       }
     } catch (e: unknown) {
+      setUploadPhase('idle')
       setError(e instanceof Error ? e.message : 'Detection failed')
     } finally { setLoading(false) }
   }
@@ -187,6 +205,25 @@ Analyzed: ${new Date().toLocaleString()}`
                 </button>
               </div>
 
+              {/* Upload progress bar */}
+              {loading && (
+                <div className="mb-2 space-y-1">
+                  <div className="flex justify-between text-[11px] text-text-muted">
+                    <span>{uploadPhase === 'uploading' ? 'Uploading…' : 'Analyzing with AI models…'}</span>
+                    {uploadPhase === 'uploading' && <span className="font-bold text-primary">{uploadProgress}%</span>}
+                  </div>
+                  <div className="h-1.5 bg-border rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-primary to-violet-400 rounded-full transition-all duration-300"
+                      style={{ width: uploadPhase === 'uploading' ? `${uploadProgress}%` : '100%' }} />
+                  </div>
+                  {uploadPhase === 'analyzing' && (
+                    <div className="flex items-center gap-1.5 text-[11px] text-text-muted">
+                      {[0,1,2].map(i=><div key={i} className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{animationDelay:`${i*0.15}s`}} />)}
+                      <span>Running 3 AI vision models…</span>
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="flex gap-3">
                 <button onClick={reset} className="btn-ghost flex-1 py-2.5 flex items-center justify-center gap-2 text-sm">
                   <RotateCcw className="w-4 h-4" /> New Image
@@ -194,7 +231,7 @@ Analyzed: ${new Date().toLocaleString()}`
                 <button onClick={handleDetect} disabled={loading}
                   className="btn-primary flex-1 py-2.5 flex items-center justify-center gap-2 text-sm disabled:opacity-50">
                   {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
-                  {loading ? 'Scanning…' : 'Detect'}
+                  {loading ? (uploadPhase === 'uploading' ? `${uploadProgress}%` : 'Analyzing…') : 'Detect'}
                 </button>
               </div>
             </div>

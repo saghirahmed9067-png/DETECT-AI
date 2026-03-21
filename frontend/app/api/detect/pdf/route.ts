@@ -6,10 +6,11 @@ import { getSupabaseAdmin } from '@/lib/supabase/admin'
 export const dynamic    = 'force-dynamic'
 export const maxDuration = 120  // large PDFs need time
 
-const MAX_PDF_SIZE   = 20 * 1024 * 1024   // 20MB
-const CHUNK_SIZE     = 2000               // chars per chunk
-const CHUNK_OVERLAP  = 200               // overlap for context
-const MAX_CHUNKS     = 50                 // cap parallel work
+const MAX_PDF_SIZE   = 50 * 1024 * 1024   // 50MB
+const CHUNK_SIZE     = 3000               // chars per chunk  
+const CHUNK_OVERLAP  = 300               // overlap for context
+const MAX_CHARS      = 100000            // 100k character limit
+const MAX_CHUNKS     = 80                // cap parallel work
 
 interface ChunkResult {
   chunkIndex:  number

@@ -1,178 +1,143 @@
 import { NextRequest, NextResponse } from 'next/server'
-import type { APIResponse } from '@/types'
-import { auth } from '@clerk/nextjs/server'
-
-const HF_API   = 'https://api-inference.huggingface.co/models'
-const HF_TOKEN   = process.env.HUGGINGFACE_API_TOKEN || process.env.HF_TOKEN || ''
-const TEXT_MODEL  = 'openai-community/roberta-base-openai-detector'
+import { analyzeText, checkRateLimit } from '@/lib/inference/hf-analyze'
+import { creditGuard, httpErrorResponse, HTTPError } from '@/lib/middleware/credit-guard'
 
 export const dynamic    = 'force-dynamic'
-export const maxDuration = 30
+export const maxDuration = 60
 
-/** Fetch a URL and extract text + image URLs */
-async function fetchPageContent(url: string): Promise<{
-  title: string
-  description: string
-  textBlocks: string[]
-  imageUrls:  string[]
-}> {
+async function fetchWebContent(url: string): Promise<{ html: string; text: string; title: string }> {
   const res = await fetch(url, {
-    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Aiscern-Scanner/1.0)' },
-    signal: AbortSignal.timeout(10_000),
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (compatible; Aiscern/1.0; AI Content Detector)',
+      'Accept': 'text/html,application/xhtml+xml',
+    },
+    signal: AbortSignal.timeout(15000),
   })
-  if (!res.ok) throw new Error(`Failed to fetch page: ${res.status}`)
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`)
   const html = await res.text()
 
-  // Extract title
+  // Extract clean text - strip HTML tags, scripts, styles, nav, footer
+  let text = html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, ' ')
+    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, ' ')
+    .replace(/<nav\b[^<]*(?:(?!<\/nav>)<[^<]*)*<\/nav>/gi, ' ')
+    .replace(/<footer\b[^<]*(?:(?!<\/footer>)<[^<]*)*<\/footer>/gi, ' ')
+    .replace(/<header\b[^<]*(?:(?!<\/header>)<[^<]*)*<\/header>/gi, ' ')
+    .replace(/<!--[\s\S]*?-->/g, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&[a-z]+;/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
   const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i)
-  const title      = titleMatch?.[1]?.trim() || new URL(url).hostname
+  const title = titleMatch ? titleMatch[1].trim() : url
 
-  // Extract meta description
-  const descMatch  = html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)/i)
-  const description = descMatch?.[1]?.trim() || ''
-
-  // Extract text blocks (paragraphs, headings)
-  const textBlocks: string[] = []
-  const textRegex = /<(p|h[1-6]|article|section)[^>]*>([\s\S]*?)<\/\1>/gi
-  let m
-  while ((m = textRegex.exec(html)) !== null && textBlocks.length < 10) {
-    const clean = m[2].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
-    if (clean.length > 80) textBlocks.push(clean.slice(0, 500))
-  }
-
-  // Extract image URLs
-  const imageUrls: string[] = []
-  const imgRegex  = /<img[^>]+src=["']([^"']+)["']/gi
-  while ((m = imgRegex.exec(html)) !== null && imageUrls.length < 10) {
-    let src = m[1]
-    if (src.startsWith('//')) src = 'https:' + src
-    else if (src.startsWith('/')) src = new URL(src, url).href
-    if (src.startsWith('http')) imageUrls.push(src)
-  }
-
-  return { title, description, textBlocks, imageUrls }
+  return { html, text, title }
 }
 
-/** Analyze a text block with HF */
-async function analyzeTextBlock(text: string): Promise<{ verdict: string; confidence: number }> {
-  try {
-    const res = await fetch(`${HF_API}/${TEXT_MODEL}`, {
-      method:  'POST',
-      headers: { 'Authorization': `Bearer ${HF_TOKEN}`, 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ inputs: text.slice(0, 512) }),
-      signal:  AbortSignal.timeout(15_000),
-    })
-    if (!res.ok) return { verdict: 'UNCERTAIN', confidence: 50 }
-    const data = await res.json() as { label: string; score: number }[][]
-    const flat  = Array.isArray(data[0]) ? data[0] : data as any
-    const aiE   = flat.find((s: any) => /fake|label_1/i.test(s.label))
-    const huE   = flat.find((s: any) => /real|label_0/i.test(s.label))
-    const score = aiE?.score ?? (huE ? 1 - huE.score : 0.5)
-    const pct   = Math.round(score * 100)
-    return {
-      verdict:    pct >= 62 ? 'AI' : pct <= 38 ? 'HUMAN' : 'UNCERTAIN',
-      confidence: pct,
-    }
-  } catch {
-    return { verdict: 'UNCERTAIN', confidence: 50 }
-  }
+function extractParagraphs(text: string): string[] {
+  // Split into meaningful content blocks (50+ chars)
+  return text
+    .split(/[.\n]{2,}/)
+    .map(p => p.trim())
+    .filter(p => p.length >= 60 && p.split(' ').length >= 8)
+    .slice(0, 30)  // Analyze up to 30 paragraphs
 }
 
 export async function POST(req: NextRequest) {
-  // Require authentication to prevent scraping abuse
-  const { userId } = await auth()
-  if (!userId) {
-    return NextResponse.json({ success: false, error: { code: 'UNAUTHORIZED', message: 'Sign in to use the web scanner' } }, { status: 401 })
+  const ip = req.headers.get('x-forwarded-for') || 'unknown'
+  if (!checkRateLimit(ip, 5)) {
+    return NextResponse.json({ success: false, error: { code: 'RATE_LIMIT', message: 'Too many requests' } }, { status: 429 })
   }
 
-  // Rate limit via creditGuard (already handles IP-based limits)
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown'
+  let userId: string
+  try {
+    const guard = await creditGuard(req, 'text')
+    userId = guard.userId
+  } catch (err) {
+    if (err instanceof HTTPError) return httpErrorResponse(err)
+    return NextResponse.json({ success: false, error: { code: 'ERROR', message: 'Request failed' } }, { status: 500 })
+  }
 
   try {
     const { url } = await req.json()
-    if (!url) return NextResponse.json<APIResponse>({
-      success: false, error: { code: 'NO_URL', message: 'URL is required' }
-    }, { status: 400 })
-
-    let urlObj: URL
-    try { urlObj = new URL(url) } catch {
-      return NextResponse.json<APIResponse>({
-        success: false, error: { code: 'INVALID_URL', message: 'Invalid URL format' }
-      }, { status: 400 })
+    if (!url || typeof url !== 'string') {
+      return NextResponse.json({ success: false, error: { code: 'NO_URL', message: 'URL is required' } }, { status: 400 })
     }
 
-    // Fetch page
-    const page = await fetchPageContent(url)
-
-    // Analyze text blocks in parallel (max 5)
-    const textToAnalyze = page.textBlocks.slice(0, 5)
-    const textResults   = await Promise.all(textToAnalyze.map(t => analyzeTextBlock(t)))
-
-    // Build asset list
-    const assets: any[] = []
-
-    // Text assets
-    textToAnalyze.forEach((text, i) => {
-      const r = textResults[i]
-      assets.push({
-        type:       'text',
-        content:    text.slice(0, 150) + (text.length > 150 ? '…' : ''),
-        verdict:    r.verdict,
-        confidence: r.confidence,
-        signals: [
-          { name: 'AI Content Classifier', flagged: r.verdict === 'AI' },
-          { name: 'Linguistic Pattern Analysis', flagged: r.confidence > 60 },
-        ],
-      })
-    })
-
-    // Image assets (metadata only — no vision model in scraper)
-    page.imageUrls.slice(0, 5).forEach(imgUrl => {
-      assets.push({
-        type:       'image',
-        url:        imgUrl,
-        verdict:    'UNCERTAIN',
-        confidence: 50,
-        signals: [
-          { name: 'Upload to Image Detector for full analysis', flagged: false },
-        ],
-      })
-    })
-
-    // If no assets found, add a notice
-    if (assets.length === 0) {
-      return NextResponse.json({ success: false, error: { code: 'NO_CONTENT', message: 'No analyzable content found on this page. Try a different URL.' } }, { status: 422 })
+    // Validate URL
+    let parsed: URL
+    try { parsed = new URL(url) } catch {
+      return NextResponse.json({ success: false, error: { code: 'INVALID_URL', message: 'Invalid URL format' } }, { status: 400 })
+    }
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      return NextResponse.json({ success: false, error: { code: 'INVALID_URL', message: 'Only HTTP/HTTPS URLs allowed' } }, { status: 400 })
     }
 
-    const aiAssets    = assets.filter(a => a.verdict === 'AI').length
-    const overallScore = Math.round((aiAssets / assets.length) * 100)
+    // Fetch content
+    const { text, title } = await fetchWebContent(url)
+    if (text.length < 100) {
+      return NextResponse.json({ success: false, error: { code: 'NO_CONTENT', message: 'Could not extract text from this page. It may require JavaScript or be behind a login.' } }, { status: 422 })
+    }
+
+    // Extract paragraphs and analyze each
+    const paragraphs = extractParagraphs(text)
+    if (!paragraphs.length) {
+      return NextResponse.json({ success: false, error: { code: 'NO_CONTENT', message: 'No analyzable text paragraphs found on this page.' } }, { status: 422 })
+    }
+
+    // Analyze up to 10 paragraphs concurrently
+    const toAnalyze = paragraphs.slice(0, 10)
+    const results = await Promise.allSettled(
+      toAnalyze.map(p => analyzeText(p))
+    )
+
+    const scored = results
+      .map((r, i) => ({
+        text: toAnalyze[i].slice(0, 200) + (toAnalyze[i].length > 200 ? '…' : ''),
+        verdict: r.status === 'fulfilled' ? r.value.verdict : 'UNCERTAIN' as const,
+        confidence: r.status === 'fulfilled' ? r.value.confidence : 0.5,
+      }))
+
+    // Weighted overall score
+    const aiCount      = scored.filter(s => s.verdict === 'AI').length
+    const humanCount   = scored.filter(s => s.verdict === 'HUMAN').length
+    const uncertainCount = scored.filter(s => s.verdict === 'UNCERTAIN').length
+    const avgAiScore   = scored.reduce((sum, s) => sum + s.confidence, 0) / scored.length
+    const aiPct        = Math.round((aiCount / scored.length) * 100)
+    const humanPct     = Math.round((humanCount / scored.length) * 100)
+    const mixedPct     = Math.round((uncertainCount / scored.length) * 100)
+
+    const overallVerdict =
+      aiPct >= 60 ? 'AI' :
+      humanPct >= 60 ? 'HUMAN' : 'MIXED'
 
     return NextResponse.json({
       success: true,
-      data: {
+      result: {
         url,
-        domain:            urlObj.hostname,
-        title:             page.title,
-        description:       page.description || `Content from ${urlObj.hostname}`,
-        overall_ai_score:  overallScore,
-        total_assets:      assets.length,
-        ai_asset_count:    aiAssets,
-        scraped_content:   assets,
-        analysis_note:     'Text blocks analyzed with Aiscern detection engine. Images require manual upload for full analysis.',
-        status:            'complete',
+        title,
+        totalChars: text.length,
+        paragraphsAnalyzed: scored.length,
+        totalParagraphs: paragraphs.length,
+        overallVerdict,
+        overallConfidence: Math.round(avgAiScore * 100),
+        aiPct,
+        humanPct,
+        mixedPct,
+        paragraphs: scored,
+        summary: overallVerdict === 'AI'
+          ? `${aiPct}% of the content on this page appears to be AI-generated. ${aiCount} out of ${scored.length} analyzed paragraphs show strong AI indicators.`
+          : overallVerdict === 'HUMAN'
+          ? `${humanPct}% of the content appears to be human-written. ${humanCount} out of ${scored.length} analyzed paragraphs show authentic human writing patterns.`
+          : `Mixed content detected. ${aiPct}% AI, ${humanPct}% human, ${mixedPct}% uncertain across ${scored.length} analyzed paragraphs.`,
       }
     })
-  } catch (err: any) {
-    const msg = err?.message || 'Scraping failed'
-    const isBlocked = msg.includes('403') || msg.includes('blocked') || msg.includes('CORS')
-    return NextResponse.json<APIResponse>({
-      success: false,
-      error: {
-        code:    isBlocked ? 'BLOCKED' : 'SCRAPE_FAILED',
-        message: isBlocked
-          ? 'This website blocks automated scanning. Try a different URL.'
-          : `Scan failed: ${msg}`,
-      }
-    }, { status: 500 })
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Scan failed'
+    if (msg.includes('fetch') || msg.includes('ECONNREFUSED') || msg.includes('timeout')) {
+      return NextResponse.json({ success: false, error: { code: 'FETCH_ERROR', message: 'Could not reach that URL. Check the URL is public and accessible.' } }, { status: 422 })
+    }
+    return NextResponse.json({ success: false, error: { code: 'ERROR', message: msg } }, { status: 500 })
   }
 }

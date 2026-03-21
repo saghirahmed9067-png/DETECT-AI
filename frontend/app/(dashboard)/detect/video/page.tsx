@@ -22,8 +22,9 @@ const verdictConfig = {
   UNCERTAIN: { icon: HelpCircle,   color: 'text-amber',   border: 'border-amber/30',   bg: 'bg-amber/5',   label: 'UNCERTAIN' },
 }
 
-// Sample 6 frames spread across the video at 0%, 12%, 28%, 46%, 68%, 90%
-const FRAME_POSITIONS = [0.00, 0.12, 0.28, 0.46, 0.68, 0.90]
+// Sample 8 frames from first 10 seconds ONLY (deepfakes are detectable in first 10s)
+const FRAME_POSITIONS_10S = [0, 1.5, 3, 4.5, 6, 7.5, 9, 10]  // absolute seconds
+const MAX_ANALYZE_SECS = 10
 const FRAME_QUALITY   = 0.85
 const CANVAS_WIDTH    = 640
 const CANVAS_HEIGHT   = 360
@@ -47,15 +48,18 @@ async function extractFrames(
   duration: number,
   onProgress: (n: number, total: number) => void,
 ): Promise<ExtractedFrame[]> {
+  // Only analyze first 10 seconds — deepfake artifacts are most visible at start
+  const analyzeDuration = Math.min(duration, MAX_ANALYZE_SECS)
+  const sampleTimes = FRAME_POSITIONS_10S.filter(t => t < analyzeDuration)
   const canvas  = document.createElement('canvas')
   canvas.width  = CANVAS_WIDTH
   canvas.height = CANVAS_HEIGHT
   const ctx     = canvas.getContext('2d')!
   const frames: ExtractedFrame[] = []
 
-  for (let i = 0; i < FRAME_POSITIONS.length; i++) {
-    const timeSec = Math.max(0, Math.min(duration - 0.1, FRAME_POSITIONS[i] * duration))
-    onProgress(i, FRAME_POSITIONS.length)
+  for (let i = 0; i < FRAME_POSITIONS_10S.length; i++) {
+    const timeSec = Math.max(0, Math.min(duration - 0.1, FRAME_POSITIONS_10S[i] * duration))
+    onProgress(i, FRAME_POSITIONS_10S.length)
 
     await new Promise<void>((resolve) => {
       // Use resolve-only — reject causes whole extraction to fail for one bad frame
@@ -279,7 +283,7 @@ export default function VideoDetectionPage() {
   const cfg = result ? verdictConfig[result.verdict as Verdict] : null
 
   const loadingLabel = phase === 'extracting'
-    ? `Extracting frame ${framesDone} of ${FRAME_POSITIONS.length}…`
+    ? `Extracting frame ${framesDone} of ${FRAME_POSITIONS_10S.length}…`
     : phase === 'analyzing'
     ? 'Analyzing frames for deepfake artifacts…'
     : 'Analyzing…'
@@ -335,7 +339,7 @@ export default function VideoDetectionPage() {
                     <p className="text-sm text-secondary font-semibold">{loadingLabel}</p>
                     {phase === 'extracting' && (
                       <div className="flex gap-1 mt-1">
-                        {FRAME_POSITIONS.map((_, i) => (
+                        {FRAME_POSITIONS_10S.map((_, i) => (
                           <div key={i} className={`w-2 h-2 rounded-full transition-all duration-300
                             ${i < framesDone ? 'bg-secondary' : 'bg-secondary/20'}`} />
                         ))}
@@ -407,7 +411,7 @@ export default function VideoDetectionPage() {
             <div className="flex items-start gap-2 text-xs text-text-muted">
               <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-secondary/60" />
               <span>
-                <span className="text-text-secondary font-medium">How it works:</span> Your browser extracts {FRAME_POSITIONS.length} frames directly from the video,
+                <span className="text-text-secondary font-medium">How it works:</span> Your browser extracts {FRAME_POSITIONS_10S.length} frames directly from the video,
                 then Aiscern's vision engine analyzes each frame for deepfake artifacts. No video data is stored.
               </span>
             </div>

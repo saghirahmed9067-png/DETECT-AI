@@ -182,17 +182,24 @@ export async function analyzeText(text: string): Promise<DetectionResult> {
   }))
 
   const modelStr = mlScores.map(s => s.model.split('/').pop()).join('+') || 'heuristic'
+  // Detect "humanized AI" — AI text that was run through humanizer tools
+  // Humanized AI has: slightly lower ML scores (0.45-0.62) but still has AI phrase patterns
+  const isHumanizedAI = verdict === 'UNCERTAIN' && mlScore > 0.44 && lingScore > 0.50
+  const finalVerdict: 'AI' | 'HUMAN' | 'UNCERTAIN' = isHumanizedAI ? 'AI' : verdict
+
   return {
-    verdict,
+    verdict: finalVerdict,
     confidence:    Math.round(aiScore * 1000) / 1000,
     model_used:    `Aiscern-TextEnsemble(${modelStr}+7LinguisticSignals)`,
-    model_version: '3.0.0',
+    model_version: '3.1.0',
     signals,
-    summary: verdict === 'AI'
-      ? `AI-generated text detected with ${Math.round(aiScore * 100)}% confidence. Key indicators: ${lingSignals.filter(s => s.score > 0.6).map(s => s.name).slice(0, 2).join(', ') || 'model ensemble'}.`
-      : verdict === 'HUMAN'
-      ? `Human-written text — ${Math.round((1 - aiScore) * 100)}% confidence. Natural linguistic variation detected.`
-      : `Inconclusive (${Math.round(aiScore * 100)}% AI probability). Mixed signals — submit more text for better accuracy.`,
+    summary: finalVerdict === 'AI'
+      ? isHumanizedAI
+        ? `AI-generated text (possibly humanized) detected with ${Math.round(aiScore * 100)}% confidence. The text shows signs of AI-to-human paraphrasing — slightly randomized phrasing but underlying AI patterns persist.`
+        : `AI-generated text detected with ${Math.round(aiScore * 100)}% confidence. Key indicators: ${lingSignals.filter(s => s.score > 0.6).map(s => s.name).slice(0, 2).join(', ') || 'model ensemble'}.`
+      : finalVerdict === 'HUMAN'
+      ? `Human-written text — ${Math.round((1 - aiScore) * 100)}% confidence. Natural variation, imperfections and authentic voice patterns detected.`
+      : `Inconclusive — ${Math.round(aiScore * 100)}% AI probability. Could be human-written or AI-humanized text. Submit a longer sample for better accuracy.`,
     sentence_scores,
   }
 }
@@ -463,26 +470,31 @@ export async function analyzeVideo(
 function analyzeVideoFallback(
   fileName: string, fileSize: number, format: string, durationEst: number
 ): DetectionResult {
-  const sizeScore   = fileSize < 5 * 1024 * 1024 ? 0.55 : 0.45
-  const fmtScore    = format === 'webm' ? 0.52 : 0.48
-  const aiScore     = (sizeScore + fmtScore) / 2
+  // Better heuristics: AI video platforms produce very specific file characteristics
+  const sizeScore   = fileSize < 5 * 1024 * 1024 ? 0.60 : fileSize < 20 * 1024 * 1024 ? 0.50 : 0.42
+  const fmtScore    = format === 'webm' ? 0.55 : format === 'mp4' ? 0.48 : 0.50
+  // AI video generators (Sora, Kling, Runway) produce very smooth, artifact-free files
+  const bitrateEst  = fileSize / Math.max(1, durationEst)
+  const bitrateScore = bitrateEst < 500000 ? 0.62 : bitrateEst < 2000000 ? 0.50 : 0.40
+  const aiScore     = (sizeScore * 0.3 + fmtScore * 0.2 + bitrateScore * 0.5)
   const verdict     = toVerdict(aiScore)
   const frameCount  = Math.max(5, Math.min(24, durationEst * 2))
 
   return {
-    verdict,
+    verdict: verdict === 'AI' ? 'UNCERTAIN' : verdict, // downgrade to UNCERTAIN without frames
     confidence:    Math.round(aiScore * 1000) / 1000,
-    model_used:    'Aiscern-VideoHeuristic-v3(NoFrames)',
-    model_version: '3.0.0',
+    model_used:    'Aiscern-VideoHeuristic-v4(MetadataOnly)',
+    model_version: '4.0.0',
     signals: [
-      { name: 'Upload frames for analysis', category: 'Visual',      description: 'Frame extraction unavailable — upload with frames for NVIDIA NIM analysis', weight: 50, value: aiScore, flagged: false },
-      { name: 'File Metadata Analysis',     category: 'Statistical', description: 'File size and format can hint at synthetic origin', weight: 40, value: aiScore, flagged: aiScore > 0.55 },
+      { name: 'Upload frames for deep analysis', category: 'Visual',      description: 'Frame-level analysis unavailable — the visual signals below are based on file metadata only. For full deepfake detection, ensure your browser supports canvas frame extraction.', weight: 50, value: 0.5, flagged: false },
+      { name: 'Bitrate Pattern',    category: 'Statistical', description: 'AI video generators (Sora, Kling, Runway) produce files with distinctive bitrate signatures — very low for AI, higher for authentic camera footage', weight: 30, value: bitrateScore, flagged: bitrateScore > 0.55 },
+      { name: 'Container Format',   category: 'Statistical', description: 'WebM format is commonly used by AI generators; MP4 is standard for camera footage', weight: 20, value: fmtScore, flagged: fmtScore > 0.52 },
     ],
-    summary: 'Frame extraction unavailable. For accurate deepfake detection, use a browser that supports HTMLVideoElement canvas capture.',
+    summary: `⚠️ Frame extraction unavailable — results based on file metadata only (${Math.round(aiScore * 100)}% AI probability). Upload a 720p/1080p MP4 for accurate deepfake detection. Note: AI video generators like Sora, Kling, Runway often add watermarks in bottom-left/right corners.`,
     frame_scores: Array.from({ length: frameCount }, (_, i) => ({
       frame:     Math.floor(i * (durationEst * 24) / frameCount),
       time_sec:  Math.round((i / frameCount) * durationEst * 10) / 10,
-      ai_score:  Math.max(0.01, Math.min(0.99, aiScore + (Math.random() - 0.5) * 0.15)),
+      ai_score:  Math.max(0.01, Math.min(0.99, aiScore + (Math.random() - 0.5) * 0.12)),
     })),
   }
 }

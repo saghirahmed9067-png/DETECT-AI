@@ -7,7 +7,7 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/auth-provider'
 import { SiteFooter } from '@/components/site-footer'
-import {
+import { LayoutDashboard,
   Shield, Brain, Eye, Mic, FileText, Globe, Zap, BarChart3,
   ArrowRight, CheckCircle, XCircle, HelpCircle,
   Image as ImageIcon, Video, Music, ChevronRight, Loader2,
@@ -266,7 +266,7 @@ function FloatingCards() {
   const realEdges = bp === 'sm' ? REAL_EDGES_SM : bp === 'md' ? REAL_EDGES_MD : REAL_EDGES_LG
 
   // Card sizes per breakpoint
-  const cardSize = bp === 'sm' ? { w: 32, h: 42 } : bp === 'md' ? { w: 48, h: 62 } : { w: 64, h: 80 }
+  const cardSize = bp === 'sm' ? { w: 26, h: 34 } : bp === 'md' ? { w: 38, h: 50 } : { w: 52, h: 66 }
 
   // Badge positions change per breakpoint
   const badgePositions = bp === 'sm'
@@ -878,6 +878,9 @@ export default function HomePage() {
                 <Link href={user ? "/chat" : "/signup"} onClick={() => setMobileNavOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface text-text-muted hover:text-text-primary transition-all text-sm font-medium"><MessageSquare className="w-4 h-4" />AI Detection Assistant</Link>
                 <Link href="/reviews"  onClick={() => setMobileNavOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface text-text-muted hover:text-text-primary transition-all text-sm font-medium"><Star className="w-4 h-4" />Reviews</Link>
                 <Link href="/pricing"  onClick={() => setMobileNavOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface text-text-muted hover:text-text-primary transition-all text-sm font-medium"><Zap className="w-4 h-4" />View AI Detector Plans</Link>
+                {!loading && user && (
+                  <Link href="/dashboard" onClick={() => setMobileNavOpen(false)} className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold mt-1 w-full"><LayoutDashboard className="w-4 h-4" />Dashboard</Link>
+                )}
                 {!loading && !user && (
                   <>
                     <Link href="/login" onClick={() => setMobileNavOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface text-text-muted hover:text-text-primary transition-all text-sm font-medium w-full"><Lock className="w-4 h-4" />Sign In</Link>
@@ -896,11 +899,14 @@ export default function HomePage() {
         <DeferredParticleNetwork />
         <FloatingCards />
 
+        {/* Dark overlay so text is always readable over floating cards */}
+        <div className="absolute inset-0 bg-background/40 pointer-events-none z-10" />
+
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-primary/8 blur-[120px] pointer-events-none" />
         <div className="absolute top-1/3 left-1/4 w-[300px] h-[300px] rounded-full bg-secondary/8 blur-[80px] pointer-events-none" />
         <div className="absolute top-1/3 right-1/4 w-[300px] h-[300px] rounded-full bg-cyan/5 blur-[80px] pointer-events-none" />
 
-        <div className="relative z-20 text-center px-4 sm:px-8 md:px-10 lg:px-4 max-w-[100vw] sm:max-w-lg md:max-w-2xl lg:max-w-5xl mx-auto w-full">
+        <div className="relative z-20 text-center px-4 sm:px-8 md:px-10 lg:px-16 xl:px-24 max-w-[100vw] sm:max-w-lg md:max-w-2xl lg:max-w-5xl mx-auto w-full">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-[11px] sm:text-xs font-semibold mb-4 sm:mb-6">
             <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
             <span className="hidden sm:inline">413,000+ verified samples · Multi-model ensemble detection</span>

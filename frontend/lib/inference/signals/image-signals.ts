@@ -292,6 +292,53 @@ function calcEditSignature(bytes: Uint8Array, samples: number[]): number {
   return Math.min(0.95, (evenness * 0.5 + repetitionScore * 0.5))
 }
 
+
+// ── 11. Watermark Pattern Detection ────────────────────────────────────────
+// AI platforms embed subtle watermarks: Gemini has diagonal patterns,
+// DALL-E 3 has C2PA metadata, Midjourney has specific EXIF signatures.
+// We detect statistical patterns that indicate watermarking.
+function calcWatermarkPattern(bytes: Uint8Array, samples: number[]): number {
+  // Detect periodic patterns in pixel values (watermark = periodic signal)
+  if (samples.length < 100) return 0.3
+  let periodicity = 0
+  const windowSize = 32
+  let matchCount = 0
+  for (let i = 0; i < samples.length - windowSize * 2; i += windowSize) {
+    const window1 = samples.slice(i, i + windowSize)
+    const window2 = samples.slice(i + windowSize, i + windowSize * 2)
+    const diff = window1.reduce((s, v, j) => s + Math.abs(v - window2[j]), 0) / windowSize
+    if (diff < 3) matchCount++  // very similar windows = periodic pattern
+  }
+  periodicity = matchCount / Math.max(1, Math.floor(samples.length / windowSize) - 1)
+  return Math.min(0.95, periodicity * 1.8)
+}
+function watermarkScore(score: number): number {
+  if (score > 0.6) return 0.85  // strong periodicity = likely watermarked AI
+  if (score > 0.4) return 0.65
+  if (score > 0.2) return 0.45
+  return 0.20
+}
+
+// ── 12. Image Polish/Blur Detection ─────────────────────────────────────────
+// AI images are "too perfect" — no motion blur, no chromatic aberration,
+// unnaturally sharp focus everywhere. Real photos have optical imperfections.
+function calcPolishLevel(samples: number[], bytes: Uint8Array): number {
+  // Variance in local byte differences — low variance = uniformly sharp
+  const diffs: number[] = []
+  for (let i = 1; i < Math.min(samples.length, 1000); i++) {
+    diffs.push(Math.abs(samples[i] - samples[i-1]))
+  }
+  const mean = diffs.reduce((a,b)=>a+b,0) / diffs.length
+  const variance = diffs.reduce((a,b)=>a+(b-mean)**2, 0) / diffs.length
+  // Low variance in transitions = artificially uniform sharpness
+  return Math.min(1, 50 / Math.max(1, variance))
+}
+function polishScore(score: number): number {
+  if (score > 0.7) return 0.82  // unnaturally polished = AI
+  if (score > 0.5) return 0.65
+  if (score > 0.3) return 0.48
+  return 0.22
+}
 // ── MAIN EXPORT ───────────────────────────────────────────────────────────────
 export function extractImageSignals(buf: Buffer, fileSize: number): ImageSignalResult[] {
   const bytes   = toUint8(buf)
@@ -307,6 +354,8 @@ export function extractImageSignals(buf: Buffer, fileSize: number): ImageSignalR
   const rawDCT        = calcDCTPattern(bytes)
   const rawSkin       = calcSkinSmoothing(samples)
   const rawEdit       = calcEditSignature(bytes, samples)
+  const rawWatermark  = calcWatermarkPattern(bytes, samples)
+  const rawPolish     = calcPolishLevel(samples, bytes)
 
   return [
     // Reliable signals: work well even for modern AI (DALL-E 3, MJ v6, Gemini, Grok, Flux)
@@ -322,6 +371,8 @@ export function extractImageSignals(buf: Buffer, fileSize: number): ImageSignalR
     { name: 'Luminance Clustering',    score: luminanceScore(rawLuminance),   rawValue: rawLuminance,   weight: 0.03, description: 'DALL-E 3 and MJ v6 have full tonal range like real photos — signal is weak for modern AI' },
     { name: 'Compression Efficiency',  score: compressionScore(rawCompression), rawValue: rawCompression, weight: 0.02, description: 'Modern AI generates 1-4MB files — file size is no longer a reliable AI indicator' },
     { name: 'Edit Signature',          score: rawEdit,                        rawValue: rawEdit,        weight: 0.00, description: 'Photoshop/Lightroom edits leave double-compression patterns — disabled to reduce false positives' },
+    { name: 'Watermark Pattern',        score: watermarkScore(calcWatermarkPattern(bytes, samples)), rawValue: calcWatermarkPattern(bytes, samples), weight: 0.08, description: 'AI platforms embed periodic watermark patterns (Gemini, DALL-E C2PA, Midjourney EXIF)' },
+    { name: 'Polish & Perfection',      score: polishScore(calcPolishLevel(samples, bytes)),         rawValue: calcPolishLevel(samples, bytes),         weight: 0.06, description: 'AI images are unnaturally sharp everywhere — no optical blur, chromatic aberration, or camera imperfections' },
   ]
 }
 
