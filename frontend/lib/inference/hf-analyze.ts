@@ -503,9 +503,8 @@ function analyzeVideoFallback(
 const _fallback = new Map<string, { count: number; resetAt: number }>()
 export async function checkRateLimitAsync(ip: string, limit = 20, windowMinutes = 1): Promise<boolean> {
   try {
-    const { createClient } = await import('@supabase/supabase-js')
-    const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } })
-    const { data } = await sb.rpc('check_and_increment_rate_limit', { p_ip: ip, p_max: limit, p_window_minutes: windowMinutes })
+    const { getSupabaseAdmin } = await import('@/lib/supabase/admin')
+    const { data } = await getSupabaseAdmin().rpc('check_and_increment_rate_limit', { p_ip: ip, p_max: limit, p_window_minutes: windowMinutes })
     return data === true
   } catch { return checkRateLimit(ip, limit) }
 }

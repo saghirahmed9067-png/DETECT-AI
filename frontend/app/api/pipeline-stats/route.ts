@@ -95,7 +95,7 @@ export async function POST(req: Request) {
 
   if (action === 'push') {
     const workerEUrl = process.env.WORKER_E_URL
-    if (!workerEUrl) return NextResponse.json({ error: 'WORKER_E_URL not configured' }, { status: 400 })
+    if (!workerEUrl) return NextResponse.json({ error: 'Push worker not configured' }, { status: 400 })
 
     try {
       const r = await fetch(`${workerEUrl}/trigger/push`, {

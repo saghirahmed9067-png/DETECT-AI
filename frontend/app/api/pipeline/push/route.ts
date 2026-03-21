@@ -34,10 +34,7 @@ export async function GET() {
     if (!CF_ACCOUNT || !D1_DB || !CF_TOKEN) {
       return NextResponse.json({
         ok: false,
-        error: 'Cloudflare D1 not configured',
-        missing: ['CLOUDFLARE_ACCOUNT_ID', 'CLOUDFLARE_D1_DATABASE_ID', 'CLOUDFLARE_API_TOKEN'].filter(k => !process.env[k]),
-        hf_token_set: !!HF_TOKEN,
-        hf_repo: HF_REPO,
+        error: 'Pipeline not fully configured. Check Vercel environment variables.',
       })
     }
     const [pending, state, recent] = await Promise.all([
@@ -47,7 +44,7 @@ export async function GET() {
     ])
     const total = pending.reduce((s: number, r: any) => s + (r.count || 0), 0)
     return NextResponse.json({
-      ok: true, hf_repo: HF_REPO, hf_token_set: !!HF_TOKEN,
+      ok: true, hf_repo: HF_REPO,
       pending_total: total, pending_by_type: pending,
       pipeline_state: state[0] || {}, recent_pushes: recent,
     })
@@ -60,8 +57,8 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  if (!HF_TOKEN) return NextResponse.json({ error: 'Set HUGGINGFACE_API_TOKEN in Vercel env vars' }, { status: 400 })
-  if (!CF_ACCOUNT || !D1_DB || !CF_TOKEN) return NextResponse.json({ error: 'Set CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_D1_DATABASE_ID, CLOUDFLARE_API_TOKEN in Vercel env vars' }, { status: 400 })
+  if (!HF_TOKEN) return NextResponse.json({ error: 'HuggingFace integration not configured' }, { status: 400 })
+  if (!CF_ACCOUNT || !D1_DB || !CF_TOKEN) return NextResponse.json({ error: 'Pipeline not configured. Check environment variables.' }, { status: 400 })
 
   const { media_type, limit = 5000 } = await req.json().catch(() => ({}))
 
