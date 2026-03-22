@@ -18,6 +18,7 @@ import { extractAudioSignals, aggregateAudioSignals, applyAudioCalibration } fro
 import { getCalibrationStats, getAudioCalibrationStats } from './calibration-client'
 import { analyzeVideoFrames }                        from './nvidia-nim'
 import { buildVideoSignals }                         from './signals/video-signals'
+import { applyFeedbackCorrection }                  from './feedback-learning'
 
 export interface DetectionSignal {
   name:        string
@@ -213,9 +214,16 @@ export async function analyzeText(text: string): Promise<DetectionResult> {
   const isHumanizedAI = verdict === 'UNCERTAIN' && mlScore > 0.44 && lingScore > 0.50
   const finalVerdict: 'AI' | 'HUMAN' | 'UNCERTAIN' = isHumanizedAI ? 'AI' : verdict
 
+  // Apply feedback correction from D1 learning engine (non-blocking)
+  const correctedScore = await applyFeedbackCorrection(
+    aiScore, 'text',
+    lingSignals.map(s => ({ name: s.name, score: s.score, weight: s.weight }))
+  )
+  const correctedVerdict = toVerdict(correctedScore, false)
+
   return {
-    verdict: finalVerdict,
-    confidence:    Math.round(aiScore * 1000) / 1000,
+    verdict: isHumanizedAI ? 'AI' : correctedVerdict,
+    confidence:    Math.round(correctedScore * 1000) / 1000,
     model_used:    `Aiscern-TextEnsemble(${modelStr}+8LinguisticSignals)`,
     model_version: '4.0.0',
     signals,
@@ -231,7 +239,7 @@ export async function analyzeText(text: string): Promise<DetectionResult> {
 }
 
 // ── IMAGE DETECTION ─────────────────────────────────────────────────────────
-export async function analyzeImage(imageBuffer: Buffer, mimeType: string, fileName: string): Promise<DetectionResult> {
+export async function analyzeImage(imageBuffer: Buffer, mimeType: string, fileName: string, detectedFormat = 'other'): Promise<DetectionResult> {
   // 4-model parallel call: proprietary fine-tune + 3 generics
   const [r1, r2, r3, r4] = await Promise.allSettled([
     hfInference(MODELS.image_primary,  null, { binary: true, binaryData: imageBuffer }),
@@ -270,7 +278,7 @@ export async function analyzeImage(imageBuffer: Buffer, mimeType: string, fileNa
   parseImg(r4, 0.10, MODELS.image_fallback, false)  // dima806
 
   // 12 pixel-level signals + live calibration
-  let imgSignals = extractImageSignals(imageBuffer, imageBuffer.length)
+  let imgSignals = extractImageSignals(imageBuffer, imageBuffer.length, detectedFormat)
   try {
     const cal = await getCalibrationStats()
     if (cal && cal.ai_sample_count >= 10) {
@@ -293,8 +301,19 @@ export async function analyzeImage(imageBuffer: Buffer, mimeType: string, fileNa
   const isEdited = editSig && editSig.score > 0.65 && aiScore < 0.52 && aiScore > 0.30
 
   const verdictRaw = toVerdict(aiScore, finetuneResponded)
-  const verdict: 'AI' | 'HUMAN' | 'UNCERTAIN' =
+  const verdictPreCorrection: 'AI' | 'HUMAN' | 'UNCERTAIN' =
     verdictRaw !== 'UNCERTAIN' ? verdictRaw
+    : isEdited ? 'AI'
+    : 'UNCERTAIN'
+
+  // Apply feedback correction from D1 learning engine
+  const correctedScore = await applyFeedbackCorrection(
+    aiScore, 'image',
+    imgSignals.map(s => ({ name: s.name, score: s.score, weight: s.weight }))
+  )
+  const verdictCorrected = toVerdict(correctedScore, finetuneResponded)
+  const verdict: 'AI' | 'HUMAN' | 'UNCERTAIN' =
+    verdictCorrected !== 'UNCERTAIN' ? verdictCorrected
     : isEdited ? 'AI'
     : 'UNCERTAIN'
 
@@ -303,7 +322,7 @@ export async function analyzeImage(imageBuffer: Buffer, mimeType: string, fileNa
 
   return {
     verdict,
-    confidence:    Math.round(aiScore * 1000) / 1000,
+    confidence:    Math.round(correctedScore * 1000) / 1000,
     model_used:    `Aiscern-ImageEnsemble(${mlCount ? mlScores.map((s: {model:string;aiScore:number;weight:number}) => s.model.split('/').pop()).join('+') + '+' : ''}12PixelSignals${finetuneResponded ? '+FineTuned' : ''})`,
     model_version: '4.1.0',
     signals: [
@@ -405,7 +424,12 @@ export async function analyzeAudio(
     ? mlMean * mlWeight + sigScore * (1 - mlWeight)
     : sigScore
 
-  const verdict  = toVerdict(aiScore, finetuneResponded)
+  // Apply feedback correction from D1 learning engine
+  const correctedAudioScore = await applyFeedbackCorrection(
+    aiScore, 'audio',
+    audioSignals.map(s => ({ name: s.name, score: s.score, weight: s.weight / 100 }))
+  )
+  const verdict  = toVerdict(correctedAudioScore, finetuneResponded)
   const segCount = Math.max(3, Math.min(10, Math.ceil(durationEst / 5)))
 
   const modelNames = audioMLScores.map(m => m.model.split('/').pop()).join('+')
@@ -415,7 +439,7 @@ export async function analyzeAudio(
 
   return {
     verdict,
-    confidence:    Math.round(aiScore * 1000) / 1000,
+    confidence:    Math.round(correctedAudioScore * 1000) / 1000,
     model_used:    modelUsed,
     model_version: '4.1.0',
     signals: [
@@ -472,18 +496,25 @@ export async function analyzeVideoWithFrames(
       const aiScore     = ensemble.ai_score
       const verdict     = toVerdict(aiScore, false)  // NIM is not the fine-tuned HF model
 
+      // Apply feedback correction using video frame signals
+      const videoSignals = ensemble.signals.map(s => ({
+        name: s.name, score: s.value ?? aiScore, weight: s.weight / 100
+      }))
+      const correctedVideoScore = await applyFeedbackCorrection(aiScore, 'video', videoSignals)
+      const correctedVerdict    = toVerdict(correctedVideoScore, false)
+
       return {
-        verdict,
-        confidence:    Math.round(aiScore * 1000) / 1000,
+        verdict:       correctedVerdict,
+        confidence:    Math.round(correctedVideoScore * 1000) / 1000,
         model_used:    ensemble.model_used,
         model_version: '3.1.0',
         signals:       ensemble.signals,
         frame_scores:  ensemble.frame_scores,
-        summary: verdict === 'AI'
-          ? `Deepfake detected with ${Math.round(aiScore * 100)}% confidence. ${nimResult.frames.filter(f => f.face_detected).length} face-containing frames analyzed by NVIDIA vision model.`
-          : verdict === 'HUMAN'
-          ? `Video appears authentic — ${Math.round((1 - aiScore) * 100)}% confidence across ${nimResult.frames.length} sampled frames.`
-          : `Video analysis inconclusive (${Math.round(aiScore * 100)}% AI probability). Ensure the video contains a visible face.`,
+        summary: correctedVerdict === 'AI'
+          ? `Deepfake detected with ${Math.round(correctedVideoScore * 100)}% confidence. ${nimResult.frames.filter(f => f.face_detected).length} face-containing frames analyzed by NVIDIA vision model.`
+          : correctedVerdict === 'HUMAN'
+          ? `Video appears authentic — ${Math.round((1 - correctedVideoScore) * 100)}% confidence across ${nimResult.frames.length} sampled frames.`
+          : `Video analysis inconclusive (${Math.round(correctedVideoScore * 100)}% AI probability). Ensure the video contains a visible face.`,
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err)

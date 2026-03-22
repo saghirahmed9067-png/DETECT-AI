@@ -404,7 +404,7 @@ function exifPresenceSignal(bytes: Uint8Array): number {
 }
 
 // ── MAIN EXPORT ───────────────────────────────────────────────────────────────
-export function extractImageSignals(buf: Buffer, fileSize: number): ImageSignalResult[] {
+export function extractImageSignals(buf: Buffer, fileSize: number, detectedFormat = 'other'): ImageSignalResult[] {
   const bytes   = toUint8(buf)
   const samples = samplePixels(bytes, 3000)
 
@@ -424,11 +424,15 @@ export function extractImageSignals(buf: Buffer, fileSize: number): ImageSignalR
   const rawDCTBlock = calcDCTBlockArtifact(bytes)
   const rawExif     = exifPresenceSignal(bytes)
 
+  // JPEG-specific: AI-generated JPEGs have distinctive DCT quantization patterns
+  // in 8x8 blocks that differ from camera captures which have optical/sensor noise.
+  const jpegDCTBoost = detectedFormat === 'jpeg' ? 1.15 : 1.0
+
   return [
     // Tier 1 — Most reliable signals for modern AI (DALL-E 3, MJ v6, Gemini, Grok, Flux)
     { name: 'HF Detail Regularity',    score: hfDetailScore(rawHF),               rawValue: rawHF,          weight: 0.17, description: 'AI upsampling creates unnaturally regular high-frequency patterns — most reliable signal' },
-    { name: 'DCT Block Pattern',       score: rawDCT,                             rawValue: rawDCT,         weight: 0.13, description: 'JPEG block coefficient patterns differ between AI diffusion output and real camera captures' },
-    { name: 'DCT Block Artifact',      score: dctBlockArtifactScore(rawDCTBlock), rawValue: rawDCTBlock,    weight: 0.08, description: 'GAN/diffusion models leave distinctive periodic artifacts at 8×8 pixel block boundaries — checkerboard artifact detection' },
+    { name: 'DCT Block Pattern',       score: Math.min(0.99, rawDCT * jpegDCTBoost),                             rawValue: rawDCT,         weight: 0.13, description: 'JPEG block coefficient patterns differ between AI diffusion output and real camera captures; JPEG inputs get enhanced DCT analysis' },
+    { name: 'DCT Block Artifact',      score: Math.min(0.99, dctBlockArtifactScore(rawDCTBlock) * jpegDCTBoost), rawValue: rawDCTBlock,    weight: 0.08, description: 'GAN/diffusion models leave distinctive periodic artifacts at 8×8 pixel block boundaries — enhanced for JPEG inputs' },
     { name: 'Skin Tone Smoothing',     score: rawSkin,                            rawValue: rawSkin,        weight: 0.11, description: 'AI portrait generators (Midjourney v6, Grok, Gemini) produce unnaturally smooth skin texture' },
     { name: 'Background Uniformity',   score: bgScore(rawBg),                     rawValue: rawBg,          weight: 0.11, description: 'AI studio renders have unnaturally smooth gradients — reliable for portraits and product shots' },
     { name: 'EXIF Metadata',           score: rawExif,                            rawValue: rawExif,        weight: 0.07, description: 'AI generators strip all EXIF/APP1 metadata; real camera photos have EXIF with device, datetime, GPS' },

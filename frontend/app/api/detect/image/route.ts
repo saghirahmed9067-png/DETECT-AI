@@ -35,7 +35,27 @@ export async function POST(req: NextRequest) {
 
     const bytes  = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
-    const result = await analyzeImage(buffer, file.type, file.name)
+
+    // Validate file magic bytes match declared MIME type
+    // Prevents spoofing (e.g. disguising a non-image as image/jpeg)
+    const magic = new Uint8Array(bytes.slice(0, 4))
+    const isJPEG = magic[0] === 0xFF && magic[1] === 0xD8 && magic[2] === 0xFF
+    const isPNG  = magic[0] === 0x89 && magic[1] === 0x50 && magic[2] === 0x4E && magic[3] === 0x47
+    const isWEBP = magic[0] === 0x52 && magic[1] === 0x49 && magic[2] === 0x46 && magic[3] === 0x46
+    const isGIF  = magic[0] === 0x47 && magic[1] === 0x49 && magic[2] === 0x46
+    const isBMP  = magic[0] === 0x42 && magic[1] === 0x4D
+
+    const validImage = isJPEG || isPNG || isWEBP || isGIF || isBMP
+    if (!validImage) {
+      return NextResponse.json({
+        success: false,
+        error: { code: 'INVALID_FORMAT', message: 'File does not appear to be a valid image. Supported: JPEG, PNG, WebP, GIF, BMP.' }
+      }, { status: 400 })
+    }
+
+    // Pass detected format so image signals can apply JPEG-specific tuning
+    const detectedFormat = isJPEG ? 'jpeg' : isPNG ? 'png' : isWEBP ? 'webp' : 'other'
+    const result = await analyzeImage(buffer, file.type, file.name, detectedFormat)
     const processingTime = Date.now() - start
 
     let scanId: string | null = null

@@ -16,6 +16,7 @@ import {
 } from './core'
 
 import { log } from './types'
+import { aggregateCorrectionWeights } from './weights-aggregator'
 
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
@@ -108,6 +109,16 @@ export default {
       if (tick % 100 === 0) {
         const deleted = await cleanupPushed(env.DB)
         if (deleted > 0) console.log(`[W20] cleanup: removed ${deleted} orphaned records`)
+      }
+      // Every 60 ticks (~1 hour): rebuild correction_weights from signal_corrections
+      // This makes the feedback learning engine smarter over time
+      if (tick % 60 === 0) {
+        try {
+          await aggregateCorrectionWeights(env.DB)
+          console.log('[W20] correction_weights aggregation complete')
+        } catch (e: any) {
+          console.error(`[W20] aggregation error: ${e?.message}`)
+        }
       }
       return
     }
