@@ -101,7 +101,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
             <p className="text-center text-xs text-text-disabled flex items-center justify-center gap-1.5">
               <Shield className="w-3.5 h-3.5 text-emerald" />
-              Free forever · No credit card · 285,000+ training samples
+              Free forever · No credit card · 413,000+ training samples
             </p>
           </div>
         </motion.div>

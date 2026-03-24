@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     default: 'Aiscern — #1 Free AI Detector for Text, Images, Audio & Deepfakes',
     template: '%s | Aiscern — Free AI Detection',
   },
-  description: 'The most accurate free AI detector. Detect ChatGPT, Claude, Gemini text, Midjourney deepfakes, ElevenLabs voice clones & synthetic video. 94% accuracy. 285,000+ training samples. No signup required.',
+  description: 'The most accurate free AI detector. Detect ChatGPT, Claude, Gemini text, Midjourney deepfakes, ElevenLabs voice clones & synthetic video. 413,000+ verified training samples. No signup required.',
   keywords: [
     'ai detector','free ai detector','ai text detector','chatgpt detector','claude detector',
     'gemini detector','ai content detector','detect ai generated text','chatgpt checker',

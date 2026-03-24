@@ -1,13 +1,13 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'About Aiscern — The Most Accurate Free AI Detector Online',
-  description: 'Aiscern is a multi-modal AI detection platform built on 285,000+ training samples from 60+ datasets. Detect AI text, deepfakes, voice cloning and synthetic video. Built to make AI detection accessible to everyone.',
+  title: 'About Aiscern — Free Multi-Modal AI Content Detector',
+  description: 'Aiscern is a free, multi-modal AI detection platform built on 413,000+ verified training samples from 87 datasets. Detect AI text, deepfakes, voice cloning and synthetic video — free for everyone.',
   keywords: ['about aiscern','ai detection platform','how ai detector works','aiscern accuracy','ai content detection technology'],
   alternates: { canonical: 'https://aiscern.com/about' },
   openGraph: {
-    title: 'About Aiscern — Built on 285,000+ AI Training Samples',
-    description: 'How we built the most accurate free AI detector. 285k+ samples, 60+ datasets, 94% accuracy on text. Free for everyone.',
+    title: 'About Aiscern — Built on 413,000+ Verified AI Training Samples',
+    description: 'How we built a free multi-modal AI detector. 413k+ verified samples across 87 datasets covering text, images, audio and video. Free for everyone.',
     url: 'https://aiscern.com/about',
   },
 }

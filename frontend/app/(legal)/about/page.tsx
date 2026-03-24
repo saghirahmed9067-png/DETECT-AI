@@ -20,12 +20,12 @@ const VALUES = [
 ]
 
 const TIMELINE = [
-  { year: '2023', event: 'Research phase — studying detection gaps in commercial tools' },
+  { year: '2023',      event: 'Research phase — studying detection gaps in commercial tools' },
   { year: 'Early 2024', event: 'First prototype: text-only detection using RoBERTa-based classification' },
-  { year: 'Mid 2024', event: 'Multi-modal expansion: added image, audio, and video detection' },
-  { year: 'Late 2024', event: 'Multi-model ensemble deployed — image, audio, and video detection added' },
-  { year: '2025', event: 'Automated data pipeline deployed — 15 Cloudflare Workers collecting and labeling samples across 87 datasets' },
-  { year: '2026', event: '413,000+ labeled samples across 87 datasets · Text, image, audio & video detection · Public launch at aiscern.com' },
+  { year: 'Mid 2024',  event: 'Multi-modal expansion — image, audio and video detection added alongside text' },
+  { year: 'Late 2024', event: 'Multi-model ensemble deployed — 3 specialist models per modality with adaptive weighting' },
+  { year: '2025',      event: 'Automated data pipeline launched — collecting and labeling samples across 87 datasets' },
+  { year: '2026',      event: '413,000+ verified samples · Text, image, audio & video detection · Public launch at aiscern.com' },
 ]
 
 export default function AboutPage() {
@@ -211,8 +211,8 @@ export default function AboutPage() {
               </div>
               <h2 className="text-3xl font-black mb-4">Start <span className="gradient-text">Detecting</span></h2>
               <p className="text-text-muted mb-8 max-w-xl mx-auto">
-                Join thousands of journalists, researchers, and organizations using Aiscern to
-                verify media authenticity every day.
+                Built for journalists, researchers, educators, and anyone who needs to
+                verify content authenticity before it spreads.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link href="/signup" className="btn-primary inline-flex items-center gap-2 px-7 py-3 text-base">
