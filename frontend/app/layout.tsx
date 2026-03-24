@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { ClerkProvider } from '@clerk/nextjs'
 import { AuthProvider } from '@/components/auth-provider'
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Toaster } from 'sonner'
 import './globals.css'
 
@@ -94,6 +95,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
             <ServiceWorkerRegistration />
             <Toaster richColors position="top-right" />
+            <SpeedInsights />
           </AuthProvider>
         </ClerkProvider>
       </body>
