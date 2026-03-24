@@ -3,6 +3,7 @@ import { ClerkProvider } from '@clerk/nextjs'
 import { AuthProvider } from '@/components/auth-provider'
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration'
 import { Toaster } from 'sonner'
+import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -94,6 +95,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
             <ServiceWorkerRegistration />
             <Toaster richColors position="top-right" />
+            <Analytics />
           </AuthProvider>
         </ClerkProvider>
       </body>
