@@ -7,10 +7,10 @@ import Link from 'next/link'
 import { Shield, Zap, Eye, Lock } from 'lucide-react'
 
 const FEATURES = [
-  { icon: Shield, text: 'Enterprise-grade security' },
-  { icon: Zap,    text: '94%+ detection accuracy'  },
-  { icon: Eye,    text: 'Multi-modal AI detection'  },
-  { icon: Lock,   text: 'Private & encrypted scans' },
+  { icon: Shield, text: 'Private & encrypted scans' },
+  { icon: Zap,    text: 'Multi-model ensemble detection' },
+  { icon: Eye,    text: 'Text · Images · Audio · Video' },
+  { icon: Lock,   text: 'Free forever · No credit card' },
 ]
 
 export default function LoginPage() {
@@ -76,7 +76,7 @@ export default function LoginPage() {
 
           {/* Stats */}
           <div className="flex gap-6">
-            {[['413k+','Training samples'],['94%+','Accuracy'],['Free','Forever']].map(([val,lbl])=>(
+            {[['413k+','Training samples'],['4','Detection modes'],['Free','Forever']].map(([val,lbl])=>(
               <div key={lbl}>
                 <div className="text-2xl font-black text-white">{val}</div>
                 <div className="text-xs text-slate-500 mt-0.5">{lbl}</div>

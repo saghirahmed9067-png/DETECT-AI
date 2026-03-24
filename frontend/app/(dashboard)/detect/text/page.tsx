@@ -71,19 +71,10 @@ export default function TextDetectionPage() {
       const data = await res.json()
       if (!data.success) throw new Error(data.error?.message || 'PDF analysis failed')
       setResult(data.result)
-      setScanId(data.scan_id ?? null)
+      setScanId(data.scan_id ?? null)   // ← use server-returned scan_id, no frontend insert
       if (data.result?.paragraph_scores) setParagraphScores(data.result?.paragraph_scores)
       incrementGlobalScanCount()
-      window.dispatchEvent(new Event('aiscern:scan'))
-      window.dispatchEvent(new Event('aiscern:scan'))
-      if (currentUser?.uid) {
-        await (supabase as any).from('scans').insert({
-          user_id: currentUser.uid, media_type: 'text',
-          content_preview: `[PDF: ${file.name}]`,
-          verdict: data.result?.verdict, confidence_score: data.result?.confidence,
-          model_used: data.result?.model_used, processing_time: data.result?.processing_time, status: 'complete'
-        })
-      }
+      window.dispatchEvent(new Event('aiscern:scan'))   // ← single dispatch only
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'PDF analysis failed')
     } finally { setPdfLoading(false) }
@@ -103,17 +94,9 @@ export default function TextDetectionPage() {
       const data = await res.json()
       if (!data.success) throw new Error(data.error?.message || 'Detection failed')
       setResult(data.result)
+      setScanId(data.scan_id ?? null)   // ← use server-returned scan_id, no frontend insert
       incrementGlobalScanCount()
       window.dispatchEvent(new Event('aiscern:scan'))
-      if (currentUser?.uid) {
-        await (supabase as any).from('scans').insert({
-          user_id: currentUser.uid, media_type: 'text',
-          content_preview: text.substring(0, 200),
-          verdict: data.result?.verdict, confidence_score: data.result?.confidence,
-          signals: data.result?.signals, model_used: data.result?.model_used,
-          processing_time: data.result?.processing_time, status: 'complete'
-        })
-      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally { setLoading(false) }

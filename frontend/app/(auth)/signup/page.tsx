@@ -57,7 +57,7 @@ export default function SignUpPage() {
               </span>
             </h1>
             <p className="text-base text-slate-400 leading-relaxed max-w-sm">
-              Join thousands of researchers, journalists and businesses using Aiscern to verify content authenticity.
+              Built for journalists, researchers, educators and developers who need to verify content authenticity.
             </p>
           </div>
 
@@ -80,8 +80,8 @@ export default function SignUpPage() {
               ))}
             </div>
             <div>
-              <div className="text-xs font-bold text-white">10,000+ users</div>
-              <div className="text-[11px] text-slate-500">detecting AI content daily</div>
+              <div className="text-xs font-bold text-white">413k+ training samples</div>
+              <div className="text-[11px] text-slate-500">across text, image, audio & video</div>
             </div>
           </div>
         </div>
