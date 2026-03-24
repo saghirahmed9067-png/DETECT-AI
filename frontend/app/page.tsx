@@ -530,9 +530,9 @@ const STATS = [
 ]
 
 const REVIEWS = [
-  { text: 'Saved us from publishing AI content. The sentence-level heatmap is incredibly useful — now part of our daily editorial workflow.', name: 'Sarah K.', role: 'Senior Editorial Staff', stars: 5, photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=face&fm=webp&q=60', avatar: 'SK', color: '#6366f1' },
-  { text: 'Multi-model ensemble detection gives well-rounded results across text, images, audio and video. The multimodal approach sets Aiscern apart.', name: 'Marcus T.', role: 'AI Researcher', stars: 5, photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face&fm=webp&q=60', avatar: 'MT', color: '#0ea5e9' },
-  { text: 'Replaced 3 tools with just Aiscern. The batch analyser handles text, images and audio in one platform — massive cost saving.', name: 'Priya M.', role: 'Content Manager', stars: 5, photo: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=80&h=80&fit=crop&crop=face&fm=webp&q=60', avatar: 'PM', color: '#10b981' },
+  { text: 'Saved us from publishing AI content. The sentence-level heatmap is incredibly useful — now part of our daily editorial workflow.', name: 'Sarah K.', role: 'Senior Editorial Staff', stars: 5, avatar: 'SK', color: '#6366f1' },
+  { text: 'Multi-model ensemble detection gives well-rounded results across text, images, audio and video. The multimodal approach sets Aiscern apart.', name: 'Marcus T.', role: 'AI Researcher', stars: 5, avatar: 'MT', color: '#0ea5e9' },
+  { text: 'Replaced 3 tools with just Aiscern. The batch analyser handles text, images and audio in one platform — massive cost saving.', name: 'Priya M.', role: 'Content Manager', stars: 5, avatar: 'PM', color: '#10b981' },
 ]
 
 const HOW_IT_WORKS = [
@@ -544,7 +544,6 @@ const HOW_IT_WORKS = [
 
 
 // ─── AI vs Real Comparison Cards ─────────────────────────────────────────────
-// All images from Unsplash (free commercial license: https://unsplash.com/license)
 const COMPARISON_CARDS = [
   // Text AI vs Human
   { type: 'text', label: 'AI-Generated Text',  verdict: 'AI',    confidence: 96, color: '#f43f5e',
@@ -1100,17 +1099,7 @@ export default function HomePage() {
                 </div>
                 <p className="text-text-secondary text-sm leading-relaxed mb-4">&ldquo;{r.text}&rdquo;</p>
                 <div className="flex items-center gap-3">
-                  <img
-                    src={r.photo}
-                    alt={`${r.name} — Aiscern user review`}
-                    className="w-10 h-10 rounded-full object-cover ring-2 ring-primary/20"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement
-                      target.style.display = 'none'
-                      target.nextElementSibling?.classList.remove('hidden')
-                    }}
-                  />
-                  <div className="w-10 h-10 rounded-full hidden items-center justify-center text-sm font-bold text-white flex-shrink-0"
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0 ring-2 ring-primary/20"
                     style={{ background: r.color }}>
                     {r.avatar}
                   </div>
