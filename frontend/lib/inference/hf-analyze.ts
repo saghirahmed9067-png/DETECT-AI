@@ -147,7 +147,7 @@ export async function analyzeText(text: string): Promise<DetectionResult> {
   const lingSignals = extractTextSignals(text)
   const lingScore   = aggregateTextSignals(lingSignals)
 
-  // ── Bedrock fallback — fires when ALL HF models failed ───────────────────
+  // ── Gemini fallback — fires when ALL HF models failed ────────────────────
   let bedrockScore: number | null = null
   let bedrockReasoning = ''
   if (mlScores.length === 0) {
@@ -155,15 +155,15 @@ export async function analyzeText(text: string): Promise<DetectionResult> {
       const br = await bedrockAnalyzeText(text)
       bedrockScore    = br.aiScore
       bedrockReasoning = br.reasoning
-    } catch { /* Bedrock also unavailable — degrade to linguistic only */ }
+    } catch { /* Gemini also unavailable — degrade to linguistic only */ }
   }
 
   // Final ensemble:
   //  HF models available  → 70% ML + 30% linguistic
-  //  Bedrock fallback      → 60% Bedrock + 40% linguistic
+  //  Gemini fallback       → 60% Gemini + 40% linguistic
   //  Nothing available     → 100% linguistic
   const mlWeight = mlScores.length > 0 ? 0.70
-    : bedrockScore !== null            ? 0.00   // Bedrock handled separately below
+    : bedrockScore !== null            ? 0.00   // Gemini handled separately below
     : 0.00
   const lingWeight = 1 - mlWeight
   const rawAiScore = mlScores.length > 0
@@ -182,7 +182,7 @@ export async function analyzeText(text: string): Promise<DetectionResult> {
       description: mlScores.length
         ? `${mlScores.length} transformer models: ${mlScores.map(s => s.model.split('/').pop()).join(', ')}`
         : bedrockScore !== null
-        ? `Bedrock preliminary analysis (HF models cold) — ${bedrockReasoning}`
+        ? `Gemini 2.0 Flash preliminary analysis (HF models cold) — ${bedrockReasoning}`
         : 'ML models unavailable — linguistic analysis only',
       weight:      mlScores.length > 0 ? 70 : bedrockScore !== null ? 60 : 0,
       value:       bedrockScore !== null && mlScores.length === 0 ? bedrockScore : mlScore,
@@ -259,7 +259,7 @@ export async function analyzeImage(imageBuffer: Buffer, mimeType: string, fileNa
 
   const imgSignalScore = aggregateImageSignals(imgSignals)
 
-  // ── Bedrock fallback: activate when ALL HF models failed ─────────────────
+  // ── Gemini fallback: activate when ALL HF models failed ──────────────────
   let bedrockImgScore: number | null = null
   let bedrockImgReasoning = ''
   if (mlScores.length === 0 && !hfSkipped && imageBuffer) {
@@ -267,11 +267,11 @@ export async function analyzeImage(imageBuffer: Buffer, mimeType: string, fileNa
       const br = await bedrockAnalyzeImage(imageBuffer, mimeType)
       bedrockImgScore    = br.aiScore
       bedrockImgReasoning = br.reasoning
-    } catch { /* Bedrock also unavailable — fall through to pixel-only */ }
+    } catch { /* Gemini also unavailable — fall through to pixel-only */ }
   }
 
   // Adaptive ensemble: ML models 65%, image signals 35%
-  // If Bedrock stepped in, use 60% Bedrock + 40% pixel signals
+  // If Gemini stepped in, use 60% Gemini + 40% pixel signals
   // If all fail, image signals carry full weight
   const mlTotalW  = mlScores.reduce((s, m) => s + m.weight, 0) || 1
   const mlScore   = mlScores.length
@@ -301,7 +301,7 @@ export async function analyzeImage(imageBuffer: Buffer, mimeType: string, fileNa
     model_used:    mlCount
       ? `Aiscern-ImageEnsemble(${mlScores.map((s: {model:string;aiScore:number;weight:number}) => s.model.split('/').pop()).join('+')}+10PixelSignals+DiffusionDB)`
       : bedrockImgScore !== null
-      ? 'Aiscern-ImageBedrock(Claude3Haiku+10PixelSignals)'
+      ? 'Aiscern-ImageGemini(Gemini2Flash+10PixelSignals)'
       : 'Aiscern-ImageSignals(10PixelSignals+DiffusionDB)',
     model_version: '4.0.0',
     signals: [
@@ -311,7 +311,7 @@ export async function analyzeImage(imageBuffer: Buffer, mimeType: string, fileNa
         description: mlCount
           ? `${mlCount} vision models: AI-image-detector, SDXL-detector, AIorNot`
           : bedrockImgScore !== null
-          ? `Bedrock preliminary analysis (HF models cold) — ${bedrockImgReasoning}`
+          ? `Gemini 2.0 Flash preliminary analysis (HF models cold) — ${bedrockImgReasoning}`
           : 'ML models unavailable — pixel signal analysis only',
         weight:      Math.round(mlWeight * 100),
         value:       bedrockImgScore !== null && mlCount === 0 ? bedrockImgScore : mlScore,

@@ -1,119 +1,109 @@
 /**
- * Aiscern — Amazon Bedrock Fallback Inference
+ * Aiscern — Gemini 2.0 Flash Fallback Engine
  *
- * Used when ALL HuggingFace models are cold/down.
- * Prompts Claude 3 Haiku (cheapest/fastest) on Bedrock to classify content.
+ * Replaces Amazon Bedrock. Fires ONLY when ALL HuggingFace models are
+ * cold/unavailable. Gemini 2.0 Flash is fast, free-tier (1500 req/day),
+ * and has native vision support for image analysis.
  *
- * Results are clearly labelled as "Bedrock-preliminary" in model_used.
- * Less accurate than fine-tuned HF classifiers — used as a safety net only.
+ * Required env var (add ONE key to Vercel):
+ *   GEMINI_API_KEY  — from Google AI Studio (aistudio.google.com)
  *
- * Required env vars (add to Vercel):
- *   AWS_ACCESS_KEY_ID      — from AWS IAM → your user → Security Credentials
- *   AWS_SECRET_ACCESS_KEY  — same place
- *   AWS_REGION             — e.g. us-east-1 (must have Bedrock access)
+ * Results are clearly labelled as "Gemini-Fallback" in model_used so
+ * users know it's a fallback, not the fine-tuned HF classifier.
  */
 
-import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime'
+import { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory } from '@google/generative-ai'
 
 // ── Client (lazy singleton) ───────────────────────────────────────────────────
-let _client: BedrockRuntimeClient | null = null
+let _genAI: GoogleGenerativeAI | null = null
 
-function getClient(): BedrockRuntimeClient {
-  if (_client) return _client
-  const region    = process.env.AWS_REGION          || 'us-east-1'
-  const accessKey = process.env.AWS_ACCESS_KEY_ID
-  const secretKey = process.env.AWS_SECRET_ACCESS_KEY
-  if (!accessKey || !secretKey) throw new Error('AWS credentials not configured')
-  _client = new BedrockRuntimeClient({
-    region,
-    credentials: { accessKeyId: accessKey, secretAccessKey: secretKey },
-  })
-  return _client
+function getClient(): GoogleGenerativeAI {
+  if (_genAI) return _genAI
+  const key = process.env.GEMINI_API_KEY
+  if (!key) throw new Error('GEMINI_API_KEY not set in environment variables')
+  _genAI = new GoogleGenerativeAI(key)
+  return _genAI
 }
 
-// ── Model to use ─────────────────────────────────────────────────────────────
-// Claude 3 Haiku = fastest + cheapest on Bedrock. Change to claude-3-5-sonnet
-// for higher accuracy if budget allows.
-const BEDROCK_MODEL = process.env.AWS_BEDROCK_MODEL_ID
-  || 'anthropic.claude-3-haiku-20240307-v1:0'
+// Safety settings — disable blocks so detection prompts aren't refused
+const SAFETY = [
+  { category: HarmCategory.HARM_CATEGORY_HARASSMENT,        threshold: HarmBlockThreshold.BLOCK_NONE },
+  { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,       threshold: HarmBlockThreshold.BLOCK_NONE },
+  { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+  { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+]
 
-// ── Shared invoker ────────────────────────────────────────────────────────────
-async function invokeClaudeHaiku(prompt: string): Promise<string> {
-  const client = getClient()
-  const body = JSON.stringify({
-    anthropic_version: 'bedrock-2023-05-31',
-    max_tokens: 200,
-    temperature: 0.05,
-    messages: [{ role: 'user', content: prompt }],
-  })
-  const cmd = new InvokeModelCommand({
-    modelId:     BEDROCK_MODEL,
-    contentType: 'application/json',
-    accept:      'application/json',
-    body:        Buffer.from(body),
-  })
-  const res  = await client.send(cmd)
-  const json = JSON.parse(Buffer.from(res.body).toString('utf-8'))
-  return json?.content?.[0]?.text ?? ''
+const MODEL = 'gemini-2.0-flash'
+
+// ── Shared JSON parser ────────────────────────────────────────────────────────
+function parseGeminiJSON(raw: string): { ai_probability: number; verdict: string; reasoning: string; signals?: string[] } {
+  try {
+    const clean = raw.replace(/```json\n?|\n?```/g, '').trim()
+    return JSON.parse(clean)
+  } catch {
+    const prob    = raw.match(/"ai_probability"\s*:\s*([\d.]+)/)?.[1]
+    const verdict = raw.match(/"verdict"\s*:\s*"([^"]+)"/)?.[1]
+    const reason  = raw.match(/"reasoning"\s*:\s*"([^"]+)"/)?.[1]
+    return {
+      ai_probability: prob ? parseFloat(prob) : 0.5,
+      verdict:        verdict ?? 'UNCERTAIN',
+      reasoning:      reason  ?? 'Parse error — score estimated',
+    }
+  }
 }
 
-// ── Text Fallback ────────────────────────────────────────────────────────────
+function toVerdict(score: number): 'AI' | 'HUMAN' | 'UNCERTAIN' {
+  if (score >= 0.60) return 'AI'
+  if (score <= 0.40) return 'HUMAN'
+  return 'UNCERTAIN'
+}
+
+// ════════════════════════════════════════════════════════════════
+// TEXT FALLBACK
+// ════════════════════════════════════════════════════════════════
 export interface BedrockTextResult {
-  aiScore:   number          // 0–1
+  aiScore:   number
   verdict:   'AI' | 'HUMAN' | 'UNCERTAIN'
   reasoning: string
 }
 
 export async function bedrockAnalyzeText(text: string): Promise<BedrockTextResult> {
-  const sample = text.substring(0, 2000)
-  const prompt = `You are an expert AI-generated text detector.
+  const model = getClient().getGenerativeModel({ model: MODEL, safetySettings: SAFETY })
 
-Analyze the following text and determine if it was written by an AI (ChatGPT, Claude, Gemini, etc.) or by a human.
+  const prompt = `You are an expert AI-generated text detection system.
 
-Look for these AI signals:
-- Overly uniform sentence length and structure
-- Excessive use of transition words (furthermore, however, additionally)
-- Generic, hedged language lacking personal voice
-- Perfect grammar with no natural errors or colloquialisms
-- Repetitive phrasing patterns
-- Lists structured too neatly
+Analyze the following text and determine if it was written by an AI (ChatGPT, Claude, Gemini, GPT-4 etc.) or by a human.
+
+AI writing signals to look for:
+- Unnaturally uniform sentence structure and length
+- Overuse of transitions: "Furthermore", "Moreover", "In conclusion", "Additionally"  
+- Generic hedged language lacking personal voice or specific lived experience
+- Suspiciously perfect grammar with no natural errors or colloquialisms
+- Repetitive phrasing patterns across paragraphs
+- Lists structured too neatly with parallel phrasing
+- Lacks genuine emotion, humour, or idiosyncratic word choices
 
 TEXT TO ANALYZE:
 """
-${sample}
+${text.substring(0, 2500)}
 """
 
-Respond ONLY with valid JSON, no other text:
-{"ai_probability": 0.0-1.0, "verdict": "AI"|"HUMAN"|"UNCERTAIN", "reasoning": "one sentence"}`
+Respond ONLY with valid JSON — no preamble, no text outside the JSON:
+{"ai_probability": 0.0-1.0, "verdict": "AI"|"HUMAN"|"UNCERTAIN", "reasoning": "one sentence max"}`
 
-  const raw = await invokeClaudeHaiku(prompt)
-  const clean = raw.replace(/```json\n?|\n?```/g, '').trim()
+  const result  = await model.generateContent(prompt)
+  const raw     = result.response.text()
+  const parsed  = parseGeminiJSON(raw)
+  const aiScore = Math.max(0, Math.min(1, parsed.ai_probability ?? 0.5))
+  const verdict = (['AI','HUMAN','UNCERTAIN'].includes(parsed.verdict)
+    ? parsed.verdict : toVerdict(aiScore)) as 'AI' | 'HUMAN' | 'UNCERTAIN'
 
-  try {
-    const parsed = JSON.parse(clean) as {
-      ai_probability: number
-      verdict: string
-      reasoning: string
-    }
-    const aiScore = Math.max(0, Math.min(1, parsed.ai_probability ?? 0.5))
-    const verdict = (['AI', 'HUMAN', 'UNCERTAIN'].includes(parsed.verdict)
-      ? parsed.verdict
-      : aiScore >= 0.58 ? 'AI' : aiScore <= 0.42 ? 'HUMAN' : 'UNCERTAIN'
-    ) as 'AI' | 'HUMAN' | 'UNCERTAIN'
-    return { aiScore, verdict, reasoning: parsed.reasoning ?? '' }
-  } catch {
-    // Parse fallback
-    const scoreMatch = clean.match(/"?ai_probability"?\s*:\s*([\d.]+)/)
-    const aiScore    = scoreMatch ? parseFloat(scoreMatch[1]) : 0.5
-    return {
-      aiScore,
-      verdict: aiScore >= 0.58 ? 'AI' : aiScore <= 0.42 ? 'HUMAN' : 'UNCERTAIN',
-      reasoning: 'Bedrock response parse error — score estimated',
-    }
-  }
+  return { aiScore, verdict, reasoning: parsed.reasoning ?? '' }
 }
 
-// ── Image Fallback ────────────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════
+// IMAGE FALLBACK
+// ════════════════════════════════════════════════════════════════
 export interface BedrockImageResult {
   aiScore:   number
   verdict:   'AI' | 'HUMAN' | 'UNCERTAIN'
@@ -122,94 +112,59 @@ export interface BedrockImageResult {
 }
 
 export async function bedrockAnalyzeImage(imageBuffer: Buffer, mimeType: string): Promise<BedrockImageResult> {
-  // Bedrock Claude accepts base64 images directly
-  const base64 = imageBuffer.toString('base64')
-  const mediaType = (mimeType === 'image/png' ? 'image/png'
-    : mimeType === 'image/webp' ? 'image/webp'
-    : 'image/jpeg') as 'image/jpeg' | 'image/png' | 'image/webp'
+  const model = getClient().getGenerativeModel({ model: MODEL, safetySettings: SAFETY })
 
-  const client = getClient()
-  const body = JSON.stringify({
-    anthropic_version: 'bedrock-2023-05-31',
-    max_tokens: 300,
-    temperature: 0.05,
-    messages: [{
-      role: 'user',
-      content: [
-        {
-          type:   'image',
-          source: { type: 'base64', media_type: mediaType, data: base64 },
-        },
-        {
-          type: 'text',
-          text: `You are an expert AI-generated image detector.
+  const validMime = (['image/jpeg','image/png','image/webp','image/gif'] as const)
+    .find(t => t === mimeType) ?? 'image/jpeg'
 
-Analyze this image for signs of AI generation (Midjourney, DALL-E, Stable Diffusion, Firefly, Grok Aurora etc).
+  const imagePart = {
+    inlineData: {
+      data:     imageBuffer.toString('base64'),
+      mimeType: validMime,
+    },
+  }
 
-Check for:
-- Unnatural skin texture or plastic-like smoothness
-- Incorrect hand anatomy (wrong finger count, fused fingers)
-- Inconsistent lighting or impossible shadows
-- Background objects that are blurred/distorted/repeated
-- Text in the image that is garbled or nonsensical
-- Perfect symmetry that is unnatural
-- GAN checkerboard artifacts in smooth areas
-- Hair or fur that looks painted rather than individual strands
+  const prompt = `You are an expert AI-generated image detection system.
 
-Respond ONLY with valid JSON, no other text:
-{"ai_probability": 0.0-1.0, "verdict": "AI"|"HUMAN"|"UNCERTAIN", "reasoning": "one sentence", "signals": ["signal1","signal2"]}`,
-        },
-      ],
-    }],
-  })
+Analyze this image and determine if it was created by an AI generator (Midjourney, DALL-E 3, Stable Diffusion, Adobe Firefly, Grok Aurora, Gemini Imagen, Kling, Runway, Sora etc.) or is a real photograph/human-made artwork.
 
-  const cmd = new InvokeModelCommand({
-    modelId:     BEDROCK_MODEL,
-    contentType: 'application/json',
-    accept:      'application/json',
-    body:        Buffer.from(body),
-  })
+Check specifically for:
+1. FACE/SKIN: Unnatural smoothness, plastic texture, wrong ear/teeth anatomy
+2. HANDS: Incorrect finger count, fused or melted fingers, wrong proportions
+3. BACKGROUND: Repeated objects, impossible geometry, blurred edges
+4. LIGHTING: Shadows that contradict light source, missing reflections
+5. TEXT: Garbled, nonsensical, or impossible text in the image
+6. SYMMETRY: Unnaturally perfect facial symmetry
+7. ARTIFACTS: GAN checkerboard patterns, diffusion blurriness at edges, seams
+8. HAIR/FUR: Painted appearance rather than individual strands
 
-  const res  = await client.send(cmd)
-  const json = JSON.parse(Buffer.from(res.body).toString('utf-8'))
-  const raw  = json?.content?.[0]?.text ?? ''
-  const clean = raw.replace(/```json\n?|\n?```/g, '').trim()
+Respond ONLY with valid JSON:
+{"ai_probability": 0.0-1.0, "verdict": "AI"|"HUMAN"|"UNCERTAIN", "reasoning": "one sentence", "signals": ["signal1", "signal2"]}`
 
-  try {
-    const parsed = JSON.parse(clean) as {
-      ai_probability: number
-      verdict:        string
-      reasoning:      string
-      signals:        string[]
-    }
-    const aiScore = Math.max(0, Math.min(1, parsed.ai_probability ?? 0.5))
-    const verdict = (['AI', 'HUMAN', 'UNCERTAIN'].includes(parsed.verdict)
-      ? parsed.verdict
-      : aiScore >= 0.58 ? 'AI' : aiScore <= 0.42 ? 'HUMAN' : 'UNCERTAIN'
-    ) as 'AI' | 'HUMAN' | 'UNCERTAIN'
-    return {
-      aiScore,
-      verdict,
-      reasoning: parsed.reasoning ?? '',
-      signals:   Array.isArray(parsed.signals) ? parsed.signals : [],
-    }
-  } catch {
-    const scoreMatch = clean.match(/"?ai_probability"?\s*:\s*([\d.]+)/)
-    const aiScore    = scoreMatch ? parseFloat(scoreMatch[1]) : 0.5
-    return {
-      aiScore,
-      verdict:   aiScore >= 0.58 ? 'AI' : aiScore <= 0.42 ? 'HUMAN' : 'UNCERTAIN',
-      reasoning: 'Bedrock response parse error',
-      signals:   [],
-    }
+  const result  = await model.generateContent([prompt, imagePart])
+  const raw     = result.response.text()
+  const parsed  = parseGeminiJSON(raw)
+  const aiScore = Math.max(0, Math.min(1, parsed.ai_probability ?? 0.5))
+  const verdict = (['AI','HUMAN','UNCERTAIN'].includes(parsed.verdict)
+    ? parsed.verdict : toVerdict(aiScore)) as 'AI' | 'HUMAN' | 'UNCERTAIN'
+
+  return {
+    aiScore,
+    verdict,
+    reasoning: parsed.reasoning ?? '',
+    signals:   Array.isArray(parsed.signals) ? parsed.signals : [],
   }
 }
 
-// ── Health check — call this to verify credentials are working ────────────────
+// ── Availability check ────────────────────────────────────────────────────────
+export function bedrockAvailable(): boolean {
+  return !!process.env.GEMINI_API_KEY
+}
+
 export async function bedrockHealthCheck(): Promise<boolean> {
   try {
-    const result = await bedrockAnalyzeText('The quick brown fox jumps over the lazy dog.')
-    return typeof result.aiScore === 'number'
+    const r = await bedrockAnalyzeText('The quick brown fox jumps over the lazy dog.')
+    return typeof r.aiScore === 'number'
   } catch {
     return false
   }
