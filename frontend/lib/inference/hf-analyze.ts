@@ -17,6 +17,7 @@ import { extractAudioSignals, aggregateAudioSignals, applyAudioCalibration } fro
 import { getCalibrationStats, getAudioCalibrationStats } from './calibration-client'
 import { analyzeVideoFrames }                        from './nvidia-nim'
 import { buildVideoSignals }                         from './signals/video-signals'
+import { bedrockAnalyzeText, bedrockAnalyzeImage }   from './bedrock-fallback'
 
 export interface DetectionSignal {
   name:        string
@@ -146,11 +147,32 @@ export async function analyzeText(text: string): Promise<DetectionResult> {
   const lingSignals = extractTextSignals(text)
   const lingScore   = aggregateTextSignals(lingSignals)
 
-  // Final ensemble: ML models 70%, linguistic signals 30%
-  const mlWeight  = mlScores.length > 0 ? 0.70 : 0.00
-  const lingWeight= 1 - mlWeight
-  const aiScore   = mlScore * mlWeight + lingScore * lingWeight
-  const verdict   = toVerdict(aiScore)
+  // ── Bedrock fallback — fires when ALL HF models failed ───────────────────
+  let bedrockScore: number | null = null
+  let bedrockReasoning = ''
+  if (mlScores.length === 0) {
+    try {
+      const br = await bedrockAnalyzeText(text)
+      bedrockScore    = br.aiScore
+      bedrockReasoning = br.reasoning
+    } catch { /* Bedrock also unavailable — degrade to linguistic only */ }
+  }
+
+  // Final ensemble:
+  //  HF models available  → 70% ML + 30% linguistic
+  //  Bedrock fallback      → 60% Bedrock + 40% linguistic
+  //  Nothing available     → 100% linguistic
+  const mlWeight = mlScores.length > 0 ? 0.70
+    : bedrockScore !== null            ? 0.00   // Bedrock handled separately below
+    : 0.00
+  const lingWeight = 1 - mlWeight
+  const rawAiScore = mlScores.length > 0
+    ? mlScore * mlWeight + lingScore * lingWeight
+    : bedrockScore !== null
+    ? bedrockScore * 0.60 + lingScore * 0.40
+    : lingScore
+  const aiScore = rawAiScore
+  const verdict = toVerdict(aiScore, hasFinetuned)
 
   // Build signals array for UI
   const signals: DetectionSignal[] = [
@@ -159,10 +181,12 @@ export async function analyzeText(text: string): Promise<DetectionResult> {
       category:    'ML',
       description: mlScores.length
         ? `${mlScores.length} transformer models: ${mlScores.map(s => s.model.split('/').pop()).join(', ')}`
+        : bedrockScore !== null
+        ? `Bedrock preliminary analysis (HF models cold) — ${bedrockReasoning}`
         : 'ML models unavailable — linguistic analysis only',
-      weight:      Math.round(mlWeight * 100),
-      value:       mlScore,
-      flagged:     mlScore > 0.60,
+      weight:      mlScores.length > 0 ? 70 : bedrockScore !== null ? 60 : 0,
+      value:       bedrockScore !== null && mlScores.length === 0 ? bedrockScore : mlScore,
+      flagged:     (bedrockScore ?? mlScore) > 0.60,
     },
     ...lingSignals.map(sig => ({
       name:        sig.name,
@@ -235,13 +259,26 @@ export async function analyzeImage(imageBuffer: Buffer, mimeType: string, fileNa
 
   const imgSignalScore = aggregateImageSignals(imgSignals)
 
+  // ── Bedrock fallback: activate when ALL HF models failed ─────────────────
+  let bedrockImgScore: number | null = null
+  let bedrockImgReasoning = ''
+  if (mlScores.length === 0 && !hfSkipped && imageBuffer) {
+    try {
+      const br = await bedrockAnalyzeImage(imageBuffer, mimeType)
+      bedrockImgScore    = br.aiScore
+      bedrockImgReasoning = br.reasoning
+    } catch { /* Bedrock also unavailable — fall through to pixel-only */ }
+  }
+
   // Adaptive ensemble: ML models 65%, image signals 35%
-  // If all ML models fail, image signals carry full weight
+  // If Bedrock stepped in, use 60% Bedrock + 40% pixel signals
+  // If all fail, image signals carry full weight
   const mlTotalW  = mlScores.reduce((s, m) => s + m.weight, 0) || 1
   const mlScore   = mlScores.length
     ? mlScores.reduce((s, m) => s + m.aiScore * (m.weight / mlTotalW), 0)
+    : bedrockImgScore !== null ? bedrockImgScore
     : 0.5
-  const mlWeight  = mlScores.length > 0 ? 0.65 : 0.0
+  const mlWeight  = mlScores.length > 0 ? 0.65 : bedrockImgScore !== null ? 0.60 : 0.0
   const sigWeight = 1 - mlWeight
   const aiScore   = mlScore * mlWeight + imgSignalScore * sigWeight
 
@@ -261,7 +298,11 @@ export async function analyzeImage(imageBuffer: Buffer, mimeType: string, fileNa
   return {
     verdict,
     confidence:    Math.round(aiScore * 1000) / 1000,
-    model_used:    `Aiscern-ImageEnsemble(${mlCount ? mlScores.map((s: {model:string;aiScore:number;weight:number}) => s.model.split('/').pop()).join('+') + '+' : ''}10PixelSignals+DiffusionDB)`,
+    model_used:    mlCount
+      ? `Aiscern-ImageEnsemble(${mlScores.map((s: {model:string;aiScore:number;weight:number}) => s.model.split('/').pop()).join('+')}+10PixelSignals+DiffusionDB)`
+      : bedrockImgScore !== null
+      ? 'Aiscern-ImageBedrock(Claude3Haiku+10PixelSignals)'
+      : 'Aiscern-ImageSignals(10PixelSignals+DiffusionDB)',
     model_version: '4.0.0',
     signals: [
       {
@@ -269,10 +310,12 @@ export async function analyzeImage(imageBuffer: Buffer, mimeType: string, fileNa
         category:    'ML',
         description: mlCount
           ? `${mlCount} vision models: AI-image-detector, SDXL-detector, AIorNot`
+          : bedrockImgScore !== null
+          ? `Bedrock preliminary analysis (HF models cold) — ${bedrockImgReasoning}`
           : 'ML models unavailable — pixel signal analysis only',
         weight:      Math.round(mlWeight * 100),
-        value:       mlScore,
-        flagged:     mlScore > 0.52,
+        value:       bedrockImgScore !== null && mlCount === 0 ? bedrockImgScore : mlScore,
+        flagged:     (bedrockImgScore !== null && mlCount === 0 ? bedrockImgScore : mlScore) > 0.52,
       },
       ...imgSignals.map((sig: {name:string;category?:string;description:string;weight:number;score:number}) => ({
         name:        sig.name,
