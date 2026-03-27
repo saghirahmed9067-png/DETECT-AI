@@ -1,0 +1,9 @@
+transformers==4.41.0
+datasets==2.19.0
+accelerate==0.30.0
+scikit-learn==1.4.2
+pillow==10.3.0
+huggingface_hub==0.23.0
+albumentations==1.4.5
+numpy==1.26.4
+tqdm==4.66.4
