@@ -447,3 +447,90 @@ html { scroll-behavior: smooth; }
   html { scroll-behavior: auto; }
   .hero-fade-up, .node-card-bob-a, .node-card-bob-b { animation: none !important; opacity: 1 !important; }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   BIG SCREEN RESPONSIVE — 1280px, 1440px, 1920px+
+   Ensures content scales up gracefully on wide monitors
+   ═══════════════════════════════════════════════════════════ */
+
+/* 1280px — xl: standard desktop, already handled by max-w-7xl */
+@media (min-width: 1280px) {
+  .max-w-5xl { max-width: 64rem; }
+  .max-w-6xl { max-width: 76rem; }
+  .max-w-7xl { max-width: 88rem; }
+  body { font-size: 16px; }
+}
+
+/* 1440px — 2xl: wide desktop / laptop */
+@media (min-width: 1440px) {
+  /* Scale up section padding */
+  section { padding-top: clamp(3rem, 5vw, 6rem); padding-bottom: clamp(3rem, 5vw, 6rem); }
+
+  /* Hero text scales up */
+  .hero-title { font-size: clamp(3rem, 5vw, 5rem) !important; }
+
+  /* Content containers get more breathing room */
+  .max-w-5xl { max-width: 72rem; }
+  .max-w-6xl { max-width: 84rem; }
+  .max-w-7xl { max-width: 96rem; }
+
+  /* Cards get slightly more padding */
+  .card { padding: 1.75rem; }
+
+  /* Nav height increase */
+  nav, header { min-height: 4rem; }
+}
+
+/* 1920px — full HD and ultra-wide */
+@media (min-width: 1920px) {
+  body { font-size: 17px; }
+
+  .max-w-5xl { max-width: 80rem; }
+  .max-w-6xl { max-width: 96rem; }
+  .max-w-7xl { max-width: 112rem; }
+
+  /* Hero section scales text proportionally */
+  h1 { font-size: clamp(3.5rem, 4.5vw, 7rem); }
+  h2 { font-size: clamp(2rem, 3vw, 4rem); }
+
+  /* More padding on ultra-wide */
+  .px-4 { padding-left: clamp(1rem, 3vw, 4rem); padding-right: clamp(1rem, 3vw, 4rem); }
+}
+
+/* 2560px — 2K / ultra-wide */
+@media (min-width: 2560px) {
+  body { font-size: 18px; }
+
+  .max-w-5xl { max-width: 90rem; }
+  .max-w-6xl { max-width: 108rem; }
+  .max-w-7xl { max-width: 120rem; }
+
+  /* Prevent text from being tiny relative to screen */
+  p, li, td, th { font-size: 1.05rem; }
+}
+
+/* Fluid container — replaces fixed max-width classes on very wide screens */
+@media (min-width: 1440px) {
+  .fluid-container {
+    width: min(90%, 1400px);
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* Grid columns auto-expand on wide screens */
+@media (min-width: 1440px) {
+  .sm\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sm\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* Detect pages — sidebar + content layout on very wide screens */
+@media (min-width: 1600px) {
+  .detect-layout {
+    display: grid;
+    grid-template-columns: 1fr 420px;
+    gap: 2rem;
+    align-items: start;
+  }
+}

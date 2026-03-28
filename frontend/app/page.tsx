@@ -633,7 +633,7 @@ function LazyAIvsRealSection() {
 function AIvsRealSection() {
   return (
     <section className="py-10 sm:py-16 lg:py-24 overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+      <div className="max-w-7xl 2xl:max-w-[1400px] 3xl:max-w-[1600px] mx-auto px-4 sm:px-6 2xl:px-10">
 
         {/* ── Header ── */}
         <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
@@ -807,7 +807,7 @@ export default function HomePage() {
 
       {/* ── NAV ── */}
       <nav className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-border/50 bg-background/80 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto h-full px-4 sm:px-6 flex items-center justify-between">
+        <div className="max-w-7xl 2xl:max-w-[1400px] mx-auto h-full px-4 sm:px-6 2xl:px-10 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 shrink-0" title="Aiscern — Free AI Content Detector">
             <Image
               src="/logo.png"
@@ -957,7 +957,7 @@ export default function HomePage() {
             )}
           </div>
 
-          <div className="max-w-2xl mx-auto w-full hero-fade-up" style={{ animationDelay: '0.18s' }}>
+          <div className="max-w-2xl 2xl:max-w-3xl mx-auto w-full hero-fade-up" style={{ animationDelay: '0.18s' }}>
             <LiveDemo isLoggedIn={!!user} />
           </div>
         </div>
@@ -965,14 +965,14 @@ export default function HomePage() {
 
       {/* ── TRUST BAR ── */}
       <section className="py-8 border-b border-border/30 bg-surface/20">
-        <div className="max-w-6xl mx-auto px-4">
+        <div className="max-w-6xl 2xl:max-w-[1300px] mx-auto px-4 2xl:px-8">
           <TrustBar />
         </div>
       </section>
 
       {/* ── STATS ── */}
       <section className="py-10 sm:py-20 border-y border-border/50 bg-surface/30">
-        <div className="max-w-6xl mx-auto px-4">
+        <div className="max-w-6xl 2xl:max-w-[1300px] mx-auto px-4 2xl:px-8">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
             {STATS.map((stat, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}

@@ -83,59 +83,90 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* Founder */}
+        {/* Team */}
         <section className="py-20 px-4">
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-5xl mx-auto">
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-              className="card border-primary/20 overflow-hidden">
-              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-8 p-6 sm:p-8">
-                <div className="relative flex-shrink-0">
-                  <div className="w-32 h-32 sm:w-44 sm:h-44 rounded-2xl overflow-hidden ring-4 ring-primary/20 shadow-xl shadow-primary/20">
-                    <Image
-                      src="/anas-ali.jpg"
-                      alt="Anas Ali — Founder & CEO of Aiscern"
-                      width={176} height={176}
-                      className="w-full h-full object-cover"
-                      priority
-                    />
+              className="text-center mb-12">
+              <h2 className="text-3xl sm:text-4xl font-black mb-3">Meet the <span className="gradient-text">Team</span></h2>
+              <p className="text-text-muted text-base max-w-xl mx-auto">The people building the future of AI content verification.</p>
+            </motion.div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Founder Card */}
+              <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+                className="card border-primary/20 overflow-hidden">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 p-6 sm:p-8">
+                  <div className="relative flex-shrink-0">
+                    <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl overflow-hidden ring-4 ring-primary/20 shadow-xl shadow-primary/20">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="/anas-ali.jpg"
+                        alt="Anas Ali — Founder & CEO of Aiscern"
+                        className="w-full h-full object-cover object-top"
+                      />
+                    </div>
+                    <div className="absolute -bottom-2 -right-2 w-7 h-7 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg">
+                      <CheckCircle className="w-3.5 h-3.5 text-white" />
+                    </div>
                   </div>
-                  <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg">
-                    <CheckCircle className="w-4 h-4 text-white" />
-                  </div>
-                </div>
-
-                <div className="flex-1 text-center sm:text-left">
-                  <div className="text-xs text-primary font-semibold uppercase tracking-wider mb-1">Founder &amp; CEO</div>
-                  <h2 className="text-2xl sm:text-3xl font-black text-text-primary mb-1">Anas Ali</h2>
-                  <p className="text-text-muted text-sm mb-4">Islamabad, Pakistan · AI Engineer &amp; Full-Stack Developer</p>
-
-                  <p className="text-text-muted text-sm leading-relaxed mb-4">
-                    Anas Ali is the founder and lead engineer behind Aiscern. A self-taught developer from Islamabad,
-                    he began building AI detection tools after noticing how rapidly deepfake and synthetic media
-                    technology outpaced any publicly available verification solution.
-                  </p>
-                  <p className="text-text-muted text-sm leading-relaxed mb-5">
-                    With a background spanning machine learning, cloud infrastructure, and product design,
-                    Anas architected Aiscern's entire detection system — from the data infrastructure to the
-                    advanced vision models — with a single goal: make enterprise-grade media authentication
-                    accessible to everyone.
-                  </p>
-
-                  <div className="flex flex-wrap gap-2 justify-center sm:justify-start mb-4">
-                    {['Python', 'TypeScript', 'Next.js', 'Computer Vision', 'ML Systems', 'PyTorch'].map(s => (
-                      <span key={s} className="px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs font-medium text-primary">{s}</span>
-                    ))}
-                  </div>
-
-                  <div className="flex items-center gap-3 justify-center sm:justify-start">
+                  <div className="flex-1 text-center sm:text-left">
+                    <div className="text-xs text-primary font-semibold uppercase tracking-wider mb-1">Founder &amp; CEO</div>
+                    <h2 className="text-xl sm:text-2xl font-black text-text-primary mb-0.5">Anas Ali</h2>
+                    <p className="text-text-muted text-xs mb-3">Islamabad, Pakistan · AI Engineer &amp; Full-Stack Developer</p>
+                    <p className="text-text-muted text-sm leading-relaxed mb-4">
+                      Self-taught developer and founder of Aiscern. Architected the entire detection system —
+                      from the 413K-sample training pipeline to the multi-modal inference engine — with a single goal:
+                      make enterprise-grade AI detection accessible to everyone.
+                    </p>
+                    <div className="flex flex-wrap gap-1.5 justify-center sm:justify-start mb-4">
+                      {['Python', 'TypeScript', 'Next.js', 'Computer Vision', 'ML Systems', 'PyTorch'].map(s => (
+                        <span key={s} className="px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs font-medium text-primary">{s}</span>
+                      ))}
+                    </div>
                     <a href="mailto:anas@aiscern.com"
                       className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-surface border border-border hover:border-primary/50 text-sm font-medium transition-all">
                       <Mail className="w-4 h-4" /> Contact
                     </a>
                   </div>
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+
+              {/* Project Manager Card */}
+              <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+                transition={{ delay: 0.1 }}
+                className="card border-cyan/20 overflow-hidden">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 p-6 sm:p-8">
+                  <div className="relative flex-shrink-0">
+                    <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl overflow-hidden ring-4 ring-cyan/20 shadow-xl shadow-cyan/10 bg-gradient-to-br from-cyan/20 to-primary/20 flex items-center justify-center">
+                      <div className="text-4xl font-black text-cyan/60 select-none">PM</div>
+                    </div>
+                    <div className="absolute -bottom-2 -right-2 w-7 h-7 rounded-xl bg-gradient-to-br from-cyan to-secondary flex items-center justify-center shadow-lg">
+                      <Users className="w-3.5 h-3.5 text-white" />
+                    </div>
+                  </div>
+                  <div className="flex-1 text-center sm:text-left">
+                    <div className="text-xs text-cyan font-semibold uppercase tracking-wider mb-1">Project Manager</div>
+                    <h2 className="text-xl sm:text-2xl font-black text-text-primary mb-0.5">Saad Ul Hassan</h2>
+                    <p className="text-text-muted text-xs mb-3">Islamabad, Pakistan · Product &amp; Operations Lead</p>
+                    <p className="text-text-muted text-sm leading-relaxed mb-4">
+                      Leads product roadmap, cross-functional coordination, and go-to-market strategy at Aiscern.
+                      Bridges the gap between engineering and business — ensuring every feature ships on time
+                      and aligned with user needs.
+                    </p>
+                    <div className="flex flex-wrap gap-1.5 justify-center sm:justify-start mb-4">
+                      {['Product Strategy', 'Agile', 'Go-to-Market', 'User Research', 'Operations'].map(s => (
+                        <span key={s} className="px-2.5 py-1 rounded-full bg-cyan/10 border border-cyan/20 text-xs font-medium text-cyan">{s}</span>
+                      ))}
+                    </div>
+                    <a href="mailto:contact@aiscern.com"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-surface border border-border hover:border-cyan/50 text-sm font-medium transition-all">
+                      <Mail className="w-4 h-4" /> Contact
+                    </a>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
           </div>
         </section>
 
@@ -210,8 +241,8 @@ export default function AboutPage() {
               </div>
               <h2 className="text-3xl font-black mb-4">Start <span className="gradient-text">Detecting</span></h2>
               <p className="text-text-muted mb-8 max-w-xl mx-auto">
-                Join thousands of journalists, researchers, and organizations using Aiscern to
-                verify media authenticity every day.
+                Trusted by journalists, researchers, and organizations worldwide.
+                Verify media authenticity in seconds — free, no signup required.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link href="/signup" className="btn-primary inline-flex items-center gap-2 px-7 py-3 text-base">

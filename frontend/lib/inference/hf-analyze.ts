@@ -262,7 +262,7 @@ export async function analyzeImage(imageBuffer: Buffer, mimeType: string, fileNa
   // ── Gemini fallback: activate when ALL HF models failed ──────────────────
   let bedrockImgScore: number | null = null
   let bedrockImgReasoning = ''
-  if (mlScores.length === 0 && !hfSkipped && imageBuffer) {
+  if (mlScores.length === 0 && imageBuffer) {
     try {
       const br = await bedrockAnalyzeImage(imageBuffer, mimeType)
       bedrockImgScore    = br.aiScore
