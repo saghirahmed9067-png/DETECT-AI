@@ -55,14 +55,16 @@ export async function PATCH(req: NextRequest) {
     const { error } = await db.from('profiles').update(update).eq('id', targetId)
     if (error) throw error
 
-    // Log the admin action
-    await db.from('admin_activity_logs').insert({
-      admin_id: userId,
-      action: `user_${action}`,
-      target_id: targetId,
-      details: { reason },
-      created_at: new Date().toISOString(),
-    }).catch(() => {}) // non-fatal
+    // Log the admin action (non-fatal — ignore errors)
+    try {
+      await db.from('admin_activity_logs').insert({
+        admin_id: userId,
+        action: `user_${action}`,
+        target_id: targetId,
+        details: { reason },
+        created_at: new Date().toISOString(),
+      })
+    } catch { /* non-fatal */ }
 
     return NextResponse.json({ success: true, action })
   } catch (e: any) {
