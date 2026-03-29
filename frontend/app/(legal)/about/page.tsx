@@ -23,8 +23,8 @@ const TIMELINE = [
   { year: '2023', event: 'Research phase — studying detection gaps in commercial tools' },
   { year: 'Early 2024', event: 'First prototype: text-only detection using RoBERTa-based classification' },
   { year: 'Mid-Late 2024', event: 'Multi-modal expansion — added image, audio, and video detection with multi-model ensemble approach' },
-  { year: '2025', event: 'Automated data pipeline deployed — 15 Cloudflare Workers collecting and labeling samples across 87 datasets' },
-  { year: '2026', event: '413,000+ labeled samples across 87 datasets · Text, image, audio & video detection · Public launch at aiscern.com' },
+  { year: 'December 2025', event: 'Aiscern founded — automated data pipeline deployed with 15 Cloudflare Workers collecting and labeling samples across 87 datasets' },
+  { year: 'March 2026', event: 'Official public launch at aiscern.com — 413,000+ labeled samples · Text, image, audio & video detection · Free for everyone' },
 ]
 
 export default function AboutPage() {
@@ -113,7 +113,7 @@ export default function AboutPage() {
                   <div className="flex-1 text-center sm:text-left">
                     <div className="text-xs text-primary font-semibold uppercase tracking-wider mb-1">Founder &amp; CEO</div>
                     <h2 className="text-xl sm:text-2xl font-black text-text-primary mb-0.5">Anas Ali</h2>
-                    <p className="text-text-muted text-xs mb-3">Islamabad, Pakistan · AI Engineer &amp; Full-Stack Developer</p>
+                    <p className="text-text-muted text-xs mb-3">Mandi Bahauddin, Pakistan · AI Engineer &amp; Full-Stack Developer</p>
                     <p className="text-text-muted text-sm leading-relaxed mb-4">
                       Self-taught developer and founder of Aiscern. Architected the entire detection system —
                       from the 413K-sample training pipeline to the multi-modal inference engine — with a single goal:
@@ -139,7 +139,7 @@ export default function AboutPage() {
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 p-6 sm:p-8">
                   <div className="relative flex-shrink-0">
                     <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl overflow-hidden ring-4 ring-cyan/20 shadow-xl shadow-cyan/10 bg-gradient-to-br from-cyan/20 to-primary/20 flex items-center justify-center">
-                      <div className="text-4xl font-black text-cyan/60 select-none">PM</div>
+                      <div className="text-4xl font-black text-cyan/60 select-none">TN</div>
                     </div>
                     <div className="absolute -bottom-2 -right-2 w-7 h-7 rounded-xl bg-gradient-to-br from-cyan to-secondary flex items-center justify-center shadow-lg">
                       <Users className="w-3.5 h-3.5 text-white" />
@@ -147,19 +147,19 @@ export default function AboutPage() {
                   </div>
                   <div className="flex-1 text-center sm:text-left">
                     <div className="text-xs text-cyan font-semibold uppercase tracking-wider mb-1">Project Manager</div>
-                    <h2 className="text-xl sm:text-2xl font-black text-text-primary mb-0.5">Saad Ul Hassan</h2>
-                    <p className="text-text-muted text-xs mb-3">Islamabad, Pakistan · Product &amp; Operations Lead</p>
+                    <h2 className="text-xl sm:text-2xl font-black text-text-primary mb-0.5">Temah Nyanchama</h2>
+                    <p className="text-text-muted text-xs mb-3">Nairobi, Kenya · AI Workflow &amp; Operations Lead</p>
                     <p className="text-text-muted text-sm leading-relaxed mb-4">
-                      Leads product roadmap, cross-functional coordination, and go-to-market strategy at Aiscern.
-                      Bridges the gap between engineering and business — ensuring every feature ships on time
-                      and aligned with user needs.
+                      AI-focused Project Manager with hands-on experience managing and delivering projects from
+                      concept to completion. Skilled in structuring AI-driven workflows, coordinating teams, and
+                      reducing execution risk — ensuring every Aiscern milestone ships on time and aligned with user needs.
                     </p>
                     <div className="flex flex-wrap gap-1.5 justify-center sm:justify-start mb-4">
-                      {['Product Strategy', 'Agile', 'Go-to-Market', 'User Research', 'Operations'].map(s => (
+                      {['AI Workflow Design', 'Project Execution', 'Team Coordination', 'Risk Management', 'Graphic Design'].map(s => (
                         <span key={s} className="px-2.5 py-1 rounded-full bg-cyan/10 border border-cyan/20 text-xs font-medium text-cyan">{s}</span>
                       ))}
                     </div>
-                    <a href="mailto:contact@aiscern.com"
+                    <a href="mailto:temah@aiscern.com"
                       className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-surface border border-border hover:border-cyan/50 text-sm font-medium transition-all">
                       <Mail className="w-4 h-4" /> Contact
                     </a>
