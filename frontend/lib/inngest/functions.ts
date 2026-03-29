@@ -22,10 +22,12 @@ export const onScanCompleted = inngest.createFunction(
       const sb = getSupabaseAdmin()
 
       // Increment scan_count and monthly_scans on the profile
-      await sb.rpc('increment_scan_count', {
-        p_user_id:   user_id,
-        p_media_type: media_type,
-      }).catch(() => {/* non-fatal if function doesn't exist yet */})
+      try {
+        await sb.rpc('increment_scan_count', {
+          p_user_id:    user_id,
+          p_media_type: media_type,
+        })
+      } catch { /* non-fatal — RPC may not exist yet */ }
 
       return { user_id, verdict, confidence }
     })
