@@ -18,9 +18,7 @@ async function fetchPageContent(url: string): Promise<{
   textBlocks: string[]
   imageUrls:  string[]
 }> {
-  const res = await fetchWithProxy(url, { maxRetries: 3, timeoutMs: 12000, headers: {
-    signal: AbortSignal.timeout(10_000),
-  })
+  const res = await fetchWithProxy(url, { maxRetries: 3, timeoutMs: 12000 })
   if (!res.ok) throw new Error(`Failed to fetch page: ${res.status}`)
   const html = await res.text()
 
