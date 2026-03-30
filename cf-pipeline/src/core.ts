@@ -26,26 +26,42 @@ import { log } from './types'
 
 const ROWS_PER_FETCH = 100  // HF API max
 
-/** Get and advance cursor for a source — ensures no repeated offsets across workers */
+/** Get and advance cursor for a source — crash-safe with table-missing fallback (Bug #1/#8 fix) */
 async function getAndAdvanceCursor(db: D1Database, sourceName: string, advance: number): Promise<number> {
-  // Atomic read-modify-write using D1 (best-effort; occasional overlaps are fine)
-  const row = await db.prepare(
-    `SELECT next_offset FROM source_cursors WHERE source_name = ? LIMIT 1`
-  ).bind(sourceName).first<{ next_offset: number }>()
+  try {
+    // Ensure table exists before querying (auto-heals if migration not yet run)
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS source_cursors (
+        source_name     TEXT PRIMARY KEY,
+        next_offset     INTEGER NOT NULL DEFAULT 0,
+        total_fetched   INTEGER NOT NULL DEFAULT 0,
+        total_inserted  INTEGER NOT NULL DEFAULT 0,
+        error_count     INTEGER NOT NULL DEFAULT 0,
+        last_error      TEXT,
+        last_updated    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `).run().catch(() => {})
 
-  const current = row?.next_offset ?? 0
+    const row = await db.prepare(
+      `SELECT next_offset FROM source_cursors WHERE source_name = ? LIMIT 1`
+    ).bind(sourceName).first<{ next_offset: number }>()
 
-  // Advance cursor by rows fetched
-  await db.prepare(
-    `INSERT INTO source_cursors (source_name, next_offset, total_fetched, last_updated)
-     VALUES (?, ?, ?, datetime('now'))
-     ON CONFLICT(source_name) DO UPDATE SET
-       next_offset = next_offset + excluded.total_fetched,
-       total_fetched = total_fetched + excluded.total_fetched,
-       last_updated = datetime('now')`
-  ).bind(sourceName, current + advance, advance).run().catch(() => {})
+    const current = row?.next_offset ?? 0
 
-  return current
+    await db.prepare(
+      `INSERT INTO source_cursors (source_name, next_offset, total_fetched, last_updated)
+       VALUES (?, ?, ?, datetime('now'))
+       ON CONFLICT(source_name) DO UPDATE SET
+         next_offset = next_offset + excluded.total_fetched,
+         total_fetched = total_fetched + excluded.total_fetched,
+         last_updated = datetime('now')`
+    ).bind(sourceName, current + advance, advance).run().catch(() => {})
+
+    return current
+  } catch {
+    // Table missing or D1 error — return 0 so scraping still proceeds
+    return 0
+  }
 }
 
 /** Record actual insertions back to cursor table */

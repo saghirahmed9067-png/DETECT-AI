@@ -20,14 +20,15 @@ export async function sha256Bytes(data: Uint8Array): Promise<string> {
 
 /**
  * Base64-encode a UTF-8 string.
- * Uses TextEncoder + Uint8Array → avoids deprecated unescape() which is
- * unreliable for non-ASCII content in Cloudflare Workers.
+ * Chunked (8192 bytes) to avoid call-stack overflow on large payloads
+ * (e.g. 10k-row JSONL shard ~2MB) and stay within CF Workers CPU budget.
  */
 export function toBase64(str: string): string {
-  const bytes = new TextEncoder().encode(str)
-  let binary  = ''
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i])
+  const bytes   = new TextEncoder().encode(str)
+  const CHUNK   = 8192
+  let   binary  = ''
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK))
   }
   return btoa(binary)
 }

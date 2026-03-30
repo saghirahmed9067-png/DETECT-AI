@@ -52,7 +52,7 @@ export default {
     }
 
     if (url.pathname === '/trigger/push' && req.method === 'POST') {
-      const result = await pushToHF(env.DB, env.HF_TOKEN, repo, 10000)
+      const result = await pushToHF(env.DB, env.HF_TOKEN, repo, 5000)
       return Response.json({ ok: true, worker: wid, push: result }, { headers: cors })
     }
 
@@ -90,7 +90,7 @@ export default {
 
       // Every tick: push all pending items to HF (cron runs every minute)
       if (true) {
-        const push = await pushToHF(env.DB, env.HF_TOKEN, repo, 10000)
+        const push = await pushToHF(env.DB, env.HF_TOKEN, repo, 5000)
         if (push.pushed > 0) {
           console.log(`[W20] pushed ${push.pushed} → commit ${push.commitId} | files: ${push.files?.join(', ')}`)
         } else if (push.error) {

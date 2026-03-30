@@ -42,7 +42,7 @@ export async function pushToHF(
   db:      D1Database,
   token:   string,
   repo:    string,
-  batchSz = 10000,
+  batchSz = 5000, // keep commits under HF 50MB limit
 ): Promise<PushResult> {
   // Fetch unpushed rows ordered by quality DESC
   const { results } = await db.prepare(`
@@ -178,7 +178,7 @@ export async function pushToHF(
       summary:    commitSummary,
       operations,
     }),
-    signal: AbortSignal.timeout(90_000),
+    signal: AbortSignal.timeout(28_000), // CF Workers max wall-clock ~30s
   })
 
   if (!hfRes.ok) {

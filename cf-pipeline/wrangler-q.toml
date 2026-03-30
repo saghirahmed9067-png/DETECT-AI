@@ -1,0 +1,21 @@
+# ─── Worker 20/20 — HF push + README + cleanup ───────────────────────────
+# This is the ONLY worker that pushes data to HuggingFace.
+# Runs every minute; pushes up to 10k pending rows per tick.
+name               = "detectai-pipeline-q"
+main               = "src/worker.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+account_id         = "34400e6e147e83e95c942135f54aeba7"
+workers_dev        = true
+
+[[d1_databases]]
+binding       = "DB"
+database_name = "detectai-pipeline"
+database_id   = "50f5e26a-c794-4cfa-b2b7-2bbd1d7c045c"
+
+[triggers]
+crons = ["*/1 * * * *"]
+
+[vars]
+WORKER_NUM = "20"
+HF_REPO    = "saghi776/detectai-dataset"

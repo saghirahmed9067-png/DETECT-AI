@@ -6,7 +6,7 @@
 const HF_DATASETS_API = 'https://datasets-server.huggingface.co'
 const MAX_HF_LENGTH   = 100  // HF API max rows per request
 
-async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 2, baseMs = 400): Promise<T> {
+async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 3, baseMs = 1000): Promise<T> {
   let lastError: Error | undefined
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try { return await fn() }
@@ -41,12 +41,12 @@ export async function fetchHFRows(
 
   return withRetry(async () => {
     let url = buildUrl(dataset, config, split, offset, Math.min(length, MAX_HF_LENGTH))
-    let res = await fetch(url, { headers, signal: AbortSignal.timeout(18_000) })
+    let res = await fetch(url, { headers, signal: AbortSignal.timeout(25_000) })
 
     // Offset beyond dataset end — wrap to start
     if ((res.status === 400 || res.status === 416) && offset > 0) {
       url = buildUrl(dataset, config, split, 0, Math.min(length, MAX_HF_LENGTH))
-      res = await fetch(url, { headers, signal: AbortSignal.timeout(18_000) })
+      res = await fetch(url, { headers, signal: AbortSignal.timeout(25_000) })
     }
     if (res.status === 429) {
       const wait = parseInt(res.headers.get('Retry-After') ?? '5') * 1000

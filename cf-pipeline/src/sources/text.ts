@@ -80,5 +80,5 @@ export const TEXT_SOURCES: Source[] = [
   // GPT-wiki — Wikipedia paragraphs rewritten by GPT-3.5
   { name: 'gpt-wiki',        id: 'aadityaubhat/GPT-wiki-intro',                                media_type: 'text', label: 'ai',   text_fields: ['generated_intro', 'intro'] },
   // Human news articles (Reuters, BBC — high quality)
-  { name: 'cc-news-human',   id: 'cc_news',                                config: 'default',   media_type: 'text', label: 'human', text_fields: ['text', 'title', 'description'] },
+  { name: 'c4-human',        id: 'allenai/c4',                             config: 'en',        media_type: 'text', label: 'human', text_fields: ['text', 'url'] },  // cc_news had no org namespace → replaced with allenai/c4
 ]
