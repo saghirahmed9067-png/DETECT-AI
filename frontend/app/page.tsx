@@ -676,58 +676,6 @@ function AIvsRealSection() {
 }
 
 // ── Mobile card: horizontal layout, full-width ──────────────────────────────
-function ComparisonCardMobile({ card }: { card: { type: string; label: string; verdict: string; color: string; tag: string; preview?: string; img?: string } }) {
-  const isAI = card.verdict === 'AI'
-  return (
-    <div className={`w-full rounded-xl border overflow-hidden flex ${isAI ? 'border-rose/20' : 'border-emerald/20'} bg-surface`}>
-      {/* Left colour strip */}
-      <div className={`w-1 flex-shrink-0 ${isAI ? 'bg-rose' : 'bg-emerald'}`} />
-
-      {/* Thumbnail (image cards only) */}
-      {card.type === 'image' && card.img && (
-        <div className="relative w-20 h-20 flex-shrink-0 bg-surface-active self-stretch">
-          <div className="absolute inset-0" style={{
-            background: isAI ? 'linear-gradient(135deg,#4c1d9560,#1e1b4b40)' : 'linear-gradient(135deg,#06402060,#05201040)',
-          }} />
-          <img src={card.img} alt={card.label}
-            className="w-full h-full object-cover"
-            loading="lazy"
-            onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
-          />
-        </div>
-      )}
-
-      {/* Text preview (text cards) */}
-      {card.type === 'text' && (
-        <div className="w-20 flex-shrink-0 bg-surface-active self-stretch flex items-center justify-center p-1.5">
-          <span className="text-[9px] text-text-disabled leading-tight text-center line-clamp-4 italic">
-            {card.preview?.slice(0, 55)}…
-          </span>
-        </div>
-      )}
-
-      {/* Content */}
-      <div className="flex-1 min-w-0 p-3 flex flex-col justify-between">
-        <div className="flex items-start justify-between gap-2">
-          <p className="text-sm font-semibold text-text-primary leading-tight">{card.label}</p>
-          <span className={`flex-shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${isAI ? 'bg-rose/10 text-rose border border-rose/20' : 'bg-emerald/10 text-emerald border border-emerald/20'}`}>
-            {isAI ? <AlertTriangle className="w-2.5 h-2.5" /> : <CheckCircle className="w-2.5 h-2.5" />}
-            {card.verdict}
-          </span>
-        </div>
-        <div className="flex items-center justify-between mt-2">
-          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${isAI ? 'bg-rose/10 text-rose' : 'bg-emerald/10 text-emerald'}`}>
-            {card.tag}
-          </span>
-          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isAI ? 'bg-rose/10 text-rose border border-rose/20' : 'bg-emerald/10 text-emerald border border-emerald/20'}`}>
-            {isAI ? '⚠ AI' : '✓ Real'}
-          </span>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ── Desktop / tablet scrolling card ─────────────────────────────────────────
 function ComparisonCard({ card }: { card: { type: string; label: string; verdict: string; color: string; tag: string; preview?: string; img?: string } }) {
   const isAI = card.verdict === 'AI'
