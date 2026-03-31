@@ -2,6 +2,7 @@
 export const dynamic = 'force-dynamic'
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useDropzone } from 'react-dropzone'
+import { uploadToR2WithProgress } from '@/lib/storage/upload-with-progress'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Mic, Upload, X, AlertTriangle, CheckCircle, HelpCircle, Loader2, RotateCcw, Play, Pause, Download } from 'lucide-react'
 import { useAuth } from '@/components/auth-provider'
@@ -48,6 +49,7 @@ export default function AudioDetectionPage() {
   const { user: currentUser } = useAuth()
   const [file, setFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
   const [result, setResult] = useState<DetectionResult | null>(null)
   const [scanId, setScanId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -111,7 +113,8 @@ export default function AudioDetectionPage() {
         })
         const presignData = await presignRes.json()
         if (presignData.success && presignData.uploadUrl) {
-          await fetch(presignData.uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type || `audio/${ext}` }, body: file })
+          setUploadProgress(0)
+          await uploadToR2WithProgress(presignData.uploadUrl, file, setUploadProgress)
           r2Key = presignData.key
         }
       } catch { /* fallback to direct upload */ }

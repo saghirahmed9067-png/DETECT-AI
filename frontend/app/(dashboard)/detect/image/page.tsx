@@ -2,6 +2,7 @@
 export const dynamic = 'force-dynamic'
 import { useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
+import { uploadToR2WithProgress } from '@/lib/storage/upload-with-progress'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Image as ImageIcon, Upload, X, AlertTriangle, CheckCircle, HelpCircle, Loader2, RotateCcw, Download, ZoomIn, Info } from 'lucide-react'
 import { useAuth } from '@/components/auth-provider'
@@ -29,6 +30,7 @@ export default function ImageDetectionPage() {
   const [error, setError] = useState<string | null>(null)
   const [zoomed, setZoomed] = useState(false)
   const [imgDims, setImgDims] = useState<{w:number,h:number}|null>(null)
+  const [uploadProgress, setUploadProgress] = useState(0)
 
   const onDrop = useCallback((accepted: File[]) => {
     const f = accepted[0]; if (!f) return
@@ -66,7 +68,8 @@ export default function ImageDetectionPage() {
         })
         const presignData = await presignRes.json()
         if (presignData.success && presignData.uploadUrl) {
-          await fetch(presignData.uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file })
+          setUploadProgress(0)
+          await uploadToR2WithProgress(presignData.uploadUrl, file, setUploadProgress)
           r2Key = presignData.key
         }
       } catch { /* fallback to direct upload */ }
@@ -113,7 +116,7 @@ Analyzed: ${new Date().toLocaleString()}`
     a.download = `aiscern-image-${Date.now()}.txt`; a.click()
   }
 
-  const reset = () => { setFile(null); setPreview(null); setResult(null); setError(null); setImgDims(null); setZoomed(false) }
+  const reset = () => { setFile(null); setPreview(null); setResult(null); setError(null); setImgDims(null); setZoomed(false); setUploadProgress(0) }
   const cfg = result ? verdictConfig[result.verdict as Verdict] : null
 
   return (
@@ -172,7 +175,17 @@ Analyzed: ${new Date().toLocaleString()}`
                   className="absolute inset-0 bg-black/0 group-hover:bg-black/30 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100">
                   <ZoomIn className="w-8 h-8 text-white drop-shadow" />
                 </button>
-                {loading && (
+                {uploadProgress > 0 && uploadProgress < 100 && (
+                  <div className="mt-3 w-full">
+                    <div className="flex justify-between text-xs text-text-muted mb-1">
+                      <span>Uploading…</span><span>{uploadProgress}%</span>
+                    </div>
+                    <div className="h-1.5 bg-surface-active rounded-full overflow-hidden">
+                      <div className="h-full bg-primary rounded-full transition-all duration-200" style={{ width: `${uploadProgress}%` }} />
+                    </div>
+                  </div>
+                )}
+                {loading && uploadProgress >= 100 && (
                   <div className="absolute inset-0 bg-background/80 flex flex-col items-center justify-center gap-3">
                     <div className="relative w-16 h-16">
                       <div className="absolute inset-0 rounded-full border-2 border-primary/20" />
