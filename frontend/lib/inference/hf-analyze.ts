@@ -15,6 +15,7 @@
 import { extractTextSignals, aggregateTextSignals }                          from './signals/text-signals'
 import { extractImageSignals, aggregateImageSignals, applyCalibration }      from './signals/image-signals'
 import { preprocessImage } from './preprocess-image'
+import { hashBuffer, hashText, getCachedScan, setCachedScan } from '@/lib/cache/scan-cache'
 import { extractAudioSignals, aggregateAudioSignals, applyAudioCalibration } from './signals/audio-signals'
 import { getCalibrationStats, getAudioCalibrationStats }                      from './calibration-client'
 import { analyzeVideoFrames }                                                  from './nvidia-nim'
@@ -223,6 +224,11 @@ export async function analyzeText(text: string): Promise<DetectionResult> {
 // IMAGE DETECTION
 // ─────────────────────────────────────────────────────────────────────────────
 export async function analyzeImage(imageBuffer: Buffer, mimeType: string, _fileName: string): Promise<DetectionResult> {
+  // Check cache first — skip re-analysis for identical files
+  const imgCacheHash = hashBuffer(imageBuffer)
+  const imgCached    = await getCachedScan(imgCacheHash)
+  if (imgCached) return { ...imgCached, summary: imgCached.summary + ' (cached)' }
+
   // Preprocess: resize to 1024px max, strip EXIF, normalise to JPEG 92%
   // Use preprocessed buffer for all ML inference (stays under HF 10MB limit)
   // Keep original buffer for pixel signal extraction (needs full fidelity)
