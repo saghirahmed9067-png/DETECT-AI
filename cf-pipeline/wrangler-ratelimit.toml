@@ -1,0 +1,24 @@
+# ── Aiscern Edge Rate Limiter ─────────────────────────────────────────────────
+# Runs at Cloudflare edge — intercepts /api/detect/* before hitting Vercel.
+# Zero cold start, KV-backed counters, 20 req/min per IP per endpoint.
+#
+# Deploy:
+#   wrangler kv:namespace create "RATE_LIMITS" --config wrangler-ratelimit.toml
+#   (paste the id into [[kv_namespaces]] below)
+#   wrangler deploy --config wrangler-ratelimit.toml
+#   wrangler secret put UPSTREAM --config wrangler-ratelimit.toml
+#   # value: https://aiscern.com
+
+name               = "aiscern-edge-ratelimit"
+main               = "src/ratelimit-worker.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+account_id         = "34400e6e147e83e95c942135f54aeba7"
+workers_dev        = true
+
+[[kv_namespaces]]
+binding = "RATE_LIMITS"
+id      = "REPLACE_WITH_KV_NAMESPACE_ID"  # run: wrangler kv:namespace create "RATE_LIMITS"
+
+[vars]
+UPSTREAM = "https://aiscern.com"
