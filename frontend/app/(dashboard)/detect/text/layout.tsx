@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     title: 'Free AI Text Detector — Detect ChatGPT, Claude & Gemini | Aiscern',
     description: 'Paste any text and instantly know if it was written by AI. Detects ChatGPT, Claude, Gemini, GPT-4. 85%+ accuracy. Free.',
     url: 'https://aiscern.com/detect/text',
-    images: [{ url: '/og-text.png', width: 1200, height: 630, alt: 'AI Text Detector' }],
+    images: [{ url: 'https://aiscern.com/api/og?title=Free+AI+Text+Detector&tool=Text&color=%237c3aed', width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
@@ -64,6 +64,29 @@ const jsonLd = {
                   }
       ]
     }
+  ,
+    {
+    "@type": "HowTo",
+    "name": "How to detect AI-generated text",
+    "description": "Use Aiscern's free AI text detector to check if text was written by ChatGPT, Claude, Gemini, or another AI.",
+    "step": [
+        {
+            "@type": "HowToStep",
+            "name": "Paste your text",
+            "text": "Paste or type the text you want to check (minimum 50 characters) into the text box."
+        },
+        {
+            "@type": "HowToStep",
+            "name": "Run AI detection",
+            "text": "Click Analyze. Aiscern runs the text through a RoBERTa ensemble and 7 linguistic signal extractors."
+        },
+        {
+            "@type": "HowToStep",
+            "name": "Read the verdict",
+            "text": "See the AI/Human verdict with per-sentence heatmap and confidence breakdown."
+        }
+    ]
+}
   ]
 }
 

@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     title: 'Free AI Audio & Voice Clone Detector — ElevenLabs, TTS | Aiscern',
     description: 'Upload audio and detect if it is AI-synthesised or voice-cloned. Detects ElevenLabs, Suno, Udio. 79%+ accuracy. Free.',
     url: 'https://aiscern.com/detect/audio',
-    images: [{ url: '/og-audio.png', width: 1200, height: 630, alt: 'AI Audio & Voice Clone Detector' }],
+    images: [{ url: 'https://aiscern.com/api/og?title=Free+AI+Audio+Detector&tool=Audio&color=%230ea5e9', width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
@@ -57,6 +57,29 @@ const jsonLd = {
                   }
       ]
     }
+  ,
+    {
+    "@type": "HowTo",
+    "name": "How to detect AI-generated audio and voice clones",
+    "description": "Use Aiscern's free audio detector to determine if a voice recording is real or AI-synthesised.",
+    "step": [
+        {
+            "@type": "HowToStep",
+            "name": "Upload your audio",
+            "text": "Drag and drop or click to upload an MP3, WAV, or M4A file up to 50MB."
+        },
+        {
+            "@type": "HowToStep",
+            "name": "Run detection",
+            "text": "Click Analyze. Aiscern checks spectral features and voice patterns against TTS model signatures."
+        },
+        {
+            "@type": "HowToStep",
+            "name": "Read the verdict",
+            "text": "See whether the audio is real human speech or AI-generated, with a confidence score."
+        }
+    ]
+}
   ]
 }
 

@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     title: 'Free Deepfake Video Detector — Frame-by-Frame AI Analysis | Aiscern',
     description: 'Upload a video and detect deepfakes frame by frame. Identifies face swaps and AI-generated content. 76%+ accuracy. Free.',
     url: 'https://aiscern.com/detect/video',
-    images: [{ url: '/og-video.png', width: 1200, height: 630, alt: 'Deepfake Video Detector' }],
+    images: [{ url: 'https://aiscern.com/api/og?title=Free+Deepfake+Video+Detector&tool=Video&color=%23f43f5e', width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
@@ -57,6 +57,29 @@ const jsonLd = {
                   }
       ]
     }
+  ,
+    {
+    "@type": "HowTo",
+    "name": "How to detect deepfake videos",
+    "description": "Use Aiscern's free deepfake detector to analyze video frames for AI manipulation.",
+    "step": [
+        {
+            "@type": "HowToStep",
+            "name": "Upload your video",
+            "text": "Open in Chrome or Edge. Drag and drop or upload an MP4, WebM, or MOV file up to 500MB."
+        },
+        {
+            "@type": "HowToStep",
+            "name": "Frame extraction",
+            "text": "Aiscern automatically extracts key frames from the video using canvas capture."
+        },
+        {
+            "@type": "HowToStep",
+            "name": "Read the verdict",
+            "text": "See per-frame AI scores and an overall deepfake verdict with confidence percentage."
+        }
+    ]
+}
   ]
 }
 

@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     title: 'Free AI Image Detector — Detect Midjourney, DALL-E & Deepfakes | Aiscern',
     description: 'Upload any image and instantly know if it was AI-generated or a deepfake. 82%+ accuracy. Free.',
     url: 'https://aiscern.com/detect/image',
-    images: [{ url: '/og-image-detect.png', width: 1200, height: 630, alt: 'AI Image & Deepfake Detector' }],
+    images: [{ url: 'https://aiscern.com/api/og?title=Free+AI+Image+Detector&tool=Image&color=%237c3aed', width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
@@ -57,6 +57,29 @@ const jsonLd = {
                   }
       ]
     }
+  ,
+    {
+    "@type": "HowTo",
+    "name": "How to detect AI-generated images",
+    "description": "Use Aiscern's free AI image detector to determine if an image was created by AI or is a deepfake.",
+    "step": [
+        {
+            "@type": "HowToStep",
+            "name": "Upload your image",
+            "text": "Drag and drop or click to upload any JPG, PNG, or WebP image up to 10MB."
+        },
+        {
+            "@type": "HowToStep",
+            "name": "Run AI detection",
+            "text": "Click Analyze. Aiscern runs the image through 3 neural classifiers and pixel-level signal extractors."
+        },
+        {
+            "@type": "HowToStep",
+            "name": "Read the verdict",
+            "text": "See the AI/Human verdict with confidence score and full signal breakdown."
+        }
+    ]
+}
   ]
 }
 
