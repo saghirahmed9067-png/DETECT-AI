@@ -1,5 +1,4 @@
 'use client'
-export const dynamic = 'force-dynamic'
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
