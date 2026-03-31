@@ -67,6 +67,15 @@ export async function POST(req: NextRequest) {
     const hash   = contentHash(hashInput.subarray(0, 65536))
     const cached = buffer && buffer.length > 0 ? await getCachedDetection('audio', hash) : null
     if (cached) {
+
+        // Delete file from R2 after analysis — non-fatal if it fails
+        if (r2Key) {
+          try {
+            const { deleteR2Object } = await import('@/lib/storage/r2')
+            await deleteR2Object(r2Key)
+          } catch { /* cleanup failure is non-fatal */ }
+        }
+
       return NextResponse.json({
         success: true, scan_id: null, cached: true,
         result:  { ...cached, processing_time: Date.now() - start, file_name: fileName },
