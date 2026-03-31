@@ -399,8 +399,8 @@ function LiveDemo({ isLoggedIn }: { isLoggedIn: boolean }) {
       if (res.status === 401) { router.push('/signup'); setLoading(false); return }
       const d = await res.json()
       if (d.success) { setResult(d.result); setUsed(true) }
-      else setResult({ verdict: 'UNCERTAIN', confidence: 50, summary: d.error?.message || 'Try signing in for full results.' })
-    } catch { setResult({ verdict: 'UNCERTAIN', confidence: 50, summary: 'Analysis unavailable. Sign in for full access.' }) }
+      else setResult({ verdict: 'UNCERTAIN', summary: d.error?.message || 'Try signing in for full results.' })
+    } catch { setResult({ verdict: 'UNCERTAIN', summary: 'Analysis unavailable. Sign in for full access.' }) }
     setLoading(false)
   }
 
@@ -528,11 +528,7 @@ const STATS = [
   { value: 15,     suffix: '',  label: 'Scraper Workers',   icon: Zap       },
 ]
 
-const REVIEWS = [
-  { text: 'Saved us from publishing AI content. The sentence-level heatmap is incredibly useful — now part of our daily editorial workflow.', name: 'Sarah K.', role: 'Senior Editorial Staff', stars: 5, photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=face&fm=webp&q=60', avatar: 'SK', color: '#6366f1' },
-  { text: 'Multi-model ensemble detection gives well-rounded results across text, images, audio and video. The multimodal approach sets Aiscern apart.', name: 'Marcus T.', role: 'AI Researcher', stars: 5, photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face&fm=webp&q=60', avatar: 'MT', color: '#0ea5e9' },
-  { text: 'Replaced 3 tools with just Aiscern. The batch analyser handles text, images and audio in one platform — massive cost saving.', name: 'Priya M.', role: 'Content Manager', stars: 5, photo: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=80&h=80&fit=crop&crop=face&fm=webp&q=60', avatar: 'PM', color: '#10b981' },
-]
+
 
 const HOW_IT_WORKS = [
   { n: '01', title: 'Upload or Paste',  desc: 'Drop any image, video, audio file or paste text / a URL' },
@@ -546,67 +542,67 @@ const HOW_IT_WORKS = [
 // All images from Unsplash (free commercial license: https://unsplash.com/license)
 const COMPARISON_CARDS = [
   // Text AI vs Human
-  { type: 'text', label: 'AI-Generated Text',  verdict: 'AI',    confidence: 96, color: '#f43f5e',
+  { type: 'text', label: 'AI-Generated Text',  verdict: 'AI', color: '#f43f5e',
     preview: 'The implementation of advanced machine learning algorithms has fundamentally transformed the paradigm of data processing...',
     tag: 'GPT-4', icon: 'text' },
-  { type: 'text', label: 'Human Writing',       verdict: 'HUMAN', confidence: 94, color: '#10b981',
+  { type: 'text', label: 'Human Writing',       verdict: 'HUMAN', color: '#10b981',
     preview: "I burned my toast again this morning. Third time this week. My smoke alarm and I have a complicated relationship at this point...",
     tag: 'Authentic', icon: 'text' },
   // Image AI vs Real
-  { type: 'image', label: 'AI-Generated Portrait', verdict: 'AI',    confidence: 98, color: '#f43f5e',
+  { type: 'image', label: 'AI-Generated Portrait', verdict: 'AI', color: '#f43f5e',
     img: '/compare/ai-portrait-01.webp',
     tag: 'Midjourney', icon: 'image' },
-  { type: 'image', label: 'Authentic Photo',        verdict: 'HUMAN', confidence: 97, color: '#10b981',
+  { type: 'image', label: 'Authentic Photo',        verdict: 'HUMAN', color: '#10b981',
     img: '/compare/real-portrait-01.webp',
     tag: 'Authentic', icon: 'image' },
-  { type: 'image', label: 'DALL-E 3 Landscape',    verdict: 'AI',    confidence: 95, color: '#f43f5e',
+  { type: 'image', label: 'DALL-E 3 Landscape',    verdict: 'AI', color: '#f43f5e',
     img: '/compare/ai-city-01.webp',
     tag: 'DALL-E 3', icon: 'image' },
-  { type: 'image', label: 'Real Landscape',         verdict: 'HUMAN', confidence: 93, color: '#10b981',
+  { type: 'image', label: 'Real Landscape',         verdict: 'HUMAN', color: '#10b981',
     img: '/compare/real-mountain-01.webp',
     tag: 'Authentic', icon: 'image' },
-  { type: 'image', label: 'Stable Diffusion Art',  verdict: 'AI',    confidence: 99, color: '#f43f5e',
+  { type: 'image', label: 'Stable Diffusion Art',  verdict: 'AI', color: '#f43f5e',
     img: '/compare/ai-abstract-01.webp',
     tag: 'SD XL', icon: 'image' },
-  { type: 'image', label: 'Real Urban Photo',       verdict: 'HUMAN', confidence: 91, color: '#10b981',
+  { type: 'image', label: 'Real Urban Photo',       verdict: 'HUMAN', color: '#10b981',
     img: '/compare/real-street-01.webp',
     tag: 'Authentic', icon: 'image' },
   // More text
-  { type: 'text', label: 'AI Essay',            verdict: 'AI',    confidence: 93, color: '#f43f5e',
+  { type: 'text', label: 'AI Essay',            verdict: 'AI', color: '#f43f5e',
     preview: 'Furthermore, the multifaceted implications of this technological advancement necessitate a comprehensive reevaluation of existing frameworks and paradigms...',
     tag: 'Claude 3', icon: 'text' },
-  { type: 'text', label: 'Student Writing',     verdict: 'HUMAN', confidence: 88, color: '#10b981',
+  { type: 'text', label: 'Student Writing',     verdict: 'HUMAN', color: '#10b981',
     preview: "ok so i know this essay is due tomorrow but i literally just figured out what my thesis even means. starting over at midnight feels bad but here we are lol",
     tag: 'Authentic', icon: 'text' },
   // More images
-  { type: 'image', label: 'AI Nature Scene',    verdict: 'AI',    confidence: 97, color: '#f43f5e',
+  { type: 'image', label: 'AI Nature Scene',    verdict: 'AI', color: '#f43f5e',
     img: '/compare/ai-nature-01.webp',
     tag: 'Firefly', icon: 'image' },
-  { type: 'image', label: 'Real Forest',        verdict: 'HUMAN', confidence: 95, color: '#10b981',
+  { type: 'image', label: 'Real Forest',        verdict: 'HUMAN', color: '#10b981',
     img: '/compare/real-forest-01.webp',
     tag: 'Authentic', icon: 'image' },
-  { type: 'image', label: 'AI Portrait',        verdict: 'AI',    confidence: 99, color: '#f43f5e',
+  { type: 'image', label: 'AI Portrait',        verdict: 'AI', color: '#f43f5e',
     img: '/compare/ai-face-01.webp',
     tag: 'ThisPersonDoesNotExist', icon: 'image' },
-  { type: 'image', label: 'Real Portrait',      verdict: 'HUMAN', confidence: 92, color: '#10b981',
+  { type: 'image', label: 'Real Portrait',      verdict: 'HUMAN', color: '#10b981',
     img: '/compare/real-face-01.webp',
     tag: 'Authentic', icon: 'image' },
-  { type: 'image', label: 'AI Architecture',    verdict: 'AI',    confidence: 94, color: '#f43f5e',
+  { type: 'image', label: 'AI Architecture',    verdict: 'AI', color: '#f43f5e',
     img: '/compare/ai-architecture-01.webp',
     tag: 'Midjourney', icon: 'image' },
-  { type: 'image', label: 'Real Architecture',  verdict: 'HUMAN', confidence: 96, color: '#10b981',
+  { type: 'image', label: 'Real Architecture',  verdict: 'HUMAN', color: '#10b981',
     img: '/compare/real-architecture-01.webp',
     tag: 'Authentic', icon: 'image' },
-  { type: 'text', label: 'AI Product Desc.',    verdict: 'AI',    confidence: 91, color: '#f43f5e',
+  { type: 'text', label: 'AI Product Desc.',    verdict: 'AI', color: '#f43f5e',
     preview: 'Experience unparalleled innovation with our cutting-edge solution that seamlessly integrates advanced AI-powered functionality to deliver exceptional results...',
     tag: 'GPT-3.5', icon: 'text' },
-  { type: 'text', label: 'Real Review',         verdict: 'HUMAN', confidence: 89, color: '#10b981',
+  { type: 'text', label: 'Real Review',         verdict: 'HUMAN', color: '#10b981',
     preview: "shipped faster than expected, packaging was a bit beat up but the actual item inside was totally fine. would buy again if the price drops",
     tag: 'Authentic', icon: 'text' },
-  { type: 'image', label: 'AI Food Photo',      verdict: 'AI',    confidence: 95, color: '#f43f5e',
+  { type: 'image', label: 'AI Food Photo',      verdict: 'AI', color: '#f43f5e',
     img: '/compare/ai-food-01.webp',
     tag: 'DALL-E 3', icon: 'image' },
-  { type: 'image', label: 'Real Food Photo',    verdict: 'HUMAN', confidence: 93, color: '#10b981',
+  { type: 'image', label: 'Real Food Photo',    verdict: 'HUMAN', color: '#10b981',
     img: '/compare/real-food-01.webp',
     tag: 'Authentic', icon: 'image' },
 ]
@@ -671,9 +667,7 @@ function AIvsRealSection() {
             <div className="absolute left-0 inset-y-0 w-6 sm:w-16 lg:w-28 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
             <div className="absolute right-0 inset-y-0 w-6 sm:w-16 lg:w-28 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
           </div>
-          <p className="text-center text-xs text-text-disabled pt-1">
-            Results shown are illustrative detections
-          </p>
+          <p className="text-center text-xs text-text-muted pt-2">⚠️ Illustrative examples — not real detection results. Try the live detector above.</p>
         </div>
 
       </div>
@@ -682,7 +676,7 @@ function AIvsRealSection() {
 }
 
 // ── Mobile card: horizontal layout, full-width ──────────────────────────────
-function ComparisonCardMobile({ card }: { card: { type: string; label: string; verdict: string; confidence: number; color: string; tag: string; preview?: string; img?: string } }) {
+function ComparisonCardMobile({ card }: { card: { type: string; label: string; verdict: string; color: string; tag: string; preview?: string; img?: string } }) {
   const isAI = card.verdict === 'AI'
   return (
     <div className={`w-full rounded-xl border overflow-hidden flex ${isAI ? 'border-rose/20' : 'border-emerald/20'} bg-surface`}>
@@ -725,9 +719,8 @@ function ComparisonCardMobile({ card }: { card: { type: string; label: string; v
           <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${isAI ? 'bg-rose/10 text-rose' : 'bg-emerald/10 text-emerald'}`}>
             {card.tag}
           </span>
-          <span className={`text-base font-black ${isAI ? 'text-rose' : 'text-emerald'}`}>
-            {card.confidence}%
-            <span className="text-[9px] text-text-disabled font-normal ml-0.5">conf</span>
+          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isAI ? 'bg-rose/10 text-rose border border-rose/20' : 'bg-emerald/10 text-emerald border border-emerald/20'}`}>
+            {isAI ? '⚠ AI' : '✓ Real'}
           </span>
         </div>
       </div>
@@ -736,7 +729,7 @@ function ComparisonCardMobile({ card }: { card: { type: string; label: string; v
 }
 
 // ── Desktop / tablet scrolling card ─────────────────────────────────────────
-function ComparisonCard({ card }: { card: { type: string; label: string; verdict: string; confidence: number; color: string; tag: string; preview?: string; img?: string } }) {
+function ComparisonCard({ card }: { card: { type: string; label: string; verdict: string; color: string; tag: string; preview?: string; img?: string } }) {
   const isAI = card.verdict === 'AI'
   return (
     <div className="flex-shrink-0 w-60 sm:w-64 lg:w-72 bg-surface border border-border rounded-xl sm:rounded-2xl overflow-hidden hover:border-primary/30 transition-all duration-300 group">
@@ -777,15 +770,84 @@ function ComparisonCard({ card }: { card: { type: string; label: string; verdict
             {card.tag}
           </span>
         </div>
-        <div className="text-right flex-shrink-0 ml-2">
-          <div className={`text-base sm:text-lg font-black ${isAI ? 'text-rose' : 'text-emerald'}`}>{card.confidence}%</div>
-          <div className="text-[9px] text-text-disabled">confidence</div>
+        <div className="flex-shrink-0 ml-2">
+          <span className={`text-xs font-bold px-2 py-1 rounded-full ${isAI ? 'bg-rose/10 text-rose border border-rose/20' : 'bg-emerald/10 text-emerald border border-emerald/20'}`}>
+            {isAI ? '⚠ AI' : '✓ Real'}
+          </span>
         </div>
       </div>
     </div>
   )
 }
 
+
+
+// ─── HomepageReviews — live data from /api/reviews ───────────────────────────
+const AVATAR_GRADIENTS = [
+  'linear-gradient(135deg,#7c3aed,#2563eb)',
+  'linear-gradient(135deg,#0ea5e9,#06b6d4)',
+  'linear-gradient(135deg,#10b981,#16a34a)',
+  'linear-gradient(135deg,#f43f5e,#dc2626)',
+  'linear-gradient(135deg,#f59e0b,#d97706)',
+  'linear-gradient(135deg,#8b5cf6,#6d28d9)',
+]
+
+function HomepageReviews() {
+  const [reviews, setReviews] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/reviews?page=1&sort=top&limit=3')
+      .then(r => r.json())
+      .then(d => { if (d.data?.length) setReviews(d.data.slice(0, 3)) })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  if (loading) return (
+    <div className="grid sm:grid-cols-3 gap-4 sm:gap-6">
+      {[0,1,2].map(i => (
+        <div key={i} className="card border-border/50 h-40 animate-pulse bg-surface/60 rounded-2xl" />
+      ))}
+    </div>
+  )
+
+  if (!reviews.length) return null
+
+  return (
+    <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+      {reviews.map((r: any, i: number) => (
+        <motion.div key={r.id || i}
+          initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }} transition={{ delay: i * 0.1 }}
+          className="card border-border/50 hover:border-primary/20 transition-colors">
+          <div className="flex gap-0.5 mb-4">
+            {Array.from({ length: r.rating || r.stars || 5 }).map((_: unknown, j: number) => (
+              <span key={j} className="text-amber text-sm">★</span>
+            ))}
+          </div>
+          <p className="text-text-secondary text-sm leading-relaxed mb-4">
+            &ldquo;{r.body || r.text}&rdquo;
+          </p>
+          <div className="flex items-center gap-3">
+            <div
+              className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
+              style={{ background: AVATAR_GRADIENTS[i % AVATAR_GRADIENTS.length] }}
+            >
+              {r.is_anonymous ? '?' : (r.display_name?.charAt(0) || 'U').toUpperCase()}
+            </div>
+            <div>
+              <div className="text-sm font-semibold text-text-primary">
+                {r.is_anonymous ? 'Anonymous' : (r.display_name || 'Aiscern User')}
+              </div>
+              <div className="text-xs text-text-muted">{r.tool_used || 'Aiscern User'}</div>
+            </div>
+          </div>
+        </motion.div>
+      ))}
+    </div>
+  )
+}
 
 // ─── Main Page ───────────────────────────────────────────────────────────────
 export default function HomePage() {
@@ -800,7 +862,7 @@ export default function HomePage() {
       {/* ── Schema.org JSON-LD ── */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: `[
         {"@context":"https://schema.org","@type":"WebApplication","@id":"https://aiscern.com/#app","name":"Aiscern - Free AI Detector","url":"https://aiscern.com","description":"The most accurate free AI detection platform. Detect ChatGPT text, Midjourney deepfakes, ElevenLabs voice clones. 413k+ verified samples.","applicationCategory":"SecurityApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"featureList":["AI Text Detection - ChatGPT Claude Gemini","Deepfake Image Detection","AI Audio Voice Clone Detection","Deepfake Video Detection","Batch Analysis","AI Detection API"],"creator":{"@type":"Person","name":"Anas Ali","url":"https://aiscern.com/about"}},
-        {"@context":"https://schema.org","@type":"Organization","@id":"https://aiscern.com/#org","name":"Aiscern","url":"https://aiscern.com","logo":"https://aiscern.com/logo.png","foundingDate":"2024","contactPoint":{"@type":"ContactPoint","contactType":"customer support","email":"contact@aiscern.com"}},
+        {"@context":"https://schema.org","@type":"Organization","@id":"https://aiscern.com/#org","name":"Aiscern","url":"https://aiscern.com","logo":"https://aiscern.com/logo.png","foundingDate":"2025","contactPoint":{"@type":"ContactPoint","contactType":"customer support","email":"contact@aiscern.com"}},
         {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How accurate is Aiscern?","acceptedAnswer":{"@type":"Answer","text":"Aiscern uses a multi-model ensemble approach combining RoBERTa, ViT, and wav2vec2 models. Results reflect model consensus across 413,000+ verified training samples."}},{"@type":"Question","name":"Is Aiscern free?","acceptedAnswer":{"@type":"Answer","text":"Yes. Aiscern is completely free with no subscription, no credit card and no scan limits. All tools are free forever."}},{"@type":"Question","name":"Can Aiscern detect ChatGPT writing?","acceptedAnswer":{"@type":"Answer","text":"Yes. Aiscern detects ChatGPT, Claude, Gemini, GPT-4 and other AI writing models using a 3-model RoBERTa ensemble with linguistic signal analysis."}},{"@type":"Question","name":"Can Aiscern detect Midjourney images?","acceptedAnswer":{"@type":"Answer","text":"Yes. Aiscern detects Midjourney, DALL-E 3, Stable Diffusion and deepfake faces using a multi-model image analysis ensemble."}},{"@type":"Question","name":"Does Aiscern have an API?","acceptedAnswer":{"@type":"Answer","text":"Yes. Aiscern has a free REST API for AI detection. See aiscern.com/docs/api."}}]}
       ]` }} />
 
@@ -1073,38 +1135,7 @@ export default function HomePage() {
             className="text-center mb-10 sm:mb-12">
             <h2 className="text-2xl sm:text-3xl font-black mb-3">What People <span className="gradient-text">Say</span></h2>
           </motion.div>
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
-            {REVIEWS.map((r, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }} transition={{ delay: i * 0.1 }}
-                className="card border-border/50 hover:border-primary/20 transition-colors">
-                <div className="flex gap-0.5 mb-4">
-                  {Array.from({length: r.stars}).map((_, j) => <span key={j} className="text-amber text-sm">★</span>)}
-                </div>
-                <p className="text-text-secondary text-sm leading-relaxed mb-4">&ldquo;{r.text}&rdquo;</p>
-                <div className="flex items-center gap-3">
-                  <img
-                    src={r.photo}
-                    alt={`${r.name} — Aiscern user review`}
-                    className="w-10 h-10 rounded-full object-cover ring-2 ring-primary/20"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement
-                      target.style.display = 'none'
-                      target.nextElementSibling?.classList.remove('hidden')
-                    }}
-                  />
-                  <div className="w-10 h-10 rounded-full hidden items-center justify-center text-sm font-bold text-white flex-shrink-0"
-                    style={{ background: r.color }}>
-                    {r.avatar}
-                  </div>
-                  <div>
-                    <div className="text-sm font-semibold text-text-primary">{r.name}</div>
-                    <div className="text-xs text-text-muted">{r.role}</div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+          <HomepageReviews />
           <div className="text-center mt-6">
             <Link href="/reviews" className="text-sm text-primary hover:underline font-medium" title="Aiscern User Reviews">
               See all reviews →

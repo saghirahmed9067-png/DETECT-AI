@@ -57,7 +57,7 @@ export default function AboutPage() {
                 Defending Truth in the<br /><span className="gradient-text">Age of Synthetic Media</span>
               </h1>
               <p className="text-text-muted text-lg sm:text-xl leading-relaxed max-w-2xl mx-auto">
-                Aiscern is an enterprise-grade, multi-modal AI content detection platform.
+                Aiscern is a production-ready, multi-modal AI content detection platform.
                 We help organizations, journalists, and individuals verify the authenticity
                 of media before it spreads.
               </p>
@@ -116,7 +116,7 @@ export default function AboutPage() {
                     <p className="text-text-muted text-sm leading-relaxed mb-4">
                       Self-taught developer and founder of Aiscern. Architected the entire detection system —
                       from the 413K-sample training pipeline to the multi-modal inference engine — with a single goal:
-                      make enterprise-grade AI detection accessible to everyone.
+                      make professional-grade AI detection accessible to everyone.
                     </p>
                     <div className="flex flex-wrap gap-1.5 justify-center sm:justify-start mb-4">
                       {['Python', 'TypeScript', 'Next.js', 'Computer Vision', 'ML Systems', 'PyTorch'].map(s => (
