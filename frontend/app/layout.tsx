@@ -67,9 +67,6 @@ export const metadata: Metadata = {
   },
   alternates: { canonical: 'https://aiscern.com' },
   category: 'technology',
-  verification: {
-    google: 'add-your-google-search-console-verification-here',
-  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
