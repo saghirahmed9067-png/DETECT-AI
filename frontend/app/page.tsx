@@ -886,6 +886,7 @@ export default function HomePage() {
                 <Link href="#how"      onClick={() => setMobileNavOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface text-text-muted hover:text-text-primary transition-all text-sm font-medium"><Activity className="w-4 h-4" />How It Works</Link>
                 <Link href={user ? "/chat" : "/signup"} onClick={() => setMobileNavOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface text-text-muted hover:text-text-primary transition-all text-sm font-medium"><MessageSquare className="w-4 h-4" />AI Detection Assistant</Link>
                 <Link href="/reviews"  onClick={() => setMobileNavOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface text-text-muted hover:text-text-primary transition-all text-sm font-medium"><Star className="w-4 h-4" />Reviews</Link>
+                <Link href="/blog" onClick={() => setMobileNavOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface text-text-muted hover:text-text-primary transition-all text-sm font-medium"><FileText className="w-4 h-4" />Blog</Link>
                 <Link href="/pricing"  onClick={() => setMobileNavOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface text-text-muted hover:text-text-primary transition-all text-sm font-medium"><Zap className="w-4 h-4" />View AI Detector Plans</Link>
                 {!loading && !user && (
                   <>
