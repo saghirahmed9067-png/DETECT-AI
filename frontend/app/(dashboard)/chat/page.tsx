@@ -44,7 +44,7 @@ interface ToolEvent  { tool: string; status: 'running' | 'done'; result?: any }
 interface Message    { id: string; role: 'user'|'assistant'; content: string; timestamp: string; attachments?: Attachment[]; toolEvents?: ToolEvent[]; isStreaming?: boolean }
 interface Chat       { id: string; title: string; messages: Message[]; createdAt: string; updatedAt: string }
 
-const TOOL_META: Record<string,{label:string;color:string;Ic:()=>JSX.Element}> = {
+const TOOL_META: Record<string,{label:string;color:string;Ic:()=>React.ReactElement}> = {
   detect_image_with_vila: { label:'Vision Analysis',  color:'#7c3aed', Ic: Ico.Image },
   detect_text:            { label:'Text Analysis',    color:'#7c3aed', Ic: Ico.FileText },
   detect_image:           { label:'Image Analysis',   color:'#2563eb', Ic: Ico.Image },
@@ -693,7 +693,7 @@ export default function ChatPage() {
                   ['General Questions', Ico.Globe],
                   ['Dataset Insights', Ico.DB],
                 ].map(([l, I]) => {
-                  const Icon = I as () => JSX.Element
+                  const Icon = I as () => React.ReactElement
                   return (
                     <div key={l as string} className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full border border-white/8 bg-white/[0.03] text-xs text-gray-500">
                       <span className="opacity-60"><Icon /></span>

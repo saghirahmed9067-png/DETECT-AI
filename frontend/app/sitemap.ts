@@ -15,7 +15,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/privacy`,         lastModified: now, changeFrequency: 'yearly',  priority: 0.3 },
     { url: `${BASE}/terms`,           lastModified: now, changeFrequency: 'yearly',  priority: 0.3 },
 
-    // ── Auth ─────────────────────────────────────────────────────────────
+    { url: `${BASE}/reviews`,          lastModified: now, changeFrequency: 'weekly',  priority: 0.6 },
+    { url: `${BASE}/blog`,             lastModified: now, changeFrequency: 'weekly',  priority: 0.6 },
+
+    // ── Auth + Public ─────────────────────────────────────────────────────
     { url: `${BASE}/login`,           lastModified: now, changeFrequency: 'yearly',  priority: 0.6 },
     { url: `${BASE}/signup`,          lastModified: now, changeFrequency: 'yearly',  priority: 0.7 },
 
@@ -25,11 +28,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/detect/audio`,    lastModified: now, changeFrequency: 'weekly',  priority: 0.9 },
     { url: `${BASE}/detect/video`,    lastModified: now, changeFrequency: 'weekly',  priority: 0.9 },
     { url: `${BASE}/batch`,           lastModified: now, changeFrequency: 'weekly',  priority: 0.8 },
-    { url: `${BASE}/scraper`,         lastModified: now, changeFrequency: 'weekly',  priority: 0.7 },
 
-    // ── Dashboard ────────────────────────────────────────────────────────
-    { url: `${BASE}/dashboard`,       lastModified: now, changeFrequency: 'daily',   priority: 0.8 },
-    { url: `${BASE}/history`,         lastModified: now, changeFrequency: 'daily',   priority: 0.6 },
     { url: `${BASE}/chat`,            lastModified: now, changeFrequency: 'weekly',  priority: 0.7 },
   ]
 }

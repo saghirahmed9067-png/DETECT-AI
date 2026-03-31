@@ -12,9 +12,12 @@ export default function robots(): MetadataRoute.Robots {
           '/about',
           '/contact',
           '/reviews',
+          '/blog',
           '/detect/',
           '/privacy',
           '/terms',
+          '/login',
+          '/signup',
         ],
         disallow: [
           '/dashboard',
@@ -31,6 +34,6 @@ export default function robots(): MetadataRoute.Robots {
       },
     ],
     sitemap: 'https://aiscern.com/sitemap.xml',
-    host:    'https://aiscern.com',
+    host: 'https://aiscern.com',
   }
 }
