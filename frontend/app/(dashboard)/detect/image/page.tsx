@@ -1,5 +1,4 @@
 'use client'
-export const dynamic = 'force-dynamic'
 import { useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
 import ScanningLoader, { type ScanStage } from '@/components/ScanningLoader'

@@ -1,7 +1,6 @@
 'use client'
 // Normalize confidence: DB stores 0-1, display as 0-100
 const normConf = (c: number | null) => c == null ? 0 : c <= 1 ? Math.round(c * 100) : Math.round(c)
-export const dynamic = 'force-dynamic'
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Clock, Search, Filter, Download, Trash2, Eye, Image as ImgIcon, Video, Mic, FileText, Globe, RefreshCw, X, ChevronDown } from 'lucide-react'

@@ -1,5 +1,4 @@
 'use client'
-export const dynamic = 'force-dynamic'
 import { useState, useEffect, useCallback } from 'react'
 import { Database, Zap, RefreshCw, Loader2, CheckCircle, AlertCircle, Clock, TrendingUp, Radio, Play, BarChart3 } from 'lucide-react'
 import { useAuth } from '@/components/auth-provider'
