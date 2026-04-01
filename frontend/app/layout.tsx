@@ -1,15 +1,17 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import localFont from 'next/font/local'
 import { ClerkProvider } from '@clerk/nextjs'
 import { AuthProvider } from '@/components/auth-provider'
 import { Toaster } from 'sonner'
 import './globals.css'
 
-const inter = Inter({
-  subsets: ['latin'],
+const inter = localFont({
+  src: [
+    { path: '../public/fonts/inter-400.woff2', weight: '400', style: 'normal' },
+    { path: '../public/fonts/inter-700.woff2', weight: '700', style: 'normal' },
+  ],
   variable: '--font-inter',
   display: 'swap',
-  preload: true,
   fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
 })
 
