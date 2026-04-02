@@ -59,10 +59,63 @@ export default function SettingsPage() {
   const [language, setLanguage] = useState('en')
   const [timezone, setTimezone] = useState('UTC+5')
 
-  // API key state
-  const [apiKey, setApiKey]         = useState('aisc_•••••••••••••••••••••••••••••')
-  const [showKey, setShowKey]       = useState(false)
-  const [keyCopied, setKeyCopied]   = useState(false)
+  // API key state — backed by real /api/user/api-keys routes
+  const [apiKeys,      setApiKeys]      = useState<any[]>([])
+  const [keysLoading,  setKeysLoading]  = useState(false)
+  const [newKeyName,   setNewKeyName]   = useState('')
+  const [generating,   setGenerating]   = useState(false)
+  const [revealedKey,  setRevealedKey]  = useState<string | null>(null)   // shown ONCE after generation
+  const [keyCopied,    setKeyCopied]    = useState(false)
+  const [revoking,     setRevoking]     = useState<string | null>(null)
+
+  // Load keys on mount
+  useEffect(() => {
+    if (!currentUser) return
+    setKeysLoading(true)
+    fetch('/api/user/api-keys')
+      .then(r => r.json())
+      .then(d => { if (d.data) setApiKeys(d.data) })
+      .catch(() => {})
+      .finally(() => setKeysLoading(false))
+  }, [currentUser])
+
+  const generateKey = async () => {
+    if (generating) return
+    setGenerating(true)
+    setRevealedKey(null)
+    try {
+      const res  = await fetch('/api/user/api-keys', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newKeyName.trim() || 'My API Key' }),
+      })
+      const data = await res.json()
+      if (!res.ok) { toast.error(data.error || 'Failed to generate key'); return }
+      setRevealedKey(data.data.key)        // show raw key ONCE
+      setApiKeys(prev => [data.data, ...prev])
+      setNewKeyName('')
+      toast.success('API key generated — copy it now, it won\'t be shown again')
+    } catch { toast.error('Failed to generate key') }
+    setGenerating(false)
+  }
+
+  const revokeKey = async (id: string) => {
+    setRevoking(id)
+    try {
+      const res = await fetch(`/api/user/api-keys/${id}`, { method: 'DELETE' })
+      if (!res.ok) { toast.error('Failed to revoke key'); return }
+      setApiKeys(prev => prev.filter(k => k.id !== id))
+      toast.success('API key revoked')
+    } catch { toast.error('Failed to revoke key') }
+    setRevoking(null)
+  }
+
+  const copyKey = (key: string) => {
+    navigator.clipboard.writeText(key).then(() => {
+      setKeyCopied(true)
+      setTimeout(() => setKeyCopied(false), 2000)
+    })
+  }
 
   const [saving, setSaving]             = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
@@ -83,8 +136,6 @@ export default function SettingsPage() {
       if (prefs.deepScan     !== undefined) setDeepScan(prefs.deepScan)
       if (prefs.autoDetectType!==undefined) setAutoDetectType(prefs.autoDetectType)
       if (prefs.language     !== undefined) setLanguage(prefs.language)
-      // Generate deterministic API key from uid
-      if (currentUser?.uid) setApiKey(`aisc_${currentUser.uid.replace(/-/g,'').slice(0, 28)}`)
     })
   }, [currentUser])
 
@@ -105,14 +156,6 @@ export default function SettingsPage() {
       toast.success('Settings saved!')
     } catch { toast.error('Failed to save settings') }
     setSaving(false)
-  }
-
-  const copyApiKey = () => {
-    if (currentUser?.uid) {
-      navigator.clipboard.writeText(`aisc_${currentUser.uid.replace(/-/g,'').slice(0, 28)}`).then(() => {
-        setKeyCopied(true); setTimeout(() => setKeyCopied(false), 2000)
-      })
-    }
   }
 
   const exportData = () => {
@@ -197,31 +240,97 @@ export default function SettingsPage() {
         ))}
       </motion.div>
 
-      {/* API Key */}
+      {/* API Key Management */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }} className="card">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-9 h-9 rounded-xl text-cyan bg-cyan/10 flex items-center justify-center"><Key className="w-4 h-4" /></div>
-          <h3 className="font-semibold text-text-primary">API Access</h3>
+          <div>
+            <h3 className="font-semibold text-text-primary">API Keys</h3>
+            <p className="text-xs text-text-muted">Max 5 active keys · 1,000 calls/day each</p>
+          </div>
         </div>
-        <p className="text-sm text-text-muted mb-4">Use your API key to access Aiscern detection endpoints programmatically.</p>
-        <div className="flex items-center gap-2 p-3 rounded-xl bg-surface border border-border font-mono text-sm">
-          <span className="flex-1 truncate text-text-secondary">
-            {showKey && currentUser?.uid ? `aisc_${currentUser.uid.replace(/-/g,'').slice(0, 28)}` : 'aisc_••••••••••••••••••••••••••••'}
-          </span>
-          <button onClick={() => setShowKey(v => !v)} className="text-text-muted hover:text-text-primary transition-colors p-1">
-            {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-          </button>
-          <button onClick={copyApiKey} className="text-text-muted hover:text-text-primary transition-colors p-1">
-            {keyCopied ? <Check className="w-4 h-4 text-emerald" /> : <Copy className="w-4 h-4" />}
+
+        {/* Revealed key banner — shown once after generation */}
+        {revealedKey && (
+          <div className="mb-4 p-3 rounded-xl bg-emerald/8 border border-emerald/25">
+            <p className="text-xs font-semibold text-emerald mb-2">✓ Key generated — copy it now, it won't be shown again</p>
+            <div className="flex items-center gap-2 bg-background rounded-lg px-3 py-2 font-mono text-xs text-text-primary border border-border">
+              <span className="flex-1 truncate select-all">{revealedKey}</span>
+              <button onClick={() => copyKey(revealedKey)} className="text-text-muted hover:text-text-primary transition-colors shrink-0">
+                {keyCopied ? <Check className="w-4 h-4 text-emerald" /> : <Copy className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Generate new key */}
+        <div className="flex gap-2 mb-4">
+          <input
+            type="text"
+            value={newKeyName}
+            onChange={e => setNewKeyName(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && generateKey()}
+            placeholder="Key name (e.g. Production)"
+            maxLength={64}
+            className="input-field flex-1 py-2 text-sm"
+          />
+          <button
+            onClick={generateKey}
+            disabled={generating || apiKeys.length >= 5}
+            className="btn-primary flex items-center gap-2 px-4 py-2 text-sm disabled:opacity-40 shrink-0"
+          >
+            {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Key className="w-3.5 h-3.5" />}
+            Generate
           </button>
         </div>
-        <div className="mt-3 flex gap-2">
-          <button onClick={() => toast.info('Key rotation coming soon — contact support')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs text-text-muted hover:border-primary/40 hover:text-text-primary transition-all">
-            <RefreshCw className="w-3 h-3" /> Rotate Key
-          </button>
-          <a href="/contact" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs text-text-muted hover:border-primary/40 hover:text-text-primary transition-all">
-            <Mail className="w-3 h-3" /> Request Pro Key
+
+        {/* Keys list */}
+        {keysLoading ? (
+          <div className="space-y-2">
+            {[0, 1].map(i => <div key={i} className="h-14 rounded-xl bg-surface-active animate-pulse" />)}
+          </div>
+        ) : apiKeys.length === 0 ? (
+          <div className="text-center py-8 text-text-muted text-sm border border-dashed border-border rounded-xl">
+            No API keys yet — generate one above to get started
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {apiKeys.map(k => (
+              <div key={k.id} className="flex items-center gap-3 px-3 py-3 rounded-xl border border-border bg-surface hover:border-primary/30 transition-colors">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-sm font-medium text-text-primary truncate">{k.name || 'Unnamed Key'}</span>
+                    {k.is_active
+                      ? <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald/10 text-emerald font-semibold shrink-0">Active</span>
+                      : <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-rose/10 text-rose font-semibold shrink-0">Revoked</span>
+                    }
+                  </div>
+                  <p className="text-xs text-text-muted">
+                    {k.calls_today ?? 0}/{k.daily_limit ?? 1000} calls today
+                    {k.last_used_at
+                      ? ` · Last used ${new Date(k.last_used_at).toLocaleDateString()}`
+                      : ' · Never used'
+                    }
+                  </p>
+                </div>
+                {k.is_active && (
+                  <button
+                    onClick={() => revokeKey(k.id)}
+                    disabled={revoking === k.id}
+                    className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border text-xs text-text-muted hover:border-rose/40 hover:text-rose hover:bg-rose/5 transition-all disabled:opacity-40"
+                  >
+                    {revoking === k.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                    Revoke
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-3 pt-3 border-t border-border">
+          <a href="/docs/api" className="flex items-center gap-1.5 text-xs text-primary hover:underline font-medium w-fit">
+            <Globe className="w-3 h-3" /> View API documentation →
           </a>
         </div>
       </motion.div>
