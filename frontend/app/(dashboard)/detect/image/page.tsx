@@ -1,10 +1,11 @@
 'use client'
 import { useState, useCallback } from 'react'
+import { toUserError } from '@/lib/utils/user-errors'
 import { useDropzone } from 'react-dropzone'
 import ScanningLoader, { type ScanStage } from '@/components/ScanningLoader'
 import { uploadToR2WithProgress } from '@/lib/storage/upload-with-progress'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Image as ImageIcon, Upload, X, AlertTriangle, CheckCircle, HelpCircle, Loader2, RotateCcw, Download, ZoomIn, Info } from 'lucide-react'
+import { Image as ImageIcon, Upload, X, AlertTriangle, CheckCircle, HelpCircle, Loader2, RotateCcw, Download, ZoomIn, Info, Share2 } from 'lucide-react'
 import { useAuth } from '@/components/auth-provider'
 import type { DetectionResult, Verdict } from '@/types'
 import { formatConfidence, formatFileSize } from '@/lib/utils/helpers'
@@ -89,13 +90,13 @@ export default function ImageDetectionPage() {
 
       setScanStage('processing')
       const data = await res.json()
-      if (!data.success) throw new Error(data.error?.message || 'Detection failed')
+      if (!data.success) throw new Error(toUserError(data.error?.code, data.error?.message))
       setScanStage('complete')
       setResult(data.result)
       setScanId(data.scan_id ?? null)
       // FIX: removed duplicate supabase.from('scans').insert() — API route already saves
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Detection failed')
+      setError(e instanceof Error ? toUserError(undefined, e.message) : toUserError())
     } finally { setLoading(false); setScanStage('idle') }
   }
 
@@ -118,6 +119,15 @@ Analyzed: ${new Date().toLocaleString()}`
     const blob = new Blob([text], { type: 'text/plain' })
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob)
     a.download = `aiscern-image-${Date.now()}.txt`; a.click()
+  }
+
+  const shareResult = async () => {
+    if (!scanId) return
+    try {
+      await fetch(`/api/scan/${scanId}/share`, { method: 'POST' })
+      await navigator.clipboard.writeText(`${window.location.origin}/scan/${scanId}`)
+      alert('Share link copied to clipboard!')
+    } catch { alert('Could not copy link. Try again.') }
   }
 
   const reset = () => { setFile(null); setPreview(null); setResult(null); setError(null); setImgDims(null); setZoomed(false); setUploadProgress(0); setScanStage('idle') }
@@ -355,7 +365,17 @@ Analyzed: ${new Date().toLocaleString()}`
     <div className="px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto pb-6">
       
       <ReviewSuggestion toolName="Image Detector" />
-      {result && <div className="px-4 pb-4"><FeedbackBar scanId={scanId} verdict={result.verdict} /></div>}
+      {result && (
+        <div className="px-4 pb-4 flex items-center justify-between flex-wrap gap-3">
+          <FeedbackBar scanId={scanId} verdict={result.verdict} />
+          {scanId && (
+            <button onClick={shareResult}
+              className="flex items-center gap-1.5 text-xs text-text-muted hover:text-primary transition-colors border border-border/50 rounded-lg px-3 py-1.5 hover:border-primary/30">
+              <Share2 className="w-3 h-3" /> Share result
+            </button>
+          )}
+        </div>
+      )}
     </div>
   </>
   )

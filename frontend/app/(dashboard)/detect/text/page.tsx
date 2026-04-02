@@ -1,5 +1,6 @@
 'use client'
 import { useState, useRef } from 'react'
+import { toUserError } from '@/lib/utils/user-errors'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FileText, Send, RotateCcw, AlertTriangle, CheckCircle, HelpCircle, Loader2, Copy, Download, ClipboardPaste, Upload, BookOpen, X } from 'lucide-react'
 import { useAuth } from '@/components/auth-provider'
@@ -66,7 +67,7 @@ export default function TextDetectionPage() {
       form.append('file', file)
       const res  = await fetch('/api/detect/pdf', { method: 'POST', body: form })
       const data = await res.json()
-      if (!data.success) throw new Error(data.error?.message || 'PDF analysis failed')
+      if (!data.success) throw new Error(toUserError(data.error?.code, data.error?.message))
       setResult(data.result)
       setScanId(data.scan_id ?? null)
       if (data.result?.paragraph_scores) setParagraphScores(data.result?.paragraph_scores)
@@ -74,7 +75,7 @@ export default function TextDetectionPage() {
       window.dispatchEvent(new Event('aiscern:scan'))
       // FIX: removed duplicate dispatch + duplicate supabase insert — API route already saves
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'PDF analysis failed')
+      setError(err instanceof Error ? toUserError(undefined, err.message) : toUserError())
     } finally { setPdfLoading(false) }
   }
 
@@ -90,14 +91,14 @@ export default function TextDetectionPage() {
         body: JSON.stringify({ text: text.trim() }),
       })
       const data = await res.json()
-      if (!data.success) throw new Error(data.error?.message || 'Detection failed')
+      if (!data.success) throw new Error(toUserError(data.error?.code, data.error?.message))
       setResult(data.result)
       setScanId(data.scan_id ?? null)
       incrementGlobalScanCount()
       window.dispatchEvent(new Event('aiscern:scan'))
       // FIX: removed duplicate supabase insert — API route already saves
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
+      setError(err instanceof Error ? toUserError(undefined, err.message) : toUserError())
     } finally { setLoading(false) }
   }
 

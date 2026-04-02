@@ -1,5 +1,6 @@
 'use client'
 import { useState, useCallback, useRef, useEffect } from 'react'
+import { toUserError } from '@/lib/utils/user-errors'
 import { useDropzone } from 'react-dropzone'
 import { uploadToR2WithProgress } from '@/lib/storage/upload-with-progress'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -130,13 +131,13 @@ export default function AudioDetectionPage() {
       }
 
       const data = await res.json()
-      if (!data.success) throw new Error(data.error?.message || 'Detection failed')
+      if (!data.success) throw new Error(toUserError(data.error?.code, data.error?.message))
       setResult(data.result)
       setScanId(data.scan_id ?? null)
       incrementGlobalScanCount()
       window.dispatchEvent(new Event('aiscern:scan'))
       // FIX: removed duplicate supabase.from('scans').insert() — API route already saves
-    } catch (e: unknown) { setError(e instanceof Error ? e.message : 'Detection failed') }
+    } catch (e: unknown) { setError(e instanceof Error ? toUserError(undefined, e.message) : toUserError()) }
     finally { setLoading(false) }
   }
 
