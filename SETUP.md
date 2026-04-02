@@ -125,7 +125,9 @@ These functions are called by the application at runtime. **Run all of them.**
 
 ```sql
 -- Dashboard stats per user
-CREATE OR REPLACE FUNCTION get_user_stats(p_user_id text)
+DROP FUNCTION IF EXISTS get_user_stats(text);
+
+CREATE FUNCTION get_user_stats(p_user_id text)
 RETURNS TABLE (
   total_scans      bigint,
   ai_detected      bigint,
@@ -144,7 +146,9 @@ RETURNS TABLE (
 $$;
 
 -- Atomic API call counter increment
-CREATE OR REPLACE FUNCTION increment_api_calls(key_hash_input text)
+DROP FUNCTION IF EXISTS increment_api_calls(text);
+
+CREATE FUNCTION increment_api_calls(key_hash_input text)
 RETURNS void LANGUAGE sql AS $$
   UPDATE api_keys
   SET
@@ -156,7 +160,9 @@ $$;
 -- Reset daily API counters at midnight UTC
 -- Schedule this via Supabase pg_cron (Dashboard → Database → Cron Jobs):
 -- Schedule: "0 0 * * *"  SQL: SELECT reset_api_daily_counts();
-CREATE OR REPLACE FUNCTION reset_api_daily_counts()
+DROP FUNCTION IF EXISTS reset_api_daily_counts();
+
+CREATE FUNCTION reset_api_daily_counts()
 RETURNS void LANGUAGE sql AS $$
   UPDATE api_keys SET calls_today = 0;
 $$;
