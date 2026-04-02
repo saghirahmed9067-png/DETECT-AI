@@ -79,19 +79,22 @@ CREATE INDEX IF NOT EXISTS idx_scans_created_at ON scans(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_scans_public     ON scans(id) WHERE is_public = true;
 
 -- API keys table (public API authentication)
+-- Run the CREATE first, then the ALTERs to add any columns that may be missing
 CREATE TABLE IF NOT EXISTS api_keys (
-  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id      text NOT NULL,
-  key_hash     text NOT NULL UNIQUE,
-  name         text NOT NULL DEFAULT 'My API Key',
-  is_active    boolean NOT NULL DEFAULT true,
-  calls_today  integer NOT NULL DEFAULT 0,
-  daily_limit  integer NOT NULL DEFAULT 1000,
-  total_calls  integer NOT NULL DEFAULT 0,
-  last_used_at timestamptz,
-  created_at   timestamptz NOT NULL DEFAULT now(),
-  expires_at   timestamptz
+  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    text NOT NULL,
+  key_hash   text NOT NULL UNIQUE,
+  created_at timestamptz NOT NULL DEFAULT now()
 );
+
+-- Add columns safely (IF NOT EXISTS means re-running this is safe)
+ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS name         text        NOT NULL DEFAULT 'My API Key';
+ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS is_active    boolean     NOT NULL DEFAULT true;
+ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS calls_today  integer     NOT NULL DEFAULT 0;
+ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS daily_limit  integer     NOT NULL DEFAULT 1000;
+ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS total_calls  integer     NOT NULL DEFAULT 0;
+ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS last_used_at timestamptz;
+ALTER TABLE api_keys ADD COLUMN IF NOT EXISTS expires_at   timestamptz;
 
 CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys(key_hash);
 CREATE INDEX IF NOT EXISTS idx_api_keys_user ON api_keys(user_id);
