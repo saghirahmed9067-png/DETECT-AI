@@ -210,8 +210,8 @@ function RootNetworkNode({ node, file, side, index, size }: {
         fetchPriority={index < 2 ? 'high' : 'auto' as 'high'|'auto'|'low'}
       />
 
-      {/* Bottom fade */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
+      {/* Bottom fade — lighter so image is visible */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
 
       {/* Label */}
       <div className={`absolute bottom-1 left-1 text-[7px] font-black px-1 py-0.5 rounded leading-none z-10 ${isAI ? 'bg-rose/80 text-white' : 'bg-emerald/80 text-white'}`}>
@@ -266,8 +266,8 @@ function FloatingCards() {
   const aiEdges   = bp === 'sm' ? AI_EDGES_SM   : bp === 'md' ? AI_EDGES_MD   : AI_EDGES_LG
   const realEdges = bp === 'sm' ? REAL_EDGES_SM : bp === 'md' ? REAL_EDGES_MD : REAL_EDGES_LG
 
-  // Card sizes per breakpoint
-  const cardSize = bp === 'sm' ? { w: 32, h: 42 } : bp === 'md' ? { w: 48, h: 62 } : { w: 64, h: 80 }
+  // Card sizes per breakpoint — larger so images are clearly visible
+  const cardSize = bp === 'sm' ? { w: 44, h: 56 } : bp === 'md' ? { w: 60, h: 76 } : { w: 80, h: 100 }
 
   // Badge positions change per breakpoint
   const badgePositions = bp === 'sm'
@@ -926,16 +926,23 @@ export default function HomePage() {
             <span className="block sm:hidden text-lg text-text-primary mt-2 font-semibold leading-snug">
               Text · Images · Audio · Video
             </span>
-            {/* Desktop: full headline */}
+            {/* Desktop: full headline with multi-color keywords */}
             <span className="hidden sm:block text-4xl lg:text-7xl gradient-text">Unmask AI-Generated Content</span>
-            <span className="hidden sm:block text-3xl lg:text-5xl text-text-primary mt-2">
-              — Free Detector for Text, Images, Audio & Video
+            <span className="hidden sm:flex sm:flex-wrap sm:items-center sm:justify-center sm:gap-x-3 text-2xl lg:text-4xl font-black mt-3 leading-snug">
+              <span className="text-amber font-black">Text</span>
+              <span className="text-text-muted font-light">·</span>
+              <span className="text-primary font-black">Images</span>
+              <span className="text-text-muted font-light">·</span>
+              <span className="text-cyan font-black">Audio</span>
+              <span className="text-text-muted font-light">·</span>
+              <span className="text-secondary font-black">Video</span>
+              <span className="text-text-secondary font-semibold ml-1">Detection. Free.</span>
             </span>
           </motion.h1>
 
           <p className="text-sm sm:text-lg text-text-secondary max-w-xl mx-auto mb-6 sm:mb-10 leading-relaxed hero-fade-up" style={{ animationDelay: '0.05s' }}>
-            <span className="sm:hidden">State-of-the-art AI detection. <strong className="text-text-primary">Free forever.</strong> Free — no credit card required.</span>
-            <span className="hidden sm:inline">Detect AI-generated <strong className="text-text-primary">text</strong>, <strong className="text-text-primary">images</strong>, <strong className="text-text-primary">audio</strong> & <strong className="text-text-primary">video</strong> with state-of-the-art models. Start free. Free — no credit card required.</span>
+            <span className="sm:hidden">State-of-the-art AI detection. <strong className="text-text-primary">Free forever.</strong> No credit card required.</span>
+            <span className="hidden sm:inline">Detect AI-generated <strong className="text-amber">text</strong>, <strong className="text-primary">images</strong>, <strong className="text-cyan">audio</strong> &amp; <strong className="text-secondary">video</strong> with state-of-the-art models. <strong className="text-text-primary">100% free</strong> — no credit card required.</span>
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-4 mb-8 sm:mb-16 hero-fade-up" style={{ animationDelay: '0.1s' }}>

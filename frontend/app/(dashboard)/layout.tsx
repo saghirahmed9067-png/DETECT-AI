@@ -146,10 +146,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
-      <div className={`flex items-center gap-3 px-4 py-5 border-b border-border ${collapsed ? 'justify-center' : ''}`}>
+      <Link href="/" className={`flex items-center gap-3 px-4 py-5 border-b border-border hover:opacity-80 transition-opacity ${collapsed ? 'justify-center' : ''}`}>
         <Image src="/logo.png" alt="Aiscern" width={36} height={25} className="object-contain drop-shadow-[0_0_6px_rgba(245,100,0,0.5)] flex-shrink-0" />
         {!collapsed && <span className="text-lg font-black gradient-text">Aiscern</span>}
-      </div>
+      </Link>
 
       <nav className="flex-1 px-3 py-4 space-y-5 overflow-y-auto">
         {navGroups.map(group => (
@@ -251,10 +251,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <button onClick={() => setMobileOpen(true)} className="lg:hidden text-text-muted hover:text-text-primary">
               <Menu className="w-6 h-6" />
             </button>
-            <div className="flex items-center gap-2 lg:hidden">
+            <Link href="/" className="flex items-center gap-2 lg:hidden hover:opacity-80 transition-opacity">
               <Image src="/logo.png" alt="Aiscern" width={28} height={19} className="object-contain drop-shadow-[0_0_6px_rgba(245,100,0,0.5)]" />
               <span className="font-bold gradient-text text-sm">Aiscern</span>
-            </div>
+            </Link>
             <div className="hidden lg:flex items-center gap-2 text-sm text-text-muted">
               <span className="w-2 h-2 rounded-full bg-emerald animate-pulse" />
               All systems operational
