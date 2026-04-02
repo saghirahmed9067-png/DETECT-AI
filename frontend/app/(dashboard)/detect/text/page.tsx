@@ -2,7 +2,7 @@
 import { useState, useRef } from 'react'
 import { toUserError } from '@/lib/utils/user-errors'
 import { motion, AnimatePresence } from 'framer-motion'
-import { FileText, Send, RotateCcw, AlertTriangle, CheckCircle, HelpCircle, Loader2, Copy, Download, ClipboardPaste, Upload, BookOpen, X } from 'lucide-react'
+import { FileText, Send, RotateCcw, AlertTriangle, CheckCircle, HelpCircle, Loader2, Copy, Download, ClipboardPaste, Upload, BookOpen, X , Share2 } from 'lucide-react'
 import { useAuth } from '@/components/auth-provider'
 import type { DetectionResult, Verdict } from '@/types'
 import { formatConfidence } from '@/lib/utils/helpers'
@@ -143,6 +143,15 @@ Analyzed: ${new Date().toLocaleString()}`
 
   const verdictColor: Record<Verdict, string> = {
     AI: 'text-rose', HUMAN: 'text-emerald', UNCERTAIN: 'text-amber'
+  }
+
+  const shareResult = async () => {
+    if (!scanId) return
+    try {
+      await fetch(`/api/scan/${scanId}/share`, { method: 'POST' })
+      await navigator.clipboard.writeText(`${window.location.origin}/scan/${scanId}`)
+      alert('Share link copied to clipboard!')
+    } catch { alert('Could not copy link. Try again.') }
   }
 
   return (
@@ -448,7 +457,17 @@ Analyzed: ${new Date().toLocaleString()}`
     <div className="px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto pb-6">
       
       <ReviewSuggestion toolName="AI Text Detector" />
-      {result && <div className="px-4 pb-4"><FeedbackBar scanId={scanId} verdict={result.verdict} /></div>}
+      {result && (
+        <div className="px-4 pb-4 flex items-center justify-between flex-wrap gap-3">
+          <FeedbackBar scanId={scanId} verdict={result.verdict} />
+          {scanId && (
+            <button onClick={shareResult}
+              className="flex items-center gap-1.5 text-xs text-text-muted hover:text-primary transition-colors border border-border/50 rounded-lg px-3 py-1.5 hover:border-primary/30">
+              <Share2 className="w-3 h-3" /> Share result
+            </button>
+          )}
+        </div>
+      )}
     </div>
   </>
   )

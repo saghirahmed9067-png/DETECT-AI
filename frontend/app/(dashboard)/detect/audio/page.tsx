@@ -4,7 +4,7 @@ import { toUserError } from '@/lib/utils/user-errors'
 import { useDropzone } from 'react-dropzone'
 import { uploadToR2WithProgress } from '@/lib/storage/upload-with-progress'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mic, Upload, X, AlertTriangle, CheckCircle, HelpCircle, Loader2, RotateCcw, Play, Pause, Download } from 'lucide-react'
+import { Mic, Upload, X, AlertTriangle, CheckCircle, HelpCircle, Loader2, RotateCcw, Play, Pause, Download , Share2 } from 'lucide-react'
 import { useAuth } from '@/components/auth-provider'
 import type { DetectionResult, Verdict } from '@/types'
 import { formatConfidence, formatFileSize } from '@/lib/utils/helpers'
@@ -24,6 +24,7 @@ const WAVE_HEIGHTS = Array.from({ length: 40 }, (_, i) => 6 + Math.sin(i * 0.8) 
 const WAVE_DURATIONS = Array.from({ length: 40 }, (_, i) => 0.45 + (i % 7) * 0.08)
 
 function WaveformVisualizer({ playing, progress = 0 }: { playing: boolean; progress?: number }) {
+
   return (
     <div className="flex items-center justify-center gap-0.5 h-14 relative overflow-hidden rounded-xl">
       {/* Progress overlay */}
@@ -52,6 +53,15 @@ export default function AudioDetectionPage() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [result, setResult] = useState<DetectionResult | null>(null)
   const [scanId, setScanId] = useState<string | null>(null)
+
+  const shareResult = async () => {
+    if (!scanId) return
+    try {
+      await fetch(`/api/scan/${scanId}/share`, { method: 'POST' })
+      await navigator.clipboard.writeText(`${window.location.origin}/scan/${scanId}`)
+      alert('Share link copied to clipboard!')
+    } catch { alert('Could not copy link. Try again.') }
+  }
   const [error, setError] = useState<string | null>(null)
   const [playing, setPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -355,7 +365,17 @@ export default function AudioDetectionPage() {
     <div className="px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto pb-6">
       
       <ReviewSuggestion toolName="Audio Detector" />
-      {result && <div className="px-4 pb-4"><FeedbackBar scanId={scanId} verdict={result.verdict} /></div>}
+      {result && (
+        <div className="px-4 pb-4 flex items-center justify-between flex-wrap gap-3">
+          <FeedbackBar scanId={scanId} verdict={result.verdict} />
+          {scanId && (
+            <button onClick={shareResult}
+              className="flex items-center gap-1.5 text-xs text-text-muted hover:text-primary transition-colors border border-border/50 rounded-lg px-3 py-1.5 hover:border-primary/30">
+              <Share2 className="w-3 h-3" /> Share result
+            </button>
+          )}
+        </div>
+      )}
     </div>
     </>
   )

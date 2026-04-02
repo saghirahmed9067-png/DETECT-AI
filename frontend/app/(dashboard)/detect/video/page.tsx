@@ -5,8 +5,7 @@ import { useDropzone } from 'react-dropzone'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Video, Upload, X, AlertTriangle, CheckCircle, HelpCircle,
-  Loader2, RotateCcw, Play, Pause, Download, Info, Scan, Eye,
-} from 'lucide-react'
+  Loader2, RotateCcw, Play, Pause, Download, Info, Scan, Eye, Share2 } from 'lucide-react'
 import { useAuth } from '@/components/auth-provider'
 import type { DetectionResult, Verdict } from '@/types'
 import { formatConfidence, formatFileSize } from '@/lib/utils/helpers'
@@ -83,6 +82,7 @@ function FrameStrip({
   frameScores?: { frame: number; time_sec: number; ai_score: number; face_detected?: boolean }[]
 }) {
   if (!frames.length) return null
+
   return (
     <div className="space-y-2">
       <p className="text-xs text-text-muted font-medium">Extracted Frames ({frames.length})</p>
@@ -138,6 +138,15 @@ export default function VideoDetectionPage() {
   const [duration,    setDuration]    = useState(0)
   const [currentTime, setCurrentTime] = useState(0)
   const [scanId,      setScanId]      = useState<string | null>(null)
+
+  const shareResult = async () => {
+    if (!scanId) return
+    try {
+      await fetch(`/api/scan/${scanId}/share`, { method: 'POST' })
+      await navigator.clipboard.writeText(`${window.location.origin}/scan/${scanId}`)
+      alert('Share link copied to clipboard!')
+    } catch { alert('Could not copy link. Try again.') }
+  }
   const [phase,       setPhase]       = useState<'idle' | 'extracting' | 'analyzing'>('idle')
   const [framesDone,  setFramesDone]  = useState(0)
   const [extractedFrames, setExtractedFrames] = useState<ExtractedFrame[]>([])
@@ -544,7 +553,17 @@ export default function VideoDetectionPage() {
     <div className="px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto pb-6">
       
       <ReviewSuggestion toolName="Video Detector" />
-      {result && <div className="px-4 pb-4"><FeedbackBar scanId={scanId} verdict={result.verdict} /></div>}
+      {result && (
+        <div className="px-4 pb-4 flex items-center justify-between flex-wrap gap-3">
+          <FeedbackBar scanId={scanId} verdict={result.verdict} />
+          {scanId && (
+            <button onClick={shareResult}
+              className="flex items-center gap-1.5 text-xs text-text-muted hover:text-primary transition-colors border border-border/50 rounded-lg px-3 py-1.5 hover:border-primary/30">
+              <Share2 className="w-3 h-3" /> Share result
+            </button>
+          )}
+        </div>
+      )}
     </div>
   </>
   )
