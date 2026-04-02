@@ -55,15 +55,33 @@ export async function getStatus(db: D1Database) {
 }
 
 /**
- * Safety-net cleanup — removes any rows stuck with hf_pushed_at set but not deleted.
- * Under normal operation this returns 0 (push.ts deletes immediately).
- * Catches edge cases: worker crash mid-delete, partial failures, etc.
+ * Safety-net cleanup — two passes:
+ *
+ * Pass 1 (orphan guard): rows older than 2 hours are assumed pushed-but-not-deleted
+ *   (worker crashed mid-delete). push.ts deletes rows immediately after HF commit,
+ *   so any row sitting for 2h+ without being pushed is stale data.
+ *   NOTE: hf_pushed_at is never set in push.ts (rows are deleted directly),
+ *   so the old hf_pushed_at IS NOT NULL check would never match — fixed here.
+ *
+ * Pass 2 (push log trim): keep only the last 500 push log entries to prevent
+ *   hf_push_log from growing unboundedly (used for shard part-number counting).
  */
 export async function cleanupPushed(db: D1Database): Promise<number> {
-  const r = await db.prepare(`
+  // Pass 1: delete rows older than 2 hours (orphaned by crashed worker mid-delete)
+  const stale = await db.prepare(`
     DELETE FROM dataset_items
-    WHERE hf_pushed_at IS NOT NULL
-      AND hf_pushed_at < datetime('now', '-1 hour')
-  `).run()
-  return r.meta?.changes ?? 0
+    WHERE created_at < datetime('now', '-2 hours')
+  `).run().catch(() => ({ meta: { changes: 0 } }))
+
+  // Pass 2: trim hf_push_log — keep last 500 rows per repo
+  await db.prepare(`
+    DELETE FROM hf_push_log
+    WHERE id NOT IN (
+      SELECT id FROM hf_push_log
+      ORDER BY created_at DESC
+      LIMIT 500
+    )
+  `).run().catch(() => {})
+
+  return stale.meta?.changes ?? 0
 }

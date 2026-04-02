@@ -36,6 +36,9 @@ export async function extractVideoRow(
     }
   }
 
+  // Reject rows with no usable URL — avoids inserting empty/garbage rows
+  if (!url) return null
+
   return {
     label,
     content_url:      url,

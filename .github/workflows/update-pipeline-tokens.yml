@@ -13,13 +13,30 @@ jobs:
           node-version: '20'
       - run: npm install -g wrangler@latest
 
-      - name: Push HF_TOKEN to all 5 deployed workers
+      - name: Push HF_TOKEN to all 16 deployed workers
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: 34400e6e147e83e95c942135f54aeba7
         run: |
           HF="${{ secrets.HUGGINGFACE_API_TOKEN }}"
-          WORKERS=(detectai-pipeline detectai-pipeline-b detectai-pipeline-c detectai-pipeline-d detectai-pipeline-e)
+          WORKERS=(
+            detectai-pipeline
+            detectai-pipeline-b
+            detectai-pipeline-c
+            detectai-pipeline-d
+            detectai-pipeline-e
+            detectai-pipeline-f
+            detectai-pipeline-g
+            detectai-pipeline-h
+            detectai-pipeline-i
+            detectai-pipeline-j
+            detectai-pipeline-k
+            detectai-pipeline-l
+            detectai-pipeline-m
+            detectai-pipeline-n
+            detectai-pipeline-o
+            detectai-pipeline-p
+          )
           OK=0; FAIL=0
           for W in "${WORKERS[@]}"; do
             echo -n "  $W ... "
@@ -32,12 +49,12 @@ jobs:
           echo "Done: $OK ✅  $FAIL ❌"
           [ "$FAIL" -gt 0 ] && exit 1 || true
 
-      - name: Health check
+      - name: Health check (spot-check 3 workers)
         run: |
           sleep 5
-          for W in detectai-pipeline detectai-pipeline-b detectai-pipeline-e; do
+          for W in detectai-pipeline detectai-pipeline-h detectai-pipeline-e; do
             echo -n "  $W: "
             curl -sf --max-time 10 "https://${W}.workers.dev/health" \
-              | python3 -c "import json,sys;d=json.load(sys.stdin);print('✅',d.get('role','?'))" \
+              | python3 -c "import json,sys;d=json.load(sys.stdin);print('✅',d.get('worker','?'),d.get('role','?'))" \
               2>/dev/null || echo "⚠️ unreachable"
           done

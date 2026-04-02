@@ -1,4 +1,4 @@
-name: DETECTAI CI
+name: Aiscern CI
 
 on:
   push:
@@ -19,7 +19,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
-        run: cd frontend && npm ci
+        run: cd frontend && npm ci --legacy-peer-deps
 
       - name: TypeScript check
         run: cd frontend && npx tsc --noEmit
@@ -29,8 +29,8 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          NEXT_PUBLIC_APP_URL: https://detectai-platform.netlify.app
-          NEXT_PUBLIC_APP_NAME: DETECTAI
+          NEXT_PUBLIC_APP_URL: https://aiscern.com
+          NEXT_PUBLIC_APP_NAME: Aiscern
 
       - name: Build success
-        run: echo "✅ DETECTAI build passed — Netlify auto-deploy triggered"
+        run: echo "✅ Aiscern CI passed — Vercel auto-deploy triggered"

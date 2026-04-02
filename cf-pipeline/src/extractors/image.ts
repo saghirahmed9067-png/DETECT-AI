@@ -49,6 +49,9 @@ export async function extractImageRow(
     }
   }
 
+  // Reject rows with no usable content — avoids inserting empty/garbage rows
+  if (!url && !imgF) return null
+
   return {
     label,
     content_url:     url,

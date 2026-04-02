@@ -35,8 +35,8 @@ export function qualityImage(width?: number, height?: number): number {
 
 export function qualityVideo(url?: string, durationSeconds?: number): number {
   let s = 0.65
-  if (url)            s += 0.10
+  if (url)             s += 0.10
   if (durationSeconds) s += 0.10
-  s += Math.random() * 0.05  // slight jitter
+  if (durationSeconds && durationSeconds >= 10) s += 0.05
   return Math.min(0.98, s)
 }

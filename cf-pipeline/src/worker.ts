@@ -1,15 +1,11 @@
 /**
- * Aiscern Pipeline v6 — Universal Worker
- * WORKER_NUM (1–19): scraper | WORKER_NUM 20: HF push + cleanup
+ * Aiscern Pipeline v7.1 — Universal Worker
+ * WORKER_NUM (1–15): scraper | WORKER_NUM 20: HF push + cleanup
  *
- * New in v6:
- *  - Kill switch: PIPELINE_ENABLED=false halts all workers
- *  - HF pushes to data/{media_type}/{language}/part-NNNN.jsonl (proper sharding)
- *  - README auto-updated every 100 ticks (Worker 20)
- *  - Structured JSON logging for every event
+ * 16 deployed workers total:
+ *   W1–W15  (wrangler.toml, -b through -p): scrape HF datasets into D1
+ *   W20     (wrangler-e.toml):              push D1 rows to HuggingFace + cleanup
  */
-
-// Pipeline v7.1 — 16 workers, cursor tracking, parallel scraping, backup push
 import {
   Env, ALL_SOURCES, getWorkerSources,
   scrapeSource, scrapeParallel, pushToHF, pushReadme, cleanupPushed, getStatus,
@@ -33,7 +29,7 @@ export default {
       const sources = wnum <= 4 ? getWorkerSources(wnum) : []
       return Response.json({
         ok:      true,
-        version: 'v6.0',
+        version: 'v7.1',
         worker:  wid,
         role:    wnum === 20 ? 'hf-push + cleanup' : 'scraper',
         pipeline_enabled: env.PIPELINE_ENABLED !== 'false',
@@ -61,10 +57,10 @@ export default {
       return Response.json({ ok: true, worker: wid, deleted }, { headers: cors })
     }
 
-    const sources = wnum <= 4 ? getWorkerSources(wnum) : []
+    const sources = wnum <= 15 ? getWorkerSources(wnum) : []
     return Response.json({
       worker:  wid,
-      version: 'v6.0',
+      version: 'v7.1',
       role:    wnum === 20 ? 'hf-push + cleanup' : 'scraper',
       hf_structure: 'data/{media_type}/{language}/part-NNNN.jsonl',
       sources: sources.map(s => `${s.name} [${s.media_type}]`),
@@ -86,11 +82,8 @@ export default {
     const tick = Math.floor(Date.now() / 60_000)
 
     if (wnum === 20) {
-            // Calibration workers moved to separate CF account
-
       // Every tick: push all pending items to HF (cron runs every minute)
-      if (true) {
-        const push = await pushToHF(env.DB, env.HF_TOKEN, repo, 5000)
+      const push = await pushToHF(env.DB, env.HF_TOKEN, repo, 5000)
         if (push.pushed > 0) {
           console.log(`[W20] pushed ${push.pushed} → commit ${push.commitId} | files: ${push.files?.join(', ')}`)
         } else if (push.error) {
@@ -98,7 +91,6 @@ export default {
         } else {
           console.log('[W20] nothing pending to push')
         }
-      }
       // Every 50 ticks: update README with fresh stats
       if (tick % 50 === 0) {
         await pushReadme(env.DB, env.HF_TOKEN, repo)

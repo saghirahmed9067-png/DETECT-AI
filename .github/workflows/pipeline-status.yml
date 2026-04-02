@@ -9,18 +9,38 @@ jobs:
   status:
     runs-on: ubuntu-latest
     steps:
-      - name: Worker health check
+      - name: Worker health check (all 16 workers)
         run: |
-          echo "🔍 DETECTAI Pipeline Status"
-          WORKERS=(detectai-pipeline detectai-pipeline-b detectai-pipeline-c detectai-pipeline-d detectai-pipeline-e)
+          echo "🔍 Aiscern Pipeline Status"
+          WORKERS=(
+            detectai-pipeline
+            detectai-pipeline-b
+            detectai-pipeline-c
+            detectai-pipeline-d
+            detectai-pipeline-e
+            detectai-pipeline-f
+            detectai-pipeline-g
+            detectai-pipeline-h
+            detectai-pipeline-i
+            detectai-pipeline-j
+            detectai-pipeline-k
+            detectai-pipeline-l
+            detectai-pipeline-m
+            detectai-pipeline-n
+            detectai-pipeline-o
+            detectai-pipeline-p
+          )
           ALIVE=0; DEAD=0
           for W in "${WORKERS[@]}"; do
             RESP=$(curl -sf --max-time 10 "https://${W}.workers.dev/health" 2>/dev/null)
             if [ $? -eq 0 ]; then
               ROLE=$(echo "$RESP" | python3 -c "import json,sys;d=json.load(sys.stdin);print(d.get('role','?'))" 2>/dev/null)
-              echo "  ✅ $W — $ROLE"; ALIVE=$((ALIVE+1))
+              WNUM=$(echo "$RESP" | python3 -c "import json,sys;d=json.load(sys.stdin);print(d.get('worker','?'))" 2>/dev/null)
+              echo "  ✅ $W ($WNUM) — $ROLE"
+              ALIVE=$((ALIVE+1))
             else
-              echo "  ❌ $W — OFFLINE"; DEAD=$((DEAD+1))
+              echo "  ❌ $W — OFFLINE"
+              DEAD=$((DEAD+1))
             fi
           done
           echo "── $ALIVE alive, $DEAD offline ──"
@@ -31,7 +51,13 @@ jobs:
 import json,sys
 d=json.load(sys.stdin)
 ds=d.get('dataset',{}); ps=d.get('state',{})
-print(f'  Total:   {ds.get(\"total\",0):,}')
-print(f'  Pending: {ds.get(\"pending\",0):,}')
-print(f'  Pushed:  {ps.get(\"total_pushed\",0):,}')
+print(f'  Total scraped: {ps.get(\"total_scraped\",0):,}')
+print(f'  Total pushed:  {ps.get(\"total_pushed\",0):,}')
+print(f'  Pending:       {ds.get(\"pending\",0):,}')
+print(f'  Text:          {ds.get(\"text_count\",0):,}')
+print(f'  Image:         {ds.get(\"image_count\",0):,}')
+print(f'  Audio:         {ds.get(\"audio_count\",0):,}')
+print(f'  Video:         {ds.get(\"video_count\",0):,}')
+print(f'  Last scrape:   {ps.get(\"last_scrape_at\",\"never\")}')
+print(f'  Last push:     {ps.get(\"last_push_at\",\"never\")}')
 " 2>/dev/null || echo "  Could not fetch stats"

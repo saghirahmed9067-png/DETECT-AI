@@ -1,45 +1,35 @@
-name: 🤖 DETECTAI Pipeline
+name: Pipeline Manual Trigger
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 */6 * * *'   # every 6h as backup to pg_cron
+
+# Manual trigger to force-push all pending D1 rows to HuggingFace.
+# Normal operation: CF Workers cron handles this every minute automatically.
+# Use this only if W20 (detectai-pipeline-e) appears stuck.
 
 jobs:
-  run-pipeline:
-    name: Run orchestrator + HF push
+  trigger-push:
+    name: Force HF Push via W20
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     steps:
-      - name: 🔄 Trigger Orchestrator
+      - name: Trigger W20 push endpoint
         run: |
-          echo "=== Triggering pipeline orchestrator ==="
+          echo "=== Triggering W20 (detectai-pipeline-e) HF push ==="
           RESP=$(curl -sf -X POST \
-            "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}/functions/v1/pipeline-orchestrator" \
-            -H "Authorization: Bearer ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
-            -H "Content-Type: application/json" \
-            -d '{"source":"github_actions"}' \
-            --max-time 120) || { echo "Orchestrator call failed"; exit 1; }
-          echo "$RESP" | python3 -c "
-import json,sys
-d=json.load(sys.stdin)
-print(f'OK={d.get(\"ok\")} Jobs={d.get(\"jobs\")} Time={d.get(\"ms\")}ms')
-for l in (d.get('log') or [])[-20:]: print(' ', l)
-" 2>/dev/null || echo "$RESP" | head -c 500
+            "https://detectai-pipeline-e.workers.dev/trigger/push" \
+            --max-time 60) || { echo "W20 push call failed"; exit 1; }
+          echo "$RESP"
 
-      - name: 📤 Trigger HF Push
+      - name: Check pipeline status
         run: |
-          echo "=== Pushing to HuggingFace ==="
-          RESP=$(curl -sf -X POST \
-            "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}/functions/v1/hf-push" \
-            -H "Authorization: Bearer ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
-            -H "Content-Type: application/json" \
-            -d '{"source":"github_actions"}' \
-            --max-time 120) || { echo "HF push call failed"; exit 1; }
-          echo "$RESP" | python3 -c "
+          echo "=== Pipeline status ==="
+          curl -sf --max-time 15 "https://detectai-pipeline.workers.dev/status" \
+            | python3 -c "
 import json,sys
 d=json.load(sys.stdin)
-print(f'Pushed={d.get(\"pushed\")} CommitID={d.get(\"commitId\")}')
-print(f'Dataset URL: {d.get(\"url\")}')
-for l in (d.get('log') or [])[-10:]: print(' ', l)
-" 2>/dev/null || echo "$RESP" | head -c 500
+ds=d.get('dataset',{}); ps=d.get('state',{})
+print(f'  Pending: {ds.get(\"pending\",0):,}')
+print(f'  Pushed:  {ps.get(\"total_pushed\",0):,}')
+print(f'  Scraped: {ps.get(\"total_scraped\",0):,}')
+" 2>/dev/null || echo "  Could not fetch stats"
