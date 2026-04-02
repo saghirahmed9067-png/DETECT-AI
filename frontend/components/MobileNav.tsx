@@ -1,14 +1,15 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Image as ImageIcon, Video, Music, FileText } from 'lucide-react'
+import { LayoutDashboard, Image as ImageIcon, Video, Music, FileText, User } from 'lucide-react'
 
 const NAV_ITEMS = [
-  { href: '/dashboard',    icon: LayoutDashboard, label: 'Home'  },
-  { href: '/detect/image', icon: ImageIcon,        label: 'Image' },
-  { href: '/detect/video', icon: Video,            label: 'Video' },
-  { href: '/detect/audio', icon: Music,            label: 'Audio' },
-  { href: '/detect/text',  icon: FileText,         label: 'Text'  },
+  { href: '/dashboard',    icon: LayoutDashboard, label: 'Home'    },
+  { href: '/detect/image', icon: ImageIcon,        label: 'Image'   },
+  { href: '/detect/video', icon: Video,            label: 'Video'   },
+  { href: '/detect/audio', icon: Music,            label: 'Audio'   },
+  { href: '/detect/text',  icon: FileText,         label: 'Text'    },
+  { href: '/profile',      icon: User,             label: 'Account' },
 ] as const
 
 export function MobileNav() {

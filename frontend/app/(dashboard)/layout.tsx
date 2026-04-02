@@ -74,12 +74,59 @@ function UserDropdown({ user, signOut }: { user: any; signOut: () => void }) {
     function handleClick(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
     }
-    document.addEventListener('mousedown', handleClick)
+    if (open) document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
-  }, [])
+  }, [open])
+
+  // Close on ESC
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    if (open) document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open])
 
   const name  = user?.displayName || user?.email?.split('@')[0] || 'User'
   const email = user?.email || ''
+
+  const menuContent = (
+    <>
+      {/* User info header */}
+      <div className="flex items-center gap-3 px-4 py-4 border-b border-border bg-surface-active">
+        <UserAvatar user={user} size={11} />
+        <div className="min-w-0 flex-1">
+          <p className="font-bold text-text-primary truncate">{name}</p>
+          <p className="text-xs text-text-muted truncate">{email}</p>
+          <span className="inline-flex items-center gap-1 mt-1.5 text-[10px] font-semibold text-emerald bg-emerald/10 px-2 py-0.5 rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald animate-pulse" />
+            Active
+          </span>
+        </div>
+      </div>
+      {/* Menu items */}
+      <div className="p-2 space-y-0.5">
+        {[
+          { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+          { href: '/profile',   icon: User,            label: 'My Profile' },
+          { href: '/settings',  icon: Settings,        label: 'Settings'   },
+          { href: '/history',   icon: Clock,           label: 'Scan History' },
+        ].map(item => (
+          <Link key={item.href} href={item.href} onClick={() => setOpen(false)}
+            className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-surface-hover transition-colors text-sm text-text-secondary hover:text-text-primary">
+            <item.icon className="w-4 h-4 flex-shrink-0" />
+            <span className="font-medium">{item.label}</span>
+          </Link>
+        ))}
+      </div>
+      {/* Sign out */}
+      <div className="p-2 border-t border-border">
+        <button onClick={() => { setOpen(false); signOut() }}
+          className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-rose/10 transition-colors text-sm text-text-muted hover:text-rose w-full">
+          <LogOut className="w-4 h-4 flex-shrink-0" />
+          <span className="font-medium">Sign Out</span>
+        </button>
+      </div>
+    </>
+  )
 
   return (
     <div className="relative" ref={ref}>
@@ -93,45 +140,31 @@ function UserDropdown({ user, signOut }: { user: any; signOut: () => void }) {
         <ChevronDown className={`w-4 h-4 text-text-muted transition-transform hidden sm:block ${open ? 'rotate-180' : ''}`} />
       </button>
 
+      {/* Desktop dropdown — positioned left of right edge to avoid clipping */}
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-64 bg-surface border border-border rounded-2xl shadow-2xl shadow-black/40 z-50 overflow-hidden">
-          {/* User info header */}
-          <div className="flex items-center gap-3 px-4 py-4 border-b border-border bg-surface-active">
-            <UserAvatar user={user} size={11} />
-            <div className="min-w-0 flex-1">
-              <p className="font-bold text-text-primary truncate">{name}</p>
-              <p className="text-xs text-text-muted truncate">{email}</p>
-              <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-semibold text-emerald bg-emerald/10 px-2 py-0.5 rounded-full">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald" />
-                Active
-              </span>
+        <>
+          {/* Desktop */}
+          <div className="hidden sm:block absolute right-0 top-full mt-2 w-72 bg-surface border border-border rounded-2xl shadow-2xl shadow-black/50 z-[200] overflow-hidden">
+            {menuContent}
+          </div>
+
+          {/* Mobile — full bottom sheet */}
+          <div className="sm:hidden fixed inset-0 z-[200]" onClick={() => setOpen(false)}>
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <div
+              className="absolute bottom-0 left-0 right-0 bg-surface rounded-t-3xl border-t border-border overflow-hidden"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Drag handle */}
+              <div className="flex justify-center pt-3 pb-1">
+                <div className="w-10 h-1 rounded-full bg-border" />
+              </div>
+              {menuContent}
+              {/* Safe area bottom padding */}
+              <div style={{ height: 'max(1rem, env(safe-area-inset-bottom))' }} />
             </div>
           </div>
-
-          {/* Menu items */}
-          <div className="p-2 space-y-0.5">
-            <Link href="/profile" onClick={() => setOpen(false)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface-hover transition-colors text-sm text-text-secondary hover:text-text-primary">
-              <User className="w-4 h-4" /> My Profile
-            </Link>
-            <Link href="/settings" onClick={() => setOpen(false)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface-hover transition-colors text-sm text-text-secondary hover:text-text-primary">
-              <Settings className="w-4 h-4" /> Settings
-            </Link>
-            <Link href="/history" onClick={() => setOpen(false)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-surface-hover transition-colors text-sm text-text-secondary hover:text-text-primary">
-              <Clock className="w-4 h-4" /> Scan History
-            </Link>
-          </div>
-
-          {/* Sign out */}
-          <div className="p-2 border-t border-border">
-            <button onClick={() => { setOpen(false); signOut() }}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-rose/10 transition-colors text-sm text-text-muted hover:text-rose w-full">
-              <LogOut className="w-4 h-4" /> Sign Out
-            </button>
-          </div>
-        </div>
+        </>
       )}
     </div>
   )

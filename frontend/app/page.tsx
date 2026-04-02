@@ -210,8 +210,11 @@ function RootNetworkNode({ node, file, side, index, size }: {
         fetchPriority={index < 2 ? 'high' : 'auto' as 'high'|'auto'|'low'}
       />
 
-      {/* Bottom fade — lighter so image is visible */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+      {/* 40% black overlay so images are subtle background elements */}
+      <div className="absolute inset-0 bg-black/40" />
+
+      {/* Bottom fade */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
 
       {/* Label */}
       <div className={`absolute bottom-1 left-1 text-[7px] font-black px-1 py-0.5 rounded leading-none z-10 ${isAI ? 'bg-rose/80 text-white' : 'bg-emerald/80 text-white'}`}>
@@ -266,8 +269,8 @@ function FloatingCards() {
   const aiEdges   = bp === 'sm' ? AI_EDGES_SM   : bp === 'md' ? AI_EDGES_MD   : AI_EDGES_LG
   const realEdges = bp === 'sm' ? REAL_EDGES_SM : bp === 'md' ? REAL_EDGES_MD : REAL_EDGES_LG
 
-  // Card sizes per breakpoint — larger so images are clearly visible
-  const cardSize = bp === 'sm' ? { w: 44, h: 56 } : bp === 'md' ? { w: 60, h: 76 } : { w: 80, h: 100 }
+  // Card sizes per breakpoint — smaller, more subtle background elements
+  const cardSize = bp === 'sm' ? { w: 34, h: 44 } : bp === 'md' ? { w: 48, h: 60 } : { w: 62, h: 78 }
 
   // Badge positions change per breakpoint
   const badgePositions = bp === 'sm'
@@ -487,6 +490,7 @@ const WHO_NEEDS = [
     problem: 'AI-generated quotes, fabricated sources, deepfake press photos flooding your inbox.',
     value: 'Verify every image, audio clip and written statement before publication in seconds.',
     color: '#7c3aed',
+    gradient: 'from-violet-900/80 to-violet-950/60',
   },
   {
     role: 'Educators & Schools',
@@ -494,13 +498,15 @@ const WHO_NEEDS = [
     problem: 'Students submitting ChatGPT essays as their own work across every class.',
     value: 'Detect AI-written assignments with sentence-level heatmaps and a confidence score.',
     color: '#2563eb',
+    gradient: 'from-blue-900/80 to-blue-950/60',
   },
   {
     role: 'HR & Recruiters',
     img: '/trust/hr.jpg',
-    problem: 'AI-polished CVs, cover letters and interview answers that don\'t reflect the real candidate.',
+    problem: 'AI-polished CVs and cover letters that don\'t reflect the real candidate.',
     value: 'Screen written applications and video interviews for synthetic content before hiring.',
     color: '#0891b2',
+    gradient: 'from-cyan-900/80 to-cyan-950/60',
   },
   {
     role: 'Legal Professionals',
@@ -508,20 +514,23 @@ const WHO_NEEDS = [
     problem: 'Deepfake evidence, AI-drafted contracts and forged audio submitted in proceedings.',
     value: 'Authenticate documents, images and recordings with a forensic-grade detection report.',
     color: '#059669',
+    gradient: 'from-emerald-900/80 to-emerald-950/60',
   },
   {
     role: 'Security & Trust & Safety',
     img: '/trust/security.jpg',
-    problem: 'Voice-cloned fraud calls, synthetic ID photos, and AI-generated phishing content at scale.',
+    problem: 'Voice-cloned fraud calls, synthetic ID photos, and AI-generated phishing at scale.',
     value: 'Batch-scan hundreds of files simultaneously across text, image, audio and video.',
     color: '#dc2626',
+    gradient: 'from-red-900/80 to-red-950/60',
   },
   {
-    role: 'Content Creators & Agencies',
+    role: 'Content Creators',
     img: '/trust/creators.jpg',
-    problem: 'Clients questioning whether your work is original; competitors flooding feeds with AI content.',
+    problem: 'Clients questioning whether your work is original; competitors flooding feeds with AI.',
     value: 'Prove authenticity of your creative work and audit competitor content instantly.',
     color: '#d97706',
+    gradient: 'from-amber-900/80 to-amber-950/60',
   },
   {
     role: 'Academic Researchers',
@@ -529,6 +538,7 @@ const WHO_NEEDS = [
     problem: 'AI-generated papers, fake citations and synthetic datasets contaminating research.',
     value: 'Validate source material and peer submissions with methodology-backed detection.',
     color: '#7c3aed',
+    gradient: 'from-purple-900/80 to-purple-950/60',
   },
   {
     role: 'Marketing & Brand Teams',
@@ -536,6 +546,7 @@ const WHO_NEEDS = [
     problem: 'UGC campaigns flooded with AI images, fake reviews and synthetic testimonials.',
     value: 'Audit user-generated content before publishing to protect brand credibility.',
     color: '#2563eb',
+    gradient: 'from-indigo-900/80 to-indigo-950/60',
   },
   {
     role: 'Healthcare Professionals',
@@ -543,77 +554,114 @@ const WHO_NEEDS = [
     problem: 'AI-fabricated medical reports, synthetic scans and misinformation spreading fast.',
     value: 'Verify medical documents, imagery and audio records with multi-modal detection.',
     color: '#059669',
+    gradient: 'from-teal-900/80 to-teal-950/60',
   },
 ]
 
+function WhoNeedsCard({ card, i }: { card: typeof WHO_NEEDS[0]; i: number }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ delay: i * 0.05 }}
+      className="group relative rounded-2xl overflow-hidden border border-white/8 hover:border-white/20 transition-all duration-400 hover:shadow-2xl hover:-translate-y-1"
+      style={{ boxShadow: `0 0 0 1px ${card.color}15` }}
+    >
+      {/* Background image */}
+      <div className="relative h-40 sm:h-44 overflow-hidden">
+        {/* Color base layer */}
+        <div className="absolute inset-0" style={{
+          background: `linear-gradient(160deg, ${card.color}40, ${card.color}15)`
+        }} />
+        {/* Photo */}
+        <img
+          src={card.img}
+          alt={card.role}
+          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+          loading="lazy"
+          onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+        />
+        {/* Gradient overlay — dark at bottom for text legibility */}
+        <div className={`absolute inset-0 bg-gradient-to-t ${card.gradient} opacity-90`} />
+        {/* Role label on image */}
+        <div className="absolute bottom-0 left-0 right-0 px-4 pb-3 pt-6">
+          <h3 className="text-sm sm:text-base font-black text-white leading-tight drop-shadow-lg">
+            {card.role}
+          </h3>
+        </div>
+        {/* Accent top bar */}
+        <div className="absolute top-0 left-0 right-0 h-0.5" style={{ background: card.color }} />
+      </div>
+
+      {/* Content panel */}
+      <div className="bg-surface/95 backdrop-blur-sm p-4 space-y-3">
+        {/* Problem */}
+        <div className="flex gap-2.5">
+          <div className="w-4 h-4 rounded-full bg-rose/15 border border-rose/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-rose" />
+          </div>
+          <div>
+            <span className="text-[9px] font-black text-rose/70 uppercase tracking-widest block mb-0.5">Problem</span>
+            <p className="text-xs text-text-muted leading-relaxed">{card.problem}</p>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="h-px bg-border/60" />
+
+        {/* Solution */}
+        <div className="flex gap-2.5">
+          <div className="w-4 h-4 rounded-full bg-emerald/15 border border-emerald/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald" />
+          </div>
+          <div>
+            <span className="text-[9px] font-black text-emerald/70 uppercase tracking-widest block mb-0.5">How Aiscern Helps</span>
+            <p className="text-xs text-text-muted leading-relaxed">{card.value}</p>
+          </div>
+        </div>
+
+        {/* CTA strip */}
+        <div className="pt-1">
+          <Link href="/detect/text"
+            className="flex items-center justify-between w-full px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group/btn"
+            style={{
+              background: `${card.color}12`,
+              border: `1px solid ${card.color}25`,
+              color: card.color,
+            }}
+          >
+            <span>Try free detection</span>
+            <ChevronRight className="w-3.5 h-3.5 group-hover/btn:translate-x-0.5 transition-transform" />
+          </Link>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
 function WhoNeedsSection() {
   return (
-    <section className="py-16 sm:py-24 px-4 bg-surface/10 border-b border-border/40">
+    <section className="py-14 sm:py-20 lg:py-28 px-4 bg-background border-b border-border/40">
       <div className="max-w-7xl mx-auto">
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }} className="text-center mb-12 sm:mb-16">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/30 bg-primary/8 text-primary text-xs font-semibold mb-4">
+          viewport={{ once: true }} className="text-center mb-10 sm:mb-14">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/30 bg-primary/8 text-primary text-xs font-semibold mb-5">
             <Users className="w-3 h-3" />
             Who uses Aiscern
           </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black mb-4">
             Built for Every <span className="gradient-text">Professional</span>
           </h2>
-          <p className="text-text-muted text-base sm:text-lg max-w-2xl mx-auto">
-            AI-generated content is a problem in every industry. Aiscern gives you the tools to detect it across all formats — free.
+          <p className="text-text-muted text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+            AI-generated content is a problem in every industry. Aiscern gives you the tools to detect it — free, across all formats.
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {/* Responsive grid: 1 col mobile / 2 col tablet / 3 col desktop */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
           {WHO_NEEDS.map((card, i) => (
-            <motion.div key={card.role}
-              initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }} transition={{ delay: i * 0.06 }}
-              className="group relative rounded-2xl border border-border bg-surface overflow-hidden hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300">
-
-              {/* Image */}
-              <div className="relative h-44 overflow-hidden bg-surface-active">
-                <div className="absolute inset-0" style={{
-                  background: `linear-gradient(160deg, ${card.color}30, ${card.color}08)`
-                }} />
-                <img
-                  src={card.img}
-                  alt={card.role}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 relative z-10"
-                  loading="lazy"
-                  onError={e => {
-                    const el = e.target as HTMLImageElement
-                    el.style.display = 'none'
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/20 to-transparent z-20" />
-                {/* Color accent bar */}
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 z-30" style={{ background: card.color }} />
-              </div>
-
-              {/* Content */}
-              <div className="p-5">
-                <h3 className="text-base font-bold text-text-primary mb-3">{card.role}</h3>
-
-                {/* Problem */}
-                <div className="mb-3">
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-rose flex-shrink-0" />
-                    <span className="text-[10px] font-bold text-rose uppercase tracking-wider">The Problem</span>
-                  </div>
-                  <p className="text-xs text-text-muted leading-relaxed">{card.problem}</p>
-                </div>
-
-                {/* Solution */}
-                <div>
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald flex-shrink-0" />
-                    <span className="text-[10px] font-bold text-emerald uppercase tracking-wider">How Aiscern Helps</span>
-                  </div>
-                  <p className="text-xs text-text-muted leading-relaxed">{card.value}</p>
-                </div>
-              </div>
-            </motion.div>
+            <WhoNeedsCard key={card.role} card={card} i={i} />
           ))}
         </div>
       </div>
