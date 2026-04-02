@@ -586,15 +586,5 @@ html { scroll-behavior: smooth; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(124,58,237,0.3); }
 
-@keyframes node-bob-a {
-  0%, 100% { transform: translateY(0px) rotate(0deg);   }
-  33%       { transform: translateY(-8px) rotate(0.5deg);  }
-  66%       { transform: translateY(-4px) rotate(-0.5deg); }
-}
-@keyframes node-bob-b {
-  0%, 100% { transform: translateY(0px) rotate(0deg);    }
-  33%       { transform: translateY(-5px) rotate(-0.5deg); }
-  66%       { transform: translateY(-10px) rotate(0.5deg); }
-}
-.node-card-bob-a { animation: node-bob-a 6s ease-in-out infinite; }
-.node-card-bob-b { animation: node-bob-b 7s ease-in-out infinite; }
+/* node-bob-a / node-bob-b removed — node-in-bob-a / node-in-bob-b (above) handle both
+   fade-in and bob. Duplicate declarations here were overriding opacity and keeping cards invisible. */

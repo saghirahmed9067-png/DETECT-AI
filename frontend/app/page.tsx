@@ -479,34 +479,145 @@ function LiveDemo({ isLoggedIn }: { isLoggedIn: boolean }) {
   )
 }
 
-// ─── Trust Bar ───────────────────────────────────────────────────────────────
-const TRUST_CATS = [{ e:'📰',l:'Journalists' },{ e:'🎓',l:'Educators' },{ e:'🔒',l:'Security Teams' },{ e:'⚖️',l:'Legal Professionals' },{ e:'🏛️',l:'Researchers' },{ e:'🎨',l:'Content Creators' },{ e:'🏢',l:'HR Departments' },{ e:'📊',l:'Marketing Teams' },{ e:'🩺',l:'Healthcare Pros' }]
+// ─── Who Needs Aiscern — Card Section ────────────────────────────────────────
+const WHO_NEEDS = [
+  {
+    role: 'Journalists & Fact-Checkers',
+    img: '/trust/journalists.jpg',
+    problem: 'AI-generated quotes, fabricated sources, deepfake press photos flooding your inbox.',
+    value: 'Verify every image, audio clip and written statement before publication in seconds.',
+    color: '#7c3aed',
+  },
+  {
+    role: 'Educators & Schools',
+    img: '/trust/educators.jpg',
+    problem: 'Students submitting ChatGPT essays as their own work across every class.',
+    value: 'Detect AI-written assignments with sentence-level heatmaps and a confidence score.',
+    color: '#2563eb',
+  },
+  {
+    role: 'HR & Recruiters',
+    img: '/trust/hr.jpg',
+    problem: 'AI-polished CVs, cover letters and interview answers that don\'t reflect the real candidate.',
+    value: 'Screen written applications and video interviews for synthetic content before hiring.',
+    color: '#0891b2',
+  },
+  {
+    role: 'Legal Professionals',
+    img: '/trust/legal.jpg',
+    problem: 'Deepfake evidence, AI-drafted contracts and forged audio submitted in proceedings.',
+    value: 'Authenticate documents, images and recordings with a forensic-grade detection report.',
+    color: '#059669',
+  },
+  {
+    role: 'Security & Trust & Safety',
+    img: '/trust/security.jpg',
+    problem: 'Voice-cloned fraud calls, synthetic ID photos, and AI-generated phishing content at scale.',
+    value: 'Batch-scan hundreds of files simultaneously across text, image, audio and video.',
+    color: '#dc2626',
+  },
+  {
+    role: 'Content Creators & Agencies',
+    img: '/trust/creators.jpg',
+    problem: 'Clients questioning whether your work is original; competitors flooding feeds with AI content.',
+    value: 'Prove authenticity of your creative work and audit competitor content instantly.',
+    color: '#d97706',
+  },
+  {
+    role: 'Academic Researchers',
+    img: '/trust/researchers.jpg',
+    problem: 'AI-generated papers, fake citations and synthetic datasets contaminating research.',
+    value: 'Validate source material and peer submissions with methodology-backed detection.',
+    color: '#7c3aed',
+  },
+  {
+    role: 'Marketing & Brand Teams',
+    img: '/trust/marketing.jpg',
+    problem: 'UGC campaigns flooded with AI images, fake reviews and synthetic testimonials.',
+    value: 'Audit user-generated content before publishing to protect brand credibility.',
+    color: '#2563eb',
+  },
+  {
+    role: 'Healthcare Professionals',
+    img: '/trust/healthcare.jpg',
+    problem: 'AI-fabricated medical reports, synthetic scans and misinformation spreading fast.',
+    value: 'Verify medical documents, imagery and audio records with multi-modal detection.',
+    color: '#059669',
+  },
+]
 
-function TrustBar() {
+function WhoNeedsSection() {
   return (
-    <div className="py-3 sm:py-4">
-      <p className="text-center text-[10px] sm:text-xs text-text-muted uppercase tracking-widest mb-3 sm:mb-5 font-semibold">
-        Used by professionals in
-      </p>
-      {/* Mobile: single horizontally scrollable row — no wrapping */}
-      <div className="sm:hidden overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
-        <div className="flex gap-5 px-4 w-max">
-          {TRUST_CATS.map((t) => (
-            <span key={t.l} className="flex items-center gap-1.5 text-xs font-medium text-text-secondary whitespace-nowrap flex-shrink-0">
-              <span>{t.e}</span>{t.l}
-            </span>
+    <section className="py-16 sm:py-24 px-4 bg-surface/10 border-b border-border/40">
+      <div className="max-w-7xl mx-auto">
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }} className="text-center mb-12 sm:mb-16">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/30 bg-primary/8 text-primary text-xs font-semibold mb-4">
+            <Users className="w-3 h-3" />
+            Who uses Aiscern
+          </div>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black mb-4">
+            Built for Every <span className="gradient-text">Professional</span>
+          </h2>
+          <p className="text-text-muted text-base sm:text-lg max-w-2xl mx-auto">
+            AI-generated content is a problem in every industry. Aiscern gives you the tools to detect it across all formats — free.
+          </p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {WHO_NEEDS.map((card, i) => (
+            <motion.div key={card.role}
+              initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }} transition={{ delay: i * 0.06 }}
+              className="group relative rounded-2xl border border-border bg-surface overflow-hidden hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300">
+
+              {/* Image */}
+              <div className="relative h-44 overflow-hidden bg-surface-active">
+                <div className="absolute inset-0" style={{
+                  background: `linear-gradient(160deg, ${card.color}30, ${card.color}08)`
+                }} />
+                <img
+                  src={card.img}
+                  alt={card.role}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 relative z-10"
+                  loading="lazy"
+                  onError={e => {
+                    const el = e.target as HTMLImageElement
+                    el.style.display = 'none'
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/20 to-transparent z-20" />
+                {/* Color accent bar */}
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 z-30" style={{ background: card.color }} />
+              </div>
+
+              {/* Content */}
+              <div className="p-5">
+                <h3 className="text-base font-bold text-text-primary mb-3">{card.role}</h3>
+
+                {/* Problem */}
+                <div className="mb-3">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-rose flex-shrink-0" />
+                    <span className="text-[10px] font-bold text-rose uppercase tracking-wider">The Problem</span>
+                  </div>
+                  <p className="text-xs text-text-muted leading-relaxed">{card.problem}</p>
+                </div>
+
+                {/* Solution */}
+                <div>
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald flex-shrink-0" />
+                    <span className="text-[10px] font-bold text-emerald uppercase tracking-wider">How Aiscern Helps</span>
+                  </div>
+                  <p className="text-xs text-text-muted leading-relaxed">{card.value}</p>
+                </div>
+              </div>
+            </motion.div>
           ))}
         </div>
       </div>
-      {/* Desktop: centered wrapped layout */}
-      <div className="hidden sm:flex gap-4 sm:gap-6 items-center justify-center flex-wrap">
-        {TRUST_CATS.map((t) => (
-          <span key={t.l} className="flex items-center gap-1.5 text-sm font-medium text-text-muted hover:text-text-primary transition-colors">
-            <span>{t.e}</span>{t.l}
-          </span>
-        ))}
-      </div>
-    </div>
+    </section>
   )
 }
 
@@ -982,12 +1093,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── TRUST BAR ── */}
-      <section className="py-8 border-b border-border/30 bg-surface/20">
-        <div className="max-w-6xl 2xl:max-w-[1300px] mx-auto px-4 2xl:px-8">
-          <TrustBar />
-        </div>
-      </section>
+      {/* ── WHO NEEDS AISCERN ── */}
+      <WhoNeedsSection />
 
       {/* ── STATS ── */}
       <section className="py-10 sm:py-20 border-y border-border/50 bg-surface/30">
@@ -1128,13 +1235,13 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* Press / media logos as text */}
+          {/* Professionals list — clean, no emojis */}
           <div className="text-center mb-8">
             <p className="text-xs font-semibold uppercase tracking-widest text-text-muted mb-5">Built for professionals across</p>
-            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
-              {TRUST_CATS.map(t => (
-                <span key={t.l} className="flex items-center gap-1.5 text-sm font-medium text-text-muted hover:text-text-primary transition-colors">
-                  <span>{t.e}</span>{t.l}
+            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+              {['Journalists','Educators','HR Teams','Legal Pros','Security Teams','Researchers','Content Creators','Marketing Teams','Healthcare'].map(name => (
+                <span key={name} className="text-sm font-medium text-text-muted px-3 py-1 rounded-full border border-border/60 hover:border-primary/40 hover:text-text-primary transition-colors">
+                  {name}
                 </span>
               ))}
             </div>
