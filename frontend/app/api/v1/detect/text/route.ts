@@ -124,8 +124,14 @@ export async function POST(req: NextRequest) {
             .from('api_keys')
             .update({ last_used_at: new Date().toISOString() })
             .eq('key_hash', resolved.keyHash)
-          // Separate RPC for atomic counter increment (function created in Appendix B SQL)
-          await sb.rpc('increment_api_calls', { key_hash_input: resolved.keyHash })
+          // Atomic counter increment — use UPDATE with raw SQL via rpc if available,
+          // otherwise fall back to a read-modify-write (acceptable for low-frequency API keys)
+          const { error: rpcErr } = await sb.rpc('increment_api_calls', { key_hash_input: resolved.keyHash })
+          if (rpcErr) {
+            // RPC not yet created — safe fallback via select + update
+            const { data: kd } = await sb.from('api_keys').select('calls_today').eq('key_hash', resolved.keyHash).single()
+            if (kd) await sb.from('api_keys').update({ calls_today: (kd.calls_today ?? 0) + 1 }).eq('key_hash', resolved.keyHash)
+          }
         } catch { /* non-fatal */ }
       })()
     }
