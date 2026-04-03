@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { useUser } from '@clerk/nextjs'
 import { motion } from 'framer-motion'
 import {
   Mail, Shield, BarChart3, Calendar, Edit3, Save, X,
@@ -52,6 +53,7 @@ function StatCard({ icon: Icon, label, value, color }: { icon: any; label: strin
 }
 
 export default function ProfilePage() {
+  const { user: clerkUser } = useUser()
   const { user } = useAuth()
   const [stats,       setStats]       = useState<any>(null)
   const [editing,     setEditing]     = useState(false)
@@ -106,7 +108,9 @@ export default function ProfilePage() {
   }
 
   const name      = displayName || user?.displayName || user?.email?.split('@')[0] || 'User'
-  const joinedAt  = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  const joinedAt  = clerkUser?.createdAt
+    ? new Date(clerkUser.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    : 'Unknown'
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-6">

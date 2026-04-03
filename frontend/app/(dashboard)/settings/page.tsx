@@ -119,6 +119,21 @@ export default function SettingsPage() {
 
   const [saving, setSaving]             = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
+  const [deleting, setDeleting]           = useState(false)
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true)
+    try {
+      const res = await fetch('/api/user/delete-account', { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed')
+      toast.success('Account permanently deleted')
+      await signOut()
+    } catch {
+      toast.error('Failed to delete account — please contact support')
+      setDeleting(false)
+      setDeleteConfirm(false)
+    }
+  }
 
   useEffect(() => {
     if (!currentUser?.uid) return
@@ -149,7 +164,7 @@ export default function SettingsPage() {
           emailNotif, batchAlerts, weeklyReport, autoSave,
           publicProfile, saveHistory, analytics,
           aiThreshold, humanThreshold, deepScan, autoDetectType,
-          language,
+          language, timezone,
         }},
         updated_at: new Date().toISOString(),
       })
@@ -435,9 +450,10 @@ export default function SettingsPage() {
           <div className="p-4 rounded-xl bg-rose/5 border border-rose/20">
             <p className="text-sm text-rose font-medium mb-3">This will permanently delete your account and all data. Are you sure?</p>
             <div className="flex gap-2">
-              <button onClick={() => { signOut(); toast.success('Account scheduled for deletion') }}
-                className="px-4 py-2 rounded-xl bg-rose text-white text-sm font-medium hover:bg-rose/90 transition-colors">
-                Yes, Delete
+              <button onClick={handleDeleteAccount} disabled={deleting}
+                className="px-4 py-2 rounded-xl bg-rose text-white text-sm font-medium hover:bg-rose/90 transition-colors disabled:opacity-60 flex items-center gap-2">
+                {deleting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                Yes, Delete My Account
               </button>
               <button onClick={() => setDeleteConfirm(false)}
                 className="px-4 py-2 rounded-xl border border-border text-sm hover:bg-surface-hover transition-colors">
