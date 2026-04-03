@@ -106,10 +106,10 @@ export default function DashboardPage() {
       {/* ── Stats row ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
         {[
-          { label: 'Total Scans',    value: loading ? '—' : totalScans.toLocaleString(), icon: Brain,    color: 'bg-primary/10 text-primary' },
-          { label: 'AI Detected',    value: loading ? '—' : `${aiPct}%`,                icon: AlertTriangle, color: 'bg-rose/10 text-rose' },
-          { label: 'Human Detected', value: loading ? '—' : `${humanPct}%`,             icon: CheckCircle,   color: 'bg-emerald/10 text-emerald' },
-          { label: 'Avg Confidence', value: loading ? '—' : `${avgConf}%`,              icon: BarChart3, color: 'bg-amber/10 text-amber' },
+          { label: 'Total Scans',  value: loading ? '—' : totalScans.toLocaleString(), icon: Brain,         color: 'bg-primary/10 text-primary'  },
+          { label: 'AI Rate',      value: loading ? '—' : `${aiPct}%`,                 icon: AlertTriangle, color: 'bg-rose/10 text-rose'        },
+          { label: 'Human Rate',   value: loading ? '—' : `${humanPct}%`,              icon: CheckCircle,   color: 'bg-emerald/10 text-emerald'  },
+          { label: 'Avg Accuracy', value: loading ? '—' : `${avgConf}%`,               icon: BarChart3,     color: 'bg-amber/10 text-amber'      },
         ].map((s, i) => (
           <motion.div key={s.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
