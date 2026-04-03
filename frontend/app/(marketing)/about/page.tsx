@@ -1,7 +1,8 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { SiteNav }    from '@/components/SiteNav'
 import { SiteFooter } from '@/components/site-footer'
-import { Shield, Brain, Zap, Globe, Users, GitBranch } from 'lucide-react'
+import { Shield, Brain, Zap, Globe, Users, GitBranch, MapPin, Code2 } from 'lucide-react'
 
 export const metadata = {
   title: 'About Aiscern — Free AI Content Detection',
@@ -113,6 +114,46 @@ export default function AboutPage() {
                 {t}
               </span>
             ))}
+          </div>
+        </div>
+
+        {/* ── Founder / Team ── */}
+        <div className="mb-14">
+          <h2 className="text-xl font-black mb-6 text-center">The team</h2>
+          <div className="max-w-sm mx-auto">
+            <div className="rounded-2xl border border-border bg-surface overflow-hidden hover:border-primary/30 transition-colors">
+              {/* Gradient header */}
+              <div className="h-20 bg-gradient-to-br from-violet-600/30 via-indigo-600/20 to-purple-600/30 relative">
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(124,58,237,0.15),transparent)]" />
+              </div>
+              <div className="px-6 pb-6 -mt-10">
+                {/* Founder photo */}
+                <div className="w-20 h-20 rounded-full overflow-hidden ring-4 ring-surface border-2 border-primary/30 mb-4 bg-gradient-to-br from-violet-600 to-indigo-700">
+                  <Image
+                    src="/anas-ali.jpg"
+                    alt="Anas Ali — Founder & CEO"
+                    width={80}
+                    height={80}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <h3 className="text-lg font-black text-text-primary">Anas Ali</h3>
+                <p className="text-sm text-primary font-bold mb-3">Founder & CEO</p>
+                <p className="text-sm text-text-muted leading-relaxed mb-4">
+                  Building Aiscern from Islamabad, Pakistan. Passionate about AI transparency,
+                  media literacy, and making powerful detection tools accessible to everyone —
+                  regardless of budget or geography.
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 text-xs text-text-muted px-2.5 py-1 rounded-full bg-surface-active border border-border">
+                    <MapPin className="w-3 h-3 text-primary" /> Islamabad, Pakistan
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-xs text-text-muted px-2.5 py-1 rounded-full bg-surface-active border border-border">
+                    <Code2 className="w-3 h-3 text-primary" /> Full-Stack + AI/ML
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
