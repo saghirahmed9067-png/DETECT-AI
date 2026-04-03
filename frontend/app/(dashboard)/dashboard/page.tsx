@@ -5,7 +5,7 @@ import Link from 'next/link'
 import {
   Brain, Eye, FileText, Mic, BarChart3, Clock,
   Zap, ArrowRight, Shield, CheckCircle, AlertTriangle,
-  HelpCircle, Image as ImageIcon, Video, Music
+  HelpCircle, Image as ImageIcon, Video, Music, Sparkles, Layers
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/auth-provider'
@@ -127,6 +127,37 @@ export default function DashboardPage() {
 
       {/* ── Tools grid ── */}
       <div>
+        {/* New user onboarding card */}
+        {totalScans === 0 && !loading && (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+            className="mb-4 bg-gradient-to-r from-primary/10 via-secondary/5 to-transparent border border-primary/20 rounded-2xl p-5">
+            <div className="flex items-start gap-4">
+              <div className="w-11 h-11 rounded-2xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                <Sparkles className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-text-primary mb-1">Welcome to Aiscern! 🎉</h3>
+                <p className="text-sm text-text-muted mb-3">
+                  You're all set. Pick a detection tool below to run your first scan — completely free, no limits.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Link href="/detect/text"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 transition-all">
+                    <FileText className="w-3.5 h-3.5" /> Try Text Detection
+                  </Link>
+                  <Link href="/detect/image"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs font-semibold text-text-muted hover:border-primary/40 hover:text-text-primary transition-all">
+                    <ImageIcon className="w-3.5 h-3.5" /> Try Image Detection
+                  </Link>
+                  <Link href="/batch"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs font-semibold text-text-muted hover:border-primary/40 hover:text-text-primary transition-all">
+                    <Layers className="w-3.5 h-3.5" /> Try Batch Scan
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
         <div className="flex items-center justify-between mb-3 px-0.5">
           <h2 className="text-sm font-semibold text-text-muted uppercase tracking-widest">Detection Tools</h2>
         </div>

@@ -1,4 +1,5 @@
 'use client'
+import { ScrollToTop } from '@/components/ScrollToTop'
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
@@ -463,6 +464,7 @@ export default function SettingsPage() {
           </div>
         )}
       </motion.div>
+          <ScrollToTop />
     </div>
   )
 }

@@ -1,4 +1,5 @@
 'use client'
+import { ScrollToTop } from '@/components/ScrollToTop'
 import { useState, useEffect } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { motion } from 'framer-motion'
@@ -246,6 +247,7 @@ export default function ProfilePage() {
         </div>
       </motion.div>
 
+          <ScrollToTop />
     </div>
   )
 }

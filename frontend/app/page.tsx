@@ -27,7 +27,10 @@ function ParticleNetwork() {
     let W = window.innerWidth, H = window.innerHeight
     canvas.width = W; canvas.height = H
 
-    const NODES = 50
+    // BUG-27: respect reduced motion + reduce nodes on mobile for perf
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const isMobile = W < 640
+    const NODES = isMobile ? 20 : 50
     const nodes = Array.from({ length: NODES }, () => ({
       x: Math.random() * W, y: Math.random() * H,
       vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3,

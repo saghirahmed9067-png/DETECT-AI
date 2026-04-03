@@ -1,4 +1,5 @@
 'use client'
+import { ScrollToTop } from '@/components/ScrollToTop'
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Clock, Search, Filter, Download, Trash2, Eye, Image as ImgIcon, Video, Mic, FileText, Globe, RefreshCw, X, ChevronDown } from 'lucide-react'
@@ -353,7 +354,8 @@ export default function HistoryPage() {
             )}
           </>
         )}
-      </div>
+            <ScrollToTop />
+    </div>
     </>
   )
 }
