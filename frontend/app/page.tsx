@@ -496,8 +496,7 @@ const WHO_NEEDS = [
     stats: [{ label: 'Image verification', value: '~82%' }, { label: 'Audio deepfake', value: '~79%' }],
     href: '/detect/image',
     color: '#7c3aed',
-    glow: 'rgba(124,58,237,0.18)',
-    gradient: 'from-violet-950 via-violet-900/70 to-transparent',
+    glow: 'rgba(124,58,237,0.22)',
   },
   {
     role: 'Educators & Schools',
@@ -510,8 +509,7 @@ const WHO_NEEDS = [
     stats: [{ label: 'Text detection', value: '~85%' }, { label: 'Avg scan time', value: '<3s' }],
     href: '/detect/text',
     color: '#2563eb',
-    glow: 'rgba(37,99,235,0.18)',
-    gradient: 'from-blue-950 via-blue-900/70 to-transparent',
+    glow: 'rgba(37,99,235,0.22)',
   },
   {
     role: 'HR & Recruiters',
@@ -524,8 +522,7 @@ const WHO_NEEDS = [
     stats: [{ label: 'CV text scan', value: '~85%' }, { label: 'Video analysis', value: '~76%' }],
     href: '/detect/text',
     color: '#0891b2',
-    glow: 'rgba(8,145,178,0.18)',
-    gradient: 'from-cyan-950 via-cyan-900/70 to-transparent',
+    glow: 'rgba(8,145,178,0.22)',
   },
   {
     role: 'Legal Professionals',
@@ -538,8 +535,7 @@ const WHO_NEEDS = [
     stats: [{ label: 'Audio forensics', value: '~79%' }, { label: 'Image analysis', value: '~82%' }],
     href: '/detect/audio',
     color: '#059669',
-    glow: 'rgba(5,150,105,0.18)',
-    gradient: 'from-emerald-950 via-emerald-900/70 to-transparent',
+    glow: 'rgba(5,150,105,0.22)',
   },
   {
     role: 'Security & Trust & Safety',
@@ -552,8 +548,7 @@ const WHO_NEEDS = [
     stats: [{ label: 'Batch capacity', value: '20×' }, { label: 'Voice clone det.', value: '~79%' }],
     href: '/batch',
     color: '#dc2626',
-    glow: 'rgba(220,38,38,0.18)',
-    gradient: 'from-red-950 via-red-900/70 to-transparent',
+    glow: 'rgba(220,38,38,0.22)',
   },
   {
     role: 'Content Creators',
@@ -566,8 +561,7 @@ const WHO_NEEDS = [
     stats: [{ label: 'Multi-modal', value: '4 types' }, { label: 'Shareable report', value: '1-click' }],
     href: '/detect/image',
     color: '#d97706',
-    glow: 'rgba(217,119,6,0.18)',
-    gradient: 'from-amber-950 via-amber-900/70 to-transparent',
+    glow: 'rgba(217,119,6,0.22)',
   },
   {
     role: 'Academic Researchers',
@@ -580,8 +574,7 @@ const WHO_NEEDS = [
     stats: [{ label: 'Text accuracy', value: '~85%' }, { label: 'Datasets used', value: '87' }],
     href: '/methodology',
     color: '#7c3aed',
-    glow: 'rgba(124,58,237,0.18)',
-    gradient: 'from-purple-950 via-purple-900/70 to-transparent',
+    glow: 'rgba(124,58,237,0.22)',
   },
   {
     role: 'Marketing & Brand Teams',
@@ -594,8 +587,7 @@ const WHO_NEEDS = [
     stats: [{ label: 'Image detection', value: '~82%' }, { label: 'Batch UGC scan', value: '20×' }],
     href: '/detect/image',
     color: '#2563eb',
-    glow: 'rgba(37,99,235,0.18)',
-    gradient: 'from-indigo-950 via-indigo-900/70 to-transparent',
+    glow: 'rgba(37,99,235,0.22)',
   },
   {
     role: 'Healthcare Professionals',
@@ -608,8 +600,7 @@ const WHO_NEEDS = [
     stats: [{ label: 'Multi-modal', value: '4 types' }, { label: 'Confidence score', value: 'Full' }],
     href: '/detect/image',
     color: '#059669',
-    glow: 'rgba(5,150,105,0.18)',
-    gradient: 'from-teal-950 via-teal-900/70 to-transparent',
+    glow: 'rgba(5,150,105,0.22)',
   },
 ]
 
@@ -628,9 +619,14 @@ function WhoNeedsCard({ card, i }: { card: typeof WHO_NEEDS[0]; i: number }) {
     >
       {/* ── Image panel ── */}
       <div className="relative h-36 sm:h-40 overflow-hidden flex-shrink-0">
-        {/* Base color fill */}
-        <div className="absolute inset-0" style={{ background: `linear-gradient(145deg, ${card.color}35, ${card.color}10)` }} />
-        {/* Photo */}
+
+        {/* Layer 1 — colour fallback (shown only when image fails to load) */}
+        <div
+          className="absolute inset-0"
+          style={{ background: `linear-gradient(145deg, ${card.color}60, ${card.color}25)` }}
+        />
+
+        {/* Layer 2 — actual photo, fills entire panel */}
         <img
           src={card.img}
           alt={card.role}
@@ -638,28 +634,41 @@ function WhoNeedsCard({ card, i }: { card: typeof WHO_NEEDS[0]; i: number }) {
           loading="lazy"
           onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
         />
-        {/* Dark vignette — bottom-heavy for text */}
-        <div className={`absolute inset-0 bg-gradient-to-t ${card.gradient} opacity-95`} />
 
-        {/* Top accent bar */}
-        <div className="absolute top-0 left-0 right-0 h-[2px]"
-          style={{ background: `linear-gradient(90deg, transparent, ${card.color}, transparent)` }} />
+        {/* Layer 3 — subtle colour tint overlay (lets image show through) */}
+        <div
+          className="absolute inset-0"
+          style={{ background: `${card.color}28` }}
+        />
 
-        {/* Tag badge — top left */}
-        <div className="absolute top-2.5 left-3">
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest backdrop-blur-md"
-            style={{ background: `${card.color}30`, border: `1px solid ${card.color}50`, color: '#fff' }}>
+        {/* Layer 4 — bottom vignette for text legibility only — NOT full cover */}
+        <div className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+
+        {/* Layer 5 — top accent shimmer bar */}
+        <div
+          className="absolute top-0 left-0 right-0 h-[2px]"
+          style={{ background: `linear-gradient(90deg, transparent, ${card.color}, transparent)` }}
+        />
+
+        {/* Tag badge — top left, above all layers */}
+        <div className="absolute top-2.5 left-3 z-10">
+          <span
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest backdrop-blur-md"
+            style={{ background: 'rgba(0,0,0,0.55)', border: `1px solid ${card.color}70`, color: '#fff' }}
+          >
             <CardIcon className="w-2.5 h-2.5" />
             {card.tag}
           </span>
         </div>
 
-        {/* Glow hover overlay */}
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-          style={{ background: `radial-gradient(ellipse at 50% 100%, ${card.glow} 0%, transparent 70%)` }} />
+        {/* Hover colour glow from bottom */}
+        <div
+          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+          style={{ background: `radial-gradient(ellipse at 50% 120%, ${card.glow} 0%, transparent 65%)` }}
+        />
 
-        {/* Role title — bottom of image */}
-        <div className="absolute bottom-0 left-0 right-0 px-3.5 pb-3">
+        {/* Role title — pinned to bottom, above vignette */}
+        <div className="absolute bottom-0 left-0 right-0 px-3.5 pb-3 z-10">
           <h3 className="text-[13px] sm:text-sm font-black text-white leading-snug drop-shadow-lg">
             {card.role}
           </h3>
