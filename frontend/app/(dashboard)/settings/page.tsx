@@ -157,6 +157,19 @@ export default function SettingsPage() {
 
   const save = async () => {
     if (!currentUser?.uid) return
+
+    // M9 — input validation before save
+    if (aiThreshold < 50 || aiThreshold > 95) {
+      toast.error('AI threshold must be between 50% and 95%'); return
+    }
+    if (humanThreshold < 5 || humanThreshold > 50) {
+      toast.error('Human threshold must be between 5% and 50%'); return
+    }
+    const validLanguages = ['en', 'ur', 'ar', 'fr', 'es']
+    if (!validLanguages.includes(language)) {
+      toast.error('Invalid language selection'); return
+    }
+
     setSaving(true)
     try {
       await (supabase as any).from('profiles').upsert({
@@ -173,7 +186,6 @@ export default function SettingsPage() {
     } catch { toast.error('Failed to save settings') }
     setSaving(false)
   }
-
   const exportData = () => {
     const data = { exported_at: new Date().toISOString(), preferences: { emailNotif, batchAlerts, autoSave, aiThreshold, publicProfile } }
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
