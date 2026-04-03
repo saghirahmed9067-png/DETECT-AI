@@ -483,158 +483,248 @@ function LiveDemo({ isLoggedIn }: { isLoggedIn: boolean }) {
 }
 
 // ─── Who Needs Aiscern — Card Section ────────────────────────────────────────
+// ─── Who Needs Aiscern — enriched data ───────────────────────────────────────
 const WHO_NEEDS = [
   {
     role: 'Journalists & Fact-Checkers',
+    icon: Globe,
     img: '/trust/journalists.jpg',
-    problem: 'AI-generated quotes, fabricated sources, deepfake press photos flooding your inbox.',
-    value: 'Verify every image, audio clip and written statement before publication in seconds.',
+    tag: 'Media & Press',
+    tagColor: '#7c3aed',
+    problem: 'AI-fabricated quotes, deepfake press photos and synthetic sources arriving faster than ever.',
+    value: 'Verify every image, audio clip and statement before it publishes — in under 10 seconds.',
+    stats: [{ label: 'Image verification', value: '~82%' }, { label: 'Audio deepfake', value: '~79%' }],
+    href: '/detect/image',
     color: '#7c3aed',
-    gradient: 'from-violet-900/80 to-violet-950/60',
+    glow: 'rgba(124,58,237,0.18)',
+    gradient: 'from-violet-950 via-violet-900/70 to-transparent',
   },
   {
     role: 'Educators & Schools',
+    icon: Award,
     img: '/trust/educators.jpg',
-    problem: 'Students submitting ChatGPT essays as their own work across every class.',
-    value: 'Detect AI-written assignments with sentence-level heatmaps and a confidence score.',
+    tag: 'Education',
+    tagColor: '#2563eb',
+    problem: 'Students submitting ChatGPT essays — academic integrity eroding class by class.',
+    value: 'Sentence-level AI heatmaps and confidence scores catch generated text other tools miss.',
+    stats: [{ label: 'Text detection', value: '~85%' }, { label: 'Avg scan time', value: '<3s' }],
+    href: '/detect/text',
     color: '#2563eb',
-    gradient: 'from-blue-900/80 to-blue-950/60',
+    glow: 'rgba(37,99,235,0.18)',
+    gradient: 'from-blue-950 via-blue-900/70 to-transparent',
   },
   {
     role: 'HR & Recruiters',
+    icon: Users,
     img: '/trust/hr.jpg',
-    problem: 'AI-polished CVs and cover letters that don\'t reflect the real candidate.',
-    value: 'Screen written applications and video interviews for synthetic content before hiring.',
+    tag: 'Talent & Hiring',
+    tagColor: '#0891b2',
+    problem: 'AI-polished CVs and cover letters that mask the real candidate behind perfect prose.',
+    value: 'Screen written applications and video-interview transcripts for synthetic content before hiring.',
+    stats: [{ label: 'CV text scan', value: '~85%' }, { label: 'Video analysis', value: '~76%' }],
+    href: '/detect/text',
     color: '#0891b2',
-    gradient: 'from-cyan-900/80 to-cyan-950/60',
+    glow: 'rgba(8,145,178,0.18)',
+    gradient: 'from-cyan-950 via-cyan-900/70 to-transparent',
   },
   {
     role: 'Legal Professionals',
+    icon: Shield,
     img: '/trust/legal.jpg',
-    problem: 'Deepfake evidence, AI-drafted contracts and forged audio submitted in proceedings.',
-    value: 'Authenticate documents, images and recordings with a forensic-grade detection report.',
+    tag: 'Law & Compliance',
+    tagColor: '#059669',
+    problem: 'Deepfake evidence, AI-drafted contracts and forged audio recordings entering proceedings.',
+    value: 'Forensic-grade detection reports for documents, images and audio — shareable with one link.',
+    stats: [{ label: 'Audio forensics', value: '~79%' }, { label: 'Image analysis', value: '~82%' }],
+    href: '/detect/audio',
     color: '#059669',
-    gradient: 'from-emerald-900/80 to-emerald-950/60',
+    glow: 'rgba(5,150,105,0.18)',
+    gradient: 'from-emerald-950 via-emerald-900/70 to-transparent',
   },
   {
     role: 'Security & Trust & Safety',
+    icon: Lock,
     img: '/trust/security.jpg',
-    problem: 'Voice-cloned fraud calls, synthetic ID photos, and AI-generated phishing at scale.',
-    value: 'Batch-scan hundreds of files simultaneously across text, image, audio and video.',
+    tag: 'Cybersecurity',
+    tagColor: '#dc2626',
+    problem: 'Voice-cloned fraud calls, synthetic ID photos and AI-generated phishing content at scale.',
+    value: 'Batch-scan hundreds of files simultaneously — text, image, audio and video in one queue.',
+    stats: [{ label: 'Batch capacity', value: '20×' }, { label: 'Voice clone det.', value: '~79%' }],
+    href: '/batch',
     color: '#dc2626',
-    gradient: 'from-red-900/80 to-red-950/60',
+    glow: 'rgba(220,38,38,0.18)',
+    gradient: 'from-red-950 via-red-900/70 to-transparent',
   },
   {
     role: 'Content Creators',
+    icon: Sparkles,
     img: '/trust/creators.jpg',
-    problem: 'Clients questioning whether your work is original; competitors flooding feeds with AI.',
-    value: 'Prove authenticity of your creative work and audit competitor content instantly.',
+    tag: 'Creative Work',
+    tagColor: '#d97706',
+    problem: 'Clients doubting originality while competitors flood feeds with AI-generated content.',
+    value: 'Authenticate your work with a shareable proof-of-authenticity link — instantly and free.',
+    stats: [{ label: 'Multi-modal', value: '4 types' }, { label: 'Shareable report', value: '1-click' }],
+    href: '/detect/image',
     color: '#d97706',
-    gradient: 'from-amber-900/80 to-amber-950/60',
+    glow: 'rgba(217,119,6,0.18)',
+    gradient: 'from-amber-950 via-amber-900/70 to-transparent',
   },
   {
     role: 'Academic Researchers',
+    icon: Brain,
     img: '/trust/researchers.jpg',
-    problem: 'AI-generated papers, fake citations and synthetic datasets contaminating research.',
-    value: 'Validate source material and peer submissions with methodology-backed detection.',
+    tag: 'Research & Science',
+    tagColor: '#7c3aed',
+    problem: 'AI-generated papers, hallucinated citations and synthetic datasets corrupting research.',
+    value: 'Validate source material and peer submissions using methodology-backed multi-model detection.',
+    stats: [{ label: 'Text accuracy', value: '~85%' }, { label: 'Datasets used', value: '87' }],
+    href: '/methodology',
     color: '#7c3aed',
-    gradient: 'from-purple-900/80 to-purple-950/60',
+    glow: 'rgba(124,58,237,0.18)',
+    gradient: 'from-purple-950 via-purple-900/70 to-transparent',
   },
   {
     role: 'Marketing & Brand Teams',
+    icon: TrendingUp,
     img: '/trust/marketing.jpg',
-    problem: 'UGC campaigns flooded with AI images, fake reviews and synthetic testimonials.',
-    value: 'Audit user-generated content before publishing to protect brand credibility.',
+    tag: 'Brand Safety',
+    tagColor: '#2563eb',
+    problem: 'UGC campaigns flooded with AI images, fake reviews and synthetic testimonials harming trust.',
+    value: 'Audit every piece of user-generated content before it goes live — protect brand credibility.',
+    stats: [{ label: 'Image detection', value: '~82%' }, { label: 'Batch UGC scan', value: '20×' }],
+    href: '/detect/image',
     color: '#2563eb',
-    gradient: 'from-indigo-900/80 to-indigo-950/60',
+    glow: 'rgba(37,99,235,0.18)',
+    gradient: 'from-indigo-950 via-indigo-900/70 to-transparent',
   },
   {
     role: 'Healthcare Professionals',
+    icon: Activity,
     img: '/trust/healthcare.jpg',
-    problem: 'AI-fabricated medical reports, synthetic scans and misinformation spreading fast.',
-    value: 'Verify medical documents, imagery and audio records with multi-modal detection.',
+    tag: 'Medicine & Health',
+    tagColor: '#059669',
+    problem: 'AI-fabricated medical reports, synthetic scans and health misinformation spreading fast.',
+    value: 'Verify medical documents, imagery and audio records across all four modalities — free.',
+    stats: [{ label: 'Multi-modal', value: '4 types' }, { label: 'Confidence score', value: 'Full' }],
+    href: '/detect/image',
     color: '#059669',
-    gradient: 'from-teal-900/80 to-teal-950/60',
+    glow: 'rgba(5,150,105,0.18)',
+    gradient: 'from-teal-950 via-teal-900/70 to-transparent',
   },
 ]
 
 function WhoNeedsCard({ card, i }: { card: typeof WHO_NEEDS[0]; i: number }) {
+  const CardIcon = card.icon
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ delay: i * 0.05 }}
-      className="group relative rounded-2xl overflow-hidden border border-white/8 hover:border-white/20 transition-all duration-400 hover:shadow-2xl hover:-translate-y-1"
-      style={{ boxShadow: `0 0 0 1px ${card.color}15` }}
+      viewport={{ once: true, margin: '-40px' }}
+      transition={{ delay: i * 0.04, duration: 0.5, ease: 'easeOut' }}
+      className="group relative flex flex-col rounded-2xl overflow-hidden border border-white/8 hover:border-white/18 transition-all duration-500 hover:-translate-y-1.5"
+      style={{
+        boxShadow: `0 0 0 1px ${card.color}18, 0 2px 12px rgba(0,0,0,0.3)`,
+      }}
     >
-      {/* Background image */}
-      <div className="relative h-40 sm:h-44 overflow-hidden">
-        {/* Color base layer */}
-        <div className="absolute inset-0" style={{
-          background: `linear-gradient(160deg, ${card.color}40, ${card.color}15)`
-        }} />
+      {/* ── Image panel ── */}
+      <div className="relative h-36 sm:h-40 overflow-hidden flex-shrink-0">
+        {/* Base color fill */}
+        <div className="absolute inset-0" style={{ background: `linear-gradient(145deg, ${card.color}35, ${card.color}10)` }} />
         {/* Photo */}
         <img
           src={card.img}
           alt={card.role}
-          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+          className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.06] transition-transform duration-700 ease-out"
           loading="lazy"
           onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
         />
-        {/* Gradient overlay — dark at bottom for text legibility */}
-        <div className={`absolute inset-0 bg-gradient-to-t ${card.gradient} opacity-90`} />
-        {/* Role label on image */}
-        <div className="absolute bottom-0 left-0 right-0 px-4 pb-3 pt-6">
-          <h3 className="text-sm sm:text-base font-black text-white leading-tight drop-shadow-lg">
+        {/* Dark vignette — bottom-heavy for text */}
+        <div className={`absolute inset-0 bg-gradient-to-t ${card.gradient} opacity-95`} />
+
+        {/* Top accent bar */}
+        <div className="absolute top-0 left-0 right-0 h-[2px]"
+          style={{ background: `linear-gradient(90deg, transparent, ${card.color}, transparent)` }} />
+
+        {/* Tag badge — top left */}
+        <div className="absolute top-2.5 left-3">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest backdrop-blur-md"
+            style={{ background: `${card.color}30`, border: `1px solid ${card.color}50`, color: '#fff' }}>
+            <CardIcon className="w-2.5 h-2.5" />
+            {card.tag}
+          </span>
+        </div>
+
+        {/* Glow hover overlay */}
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+          style={{ background: `radial-gradient(ellipse at 50% 100%, ${card.glow} 0%, transparent 70%)` }} />
+
+        {/* Role title — bottom of image */}
+        <div className="absolute bottom-0 left-0 right-0 px-3.5 pb-3">
+          <h3 className="text-[13px] sm:text-sm font-black text-white leading-snug drop-shadow-lg">
             {card.role}
           </h3>
         </div>
-        {/* Accent top bar */}
-        <div className="absolute top-0 left-0 right-0 h-0.5" style={{ background: card.color }} />
       </div>
 
-      {/* Content panel */}
-      <div className="bg-surface/95 backdrop-blur-sm p-4 space-y-3">
-        {/* Problem */}
-        <div className="flex gap-2.5">
-          <div className="w-4 h-4 rounded-full bg-rose/15 border border-rose/30 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-rose" />
+      {/* ── Content panel ── */}
+      <div className="bg-surface/96 backdrop-blur-sm flex flex-col flex-1 p-3.5 sm:p-4 gap-3">
+
+        {/* Problem row */}
+        <div className="flex gap-2.5 items-start">
+          <div className="w-5 h-5 rounded-lg bg-rose/12 border border-rose/25 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <AlertTriangle className="w-2.5 h-2.5 text-rose" />
           </div>
-          <div>
-            <span className="text-[9px] font-black text-rose/70 uppercase tracking-widest block mb-0.5">Problem</span>
-            <p className="text-xs text-text-muted leading-relaxed">{card.problem}</p>
+          <div className="min-w-0">
+            <p className="text-[10px] font-black text-rose/60 uppercase tracking-widest mb-0.5">The Problem</p>
+            <p className="text-[11px] sm:text-xs text-text-muted leading-relaxed">{card.problem}</p>
           </div>
         </div>
 
-        {/* Divider */}
-        <div className="h-px bg-border/60" />
+        {/* Separator */}
+        <div className="flex items-center gap-2">
+          <div className="flex-1 h-px bg-border/50" />
+          <div className="w-1 h-1 rounded-full" style={{ background: card.color }} />
+          <div className="flex-1 h-px bg-border/50" />
+        </div>
 
-        {/* Solution */}
-        <div className="flex gap-2.5">
-          <div className="w-4 h-4 rounded-full bg-emerald/15 border border-emerald/30 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald" />
+        {/* Solution row */}
+        <div className="flex gap-2.5 items-start">
+          <div className="w-5 h-5 rounded-lg bg-emerald/12 border border-emerald/25 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <CheckCircle className="w-2.5 h-2.5 text-emerald" />
           </div>
-          <div>
-            <span className="text-[9px] font-black text-emerald/70 uppercase tracking-widest block mb-0.5">How Aiscern Helps</span>
-            <p className="text-xs text-text-muted leading-relaxed">{card.value}</p>
+          <div className="min-w-0">
+            <p className="text-[10px] font-black text-emerald/60 uppercase tracking-widest mb-0.5">Aiscern Solves It</p>
+            <p className="text-[11px] sm:text-xs text-text-muted leading-relaxed">{card.value}</p>
           </div>
         </div>
 
-        {/* CTA strip */}
-        <div className="pt-1">
-          <Link href="/detect/text"
-            className="flex items-center justify-between w-full px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group/btn"
-            style={{
-              background: `${card.color}12`,
-              border: `1px solid ${card.color}25`,
-              color: card.color,
-            }}
-          >
-            <span>Try free detection</span>
+        {/* Stat chips */}
+        <div className="flex gap-1.5 flex-wrap">
+          {card.stats.map(s => (
+            <span key={s.label}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[9px] font-black"
+              style={{ background: `${card.color}12`, border: `1px solid ${card.color}25`, color: card.color }}>
+              <span className="font-black">{s.value}</span>
+              <span className="font-medium opacity-70">· {s.label}</span>
+            </span>
+          ))}
+        </div>
+
+        {/* CTA */}
+        <Link href={card.href}
+          className="mt-auto flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all duration-200 group/btn hover:brightness-110"
+          style={{
+            background: `${card.color}14`,
+            border: `1px solid ${card.color}30`,
+            color: card.color,
+          }}
+        >
+          <span className="font-black">Detect free now</span>
+          <div className="flex items-center gap-0.5">
+            <span className="text-[9px] opacity-60 font-semibold">free</span>
             <ChevronRight className="w-3.5 h-3.5 group-hover/btn:translate-x-0.5 transition-transform" />
-          </Link>
-        </div>
+          </div>
+        </Link>
       </div>
     </motion.div>
   )
@@ -642,28 +732,75 @@ function WhoNeedsCard({ card, i }: { card: typeof WHO_NEEDS[0]; i: number }) {
 
 function WhoNeedsSection() {
   return (
-    <section className="py-14 sm:py-20 lg:py-28 px-4 bg-background border-b border-border/40">
-      <div className="max-w-7xl mx-auto">
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }} className="text-center mb-10 sm:mb-14">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/30 bg-primary/8 text-primary text-xs font-semibold mb-5">
+    <section className="relative py-16 sm:py-24 lg:py-32 px-5 sm:px-8 lg:px-12 bg-background border-b border-border/40 overflow-hidden">
+      {/* Subtle bg glow */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-[500px] h-[400px] rounded-full bg-primary/4 blur-[100px]" />
+        <div className="absolute bottom-0 right-1/4 w-[500px] h-[400px] rounded-full bg-secondary/4 blur-[100px]" />
+      </div>
+
+      <div className="max-w-6xl mx-auto relative z-10">
+
+        {/* ── Section header ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-12 sm:mb-16"
+        >
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/8 text-primary text-[11px] sm:text-xs font-black uppercase tracking-widest mb-5">
             <Users className="w-3 h-3" />
-            Who uses Aiscern
+            Who Uses Aiscern
           </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black mb-4">
-            Built for Every <span className="gradient-text">Professional</span>
+
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black mb-4 leading-tight">
+            Built for <span className="gradient-text">Every Industry</span><br className="hidden sm:block" />
+            <span className="text-text-secondary text-2xl sm:text-3xl lg:text-4xl font-bold"> That Demands Truth</span>
           </h2>
-          <p className="text-text-muted text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
-            AI-generated content is a problem in every industry. Aiscern gives you the tools to detect it — free, across all formats.
+
+          <p className="text-text-muted text-sm sm:text-base max-w-xl mx-auto leading-relaxed">
+            <strong className="text-text-secondary">AI-generated content</strong> is a problem in every field.
+            Aiscern gives professionals the forensic tools to detect it —{' '}
+            <strong className="text-primary">100% free</strong>, across all four modalities.
           </p>
+
+          {/* Quick industry count row */}
+          <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
+            {['Media', 'Education', 'Legal', 'HR', 'Security', 'Research', 'Healthcare', 'Marketing'].map(tag => (
+              <span key={tag} className="text-[10px] sm:text-xs font-semibold text-text-muted px-2.5 py-1 rounded-full border border-border/50 hover:border-primary/30 hover:text-primary transition-all duration-200 cursor-default">
+                {tag}
+              </span>
+            ))}
+          </div>
         </motion.div>
 
-        {/* Responsive grid: 1 col mobile / 2 col tablet / 3 col desktop */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
+        {/* ── Card grid: 1→2→3 cols ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4 lg:gap-5">
           {WHO_NEEDS.map((card, i) => (
             <WhoNeedsCard key={card.role} card={card} i={i} />
           ))}
         </div>
+
+        {/* ── Bottom CTA strip ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+          className="mt-10 sm:mt-14 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4"
+        >
+          <Link href="/detect/text"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-primary text-white text-sm font-bold shadow-lg shadow-primary/25 hover:bg-primary/90 hover:scale-[1.02] transition-all duration-200">
+            <Brain className="w-4 h-4" />
+            Start Detecting Free
+          </Link>
+          <Link href="/methodology"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-xl border border-border text-sm font-semibold text-text-muted hover:border-primary/40 hover:text-text-primary transition-all duration-200">
+            <Eye className="w-4 h-4" />
+            See How It Works
+          </Link>
+        </motion.div>
       </div>
     </section>
   )
