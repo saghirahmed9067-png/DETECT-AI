@@ -27,12 +27,12 @@ async function getUserId(req: NextRequest): Promise<string | null> {
 // ── DELETE — soft-revoke a key (sets is_active = false) ──────────────────────
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  context: { params: Promise<{ id: string }> },
 ) {
   const userId = await getUserId(req)
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { id } = params
+  const { id } = await context.params
   if (!id) return NextResponse.json({ error: 'Missing key id' }, { status: 400 })
 
   const sb = getSupabaseAdmin()
