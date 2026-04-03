@@ -15,7 +15,7 @@ const TOOLS = [
   { href: '/detect/image', icon: ImageIcon, label: 'Image', color: 'from-violet-500/20 to-violet-500/5', iconColor: 'text-violet-400', desc: 'Deepfake & AI image detection' },
   { href: '/detect/audio', icon: Mic,       label: 'Audio', color: 'from-cyan/20 to-cyan/5',        iconColor: 'text-cyan',      desc: 'Voice clone detection'         },
   { href: '/detect/video', icon: Video,     label: 'Video', color: 'from-rose/20 to-rose/5',        iconColor: 'text-rose',      desc: 'Deepfake video analysis'       },
-  { href: '/batch',        icon: Brain,     label: 'Batch', color: 'from-emerald/20 to-emerald/5',  iconColor: 'text-emerald',   desc: 'Scan 20 files at once'         },
+  { href: '/batch',        icon: Brain,     label: 'Batch', color: 'from-emerald/20 to-emerald/5',  iconColor: 'text-emerald',   desc: 'Scan up to 20 files at once'         },
   { href: '/chat',         icon: Zap,       label: 'ARIA',  color: 'from-indigo-500/20 to-indigo-500/5', iconColor: 'text-indigo-400', desc: 'AI detection assistant'   },
 ]
 

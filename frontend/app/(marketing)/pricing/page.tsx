@@ -12,7 +12,7 @@ const features = [
   'Deepfake Image Detection — unlimited',
   'AI Audio & Voice Clone Detection',
   'Deepfake Video Detection',
-  'Batch Scan up to 20 files at once',
+  'Batch scan up to 20 files at once',
   'Web Scanner / URL analysis',
   'AI Detection Assistant (chat)',
   'Scan history saved when signed in',

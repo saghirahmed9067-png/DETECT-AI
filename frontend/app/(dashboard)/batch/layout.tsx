@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Batch AI Content Analyzer — Analyze 20 Files Simultaneously | Aiscern',
-  description: 'Upload and analyze up to 20 files at once. Detect AI-generated text, images, audio, and video in parallel. Free batch AI detection — no credit card required.',
+  description: 'Upload and analyze up to 20 files simultaneously. Detect AI-generated text, images, audio, and video in parallel. Free batch AI detection — no credit card required.',
   alternates: { canonical: 'https://aiscern.com/batch' },
   openGraph: {
     title: 'Batch AI Content Analyzer — 20 Files at Once',

@@ -15,7 +15,7 @@ interface BatchFile {
   error?: string
 }
 
-const MAX_FILES = 40
+const MAX_FILES = 20
 const CONCURRENCY = 5  // 5 parallel workers
 
 function detectType(f: File) {

@@ -1,6 +1,4 @@
 'use client'
-// Normalize confidence: DB stores 0-1, display as 0-100
-const normConf = (c: number | null) => c == null ? 0 : c <= 1 ? Math.round(c * 100) : Math.round(c)
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Clock, Search, Filter, Download, Trash2, Eye, Image as ImgIcon, Video, Mic, FileText, Globe, RefreshCw, X, ChevronDown } from 'lucide-react'
@@ -24,7 +22,7 @@ function normalizeConf(c: number | null) {
 }
 
 function ScanDetailModal({ scan, onClose }: { scan: Scan; onClose: () => void }) {
-  const conf = normalizeConf(normConf(scan.confidence_score))
+  const conf = normalizeConf(scan.confidence_score)
   return (
     <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={onClose}>
       <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
@@ -73,7 +71,7 @@ function ScanDetailModal({ scan, onClose }: { scan: Scan; onClose: () => void })
                 <span className="font-bold text-text-primary">{conf}%</span>
               </div>
               <div className="h-1.5 bg-border rounded-full overflow-hidden">
-                <div className="h-full rounded-full bg-gradient-to-r from-primary to-secondary transition-all" style={{ width: `${conf}%` }} />
+                <div className="h-full rounded-full bg-gradient-to-r from-primary to-secondary transition-all" style={{ width: `${Math.max(0, Math.min(100, conf ?? 0))}%` }} />
               </div>
             </div>
           )}
@@ -290,7 +288,7 @@ export default function HistoryPage() {
                 {paginated.map((scan, i) => {
                   const Icon = mediaIcons[scan.media_type as keyof typeof mediaIcons] || FileText
                   const color = mediaColors[scan.media_type as keyof typeof mediaColors] || 'text-text-muted bg-surface'
-                  const conf = normalizeConf(normConf(scan.confidence_score))
+                  const conf = normalizeConf(scan.confidence_score)
                   return (
                     <motion.div key={scan.id}
                       initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
@@ -325,7 +323,7 @@ export default function HistoryPage() {
                             <p className="text-sm font-bold text-text-primary tabular-nums">{conf}%</p>
                             <div className="h-1 bg-border rounded-full overflow-hidden mt-0.5">
                               <div className="h-full bg-gradient-to-r from-primary to-secondary rounded-full"
-                                style={{ width: `${conf}%` }} />
+                                style={{ width: `${Math.max(0, Math.min(100, conf ?? 0))}%` }} />
                             </div>
                           </div>
                         )}

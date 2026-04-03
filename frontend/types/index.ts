@@ -43,6 +43,7 @@ export interface DetectionResult {
   sentence_scores?: SentenceScore[]
   frame_scores?:    FrameScore[]
   segment_scores?:  SegmentScore[]
+  paragraph_scores?: { text: string; confidence: number; verdict: string }[]
 }
 
 // DATABASE TYPES

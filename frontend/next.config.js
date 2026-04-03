@@ -1,6 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {},
   env: {
     NEXT_PUBLIC_SUPABASE_URL:            process.env.NEXT_PUBLIC_SUPABASE_URL            || '',
     NEXT_PUBLIC_SUPABASE_ANON_KEY:       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY       || '',
@@ -9,7 +8,7 @@ const nextConfig = {
     NEXT_PUBLIC_CLERK_SIGN_UP_URL:       '/signup',
     NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: '/dashboard',
     NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: '/dashboard',
-    NEXT_PUBLIC_R2_PUBLIC_URL:           process.env.R2_PUBLIC_URL                       || '',
+    NEXT_PUBLIC_R2_PUBLIC_URL:           process.env.NEXT_PUBLIC_R2_PUBLIC_URL || process.env.R2_PUBLIC_URL || '',
   },
   images: {
     formats:         ['image/webp', 'image/avif'],
