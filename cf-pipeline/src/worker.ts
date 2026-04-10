@@ -95,7 +95,7 @@ export default {
         }
       // Every 50 ticks: update README with fresh stats
       if (tick % 50 === 0) {
-        await pushReadme(env.DB, env.HF_TOKEN, repo)
+        await pushReadme(env.DB, env.HF_TOKEN, env)
         console.log('[W20] README updated')
       }
       // Every 100 ticks: cleanup orphaned rows

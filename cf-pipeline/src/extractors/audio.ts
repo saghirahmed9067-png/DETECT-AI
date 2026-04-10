@@ -48,12 +48,15 @@ export async function extractAudioRow(
   if (!url) return null
 
   return {
-    content_hash:    await sha256(`${src.name}:audio:${rowIdx}:${url ?? ''}`),
-    quality_score:   qualityAudio(dur, sr),
+    label,
+    content_url:      url,
+    content_preview:  transcript?.slice(0, 250) ?? `[Audio from ${src.name}]`,
+    content_hash:     await sha256(`${src.name}:audio:${rowIdx}:${url}`),
+    quality_score:    qualityAudio(dur, sr),
     duration_seconds: dur,
-    sample_rate:     sr,
-    has_speech:      true,
-    language:        src.language ?? 'en',
-    metadata:        Object.keys(meta).length ? meta : undefined,
+    sample_rate:      sr,
+    has_speech:       true,
+    language:         src.language ?? 'en',
+    metadata:         Object.keys(meta).length ? meta : undefined,
   }
 }
