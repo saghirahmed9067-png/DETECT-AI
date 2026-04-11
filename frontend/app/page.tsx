@@ -14,7 +14,7 @@ import {
   MessageSquare, Cpu, Lock, Database, AlertTriangle, Sparkles,
   TrendingUp, Users, Award, Play, Menu, X, Search,
   Scan, Fingerprint, Waves, Dna, Bot, Radio,
-  Activity, Layers, Wand2, Star
+  Activity, Layers, Wand2, Star, ChevronDown
 } from 'lucide-react'
 
 // ─── Canvas Particle Network (decorative, non-blocking) ─────────────────────
@@ -711,7 +711,7 @@ function WhoNeedsCard({ card, i }: { card: typeof WHO_NEEDS[0]; i: number }) {
         </div>
 
         {/* Stat chips */}
-        <div className="flex gap-1.5 flex-wrap">
+        <div className="flex gap-1.5 flex-wrap min-w-0">
           {card.stats.map(s => (
             <span key={s.label}
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[9px] font-black"
@@ -1107,6 +1107,23 @@ function HomepageReviews() {
   )
 }
 
+// ─── Hero Scroll Indicator ────────────────────────────────────────────────────
+function HeroScrollIndicator() {
+  const [hidden, setHidden] = useState(false)
+  useEffect(() => {
+    const onScroll = () => { if (window.scrollY > 100) setHidden(true) }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+  if (hidden) return null
+  return (
+    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-1 animate-bounce opacity-40 hover:opacity-70 transition-opacity pointer-events-none">
+      <span className="text-[10px] text-text-muted uppercase tracking-widest font-semibold">Scroll</span>
+      <ChevronDown className="w-4 h-4 text-text-muted" />
+    </div>
+  )
+}
+
 // ─── Main Page ───────────────────────────────────────────────────────────────
 export default function HomePage() {
   const { user, loading } = useAuth()
@@ -1287,6 +1304,8 @@ export default function HomePage() {
           <div className="max-w-2xl 2xl:max-w-3xl mx-auto w-full hero-fade-up" style={{ animationDelay: '0.18s' }}>
             <LiveDemo isLoggedIn={!!user} />
           </div>
+
+          <HeroScrollIndicator />
         </div>
       </section>
 

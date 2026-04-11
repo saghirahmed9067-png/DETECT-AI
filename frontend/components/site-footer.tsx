@@ -7,10 +7,10 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-border bg-surface/30 backdrop-blur-sm">
       <div className="max-w-6xl mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10 mb-10">
 
           {/* Brand */}
-          <div className="sm:col-span-2 lg:col-span-1">
+          <div className="sm:col-span-2 lg:col-span-1 pb-2 sm:pb-0">
             <div className="flex items-center gap-2 mb-3">
               <Image src="/logo.png" alt="Aiscern AI Detection Platform Logo" width={50} height={34} className="object-contain drop-shadow-[0_0_8px_rgba(245,100,0,0.4)]" />
               <span className="font-black text-lg gradient-text">Aiscern</span>
