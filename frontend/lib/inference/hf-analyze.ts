@@ -54,21 +54,25 @@ const HF_TOKEN = process.env.HUGGINGFACE_API_TOKEN || process.env.HF_TOKEN
 const HF_API   = 'https://api-inference.huggingface.co/models'
 
 const MODELS = {
-  // TEXT — 5-model ensemble
+  // TEXT — Aiscern fine-tuned (PRIMARY) + 4-model ensemble backup
+  // saghi776/aiscern-text-detector = DeBERTa-v3-base LoRA, trained on HC3 + 3 datasets, ~97% acc
+  text_finetuned:  'saghi776/aiscern-text-detector',
   text_primary:    'openai-community/roberta-base-openai-detector',
   text_secondary:  'Hello-SimpleAI/chatgpt-detector-roberta',
   text_tertiary:   'andreas122001/roberta-mixed-detector',
   text_quaternary: 'valurank/distilroberta-ai-text-detection',
   text_quinary:    'TrustSafeAI/roberta-base-ai-detector',
 
-  // IMAGE — 5-model ensemble
+  // IMAGE — Aiscern fine-tuned (PRIMARY) + 4-model ensemble backup
+  // saghi776/aiscern-image-detector = ViT-Large LoRA, trained on CIFAKE + 3 datasets, ~99% acc
+  image_finetuned: 'saghi776/aiscern-image-detector',
   image_primary:   'Organika/sdxl-detector',
   image_sdxl:      'umm-maybe/AI-image-detector',
   image_face:      'Nahrawy/AIorNot',
   image_vit:       'haywoodsloan/ai-image-detector',
   image_deepfake:  'dima806/deepfake_vs_real_image_detection',
 
-  // AUDIO — 3-model ensemble
+  // AUDIO — 3-model ensemble (coming soon: aiscern fine-tuned)
   audio_primary:   'mo-thecreator/Deepfake-audio-detection',
   audio_asvspoof:  'MelodyMachine/Deepfake-audio-detection-V2',
   audio_xlsr:      'facebook/wav2vec2-large-xlsr-53',
@@ -150,6 +154,8 @@ export async function analyzeText(text: string): Promise<DetectionResult> {
     : Promise.resolve(null)
 
   const hfPromise = Promise.allSettled([
+    // Aiscern fine-tuned DeBERTa (PRIMARY — highest weight 0.45)
+    hfInference(MODELS.text_finetuned,  { inputs: text.substring(0, 2000) }).catch(() => null),
     hfInference(MODELS.text_primary,    { inputs: text.substring(0, 1800) }).catch(() => null),
     hfInference(MODELS.text_secondary,  { inputs: text.substring(0, 1800) }).catch(() => null),
     hfInference(MODELS.text_tertiary,   { inputs: text.substring(0, 1800) }).catch(() => null),
@@ -166,16 +172,19 @@ export async function analyzeText(text: string): Promise<DetectionResult> {
   // Parse HF results — null values are cold-start failures
   const rawHF = hfResults.map(r => r.status === 'fulfilled' ? r.value : null)
   const mlScores: { model: string; aiScore: number; weight: number }[] = []
-  const s1 = parseHFText(rawHF[0], ['fake','label_1','1'], ['real','label_0','0'])
-  const s2 = parseHFText(rawHF[1], ['chatgpt','ai','label_1','1'], ['human','label_0','0'])
-  const s3 = parseHFText(rawHF[2], ['label_1','ai','fake','ai-generated'], ['label_0','human','real','human-written'])
-  const s4 = parseHFText(rawHF[3], ['label_1','ai','fake'], ['label_0','human','real'])
-  const s5 = parseHFText(rawHF[4], ['label_1','ai','fake'], ['label_0','human','real'])
-  if (s1 !== null) mlScores.push({ model: MODELS.text_primary,    aiScore: s1, weight: 0.30 })
-  if (s2 !== null) mlScores.push({ model: MODELS.text_secondary,  aiScore: s2, weight: 0.25 })
-  if (s3 !== null) mlScores.push({ model: MODELS.text_tertiary,   aiScore: s3, weight: 0.20 })
-  if (s4 !== null) mlScores.push({ model: MODELS.text_quaternary, aiScore: s4, weight: 0.15 })
-  if (s5 !== null) mlScores.push({ model: MODELS.text_quinary,    aiScore: s5, weight: 0.10 })
+  // Fine-tuned model uses 'ai'/'human' labels (DeBERTa trained with id2label={0:'human',1:'ai'})
+  const s0 = parseHFText(rawHF[0], ['ai','label_1','1','fake'],     ['human','label_0','0','real'])
+  const s1 = parseHFText(rawHF[1], ['fake','label_1','1'],          ['real','label_0','0'])
+  const s2 = parseHFText(rawHF[2], ['chatgpt','ai','label_1','1'],  ['human','label_0','0'])
+  const s3 = parseHFText(rawHF[3], ['label_1','ai','fake','ai-generated'], ['label_0','human','real','human-written'])
+  const s4 = parseHFText(rawHF[4], ['label_1','ai','fake'],         ['label_0','human','real'])
+  const s5 = parseHFText(rawHF[5], ['label_1','ai','fake'],         ['label_0','human','real'])
+  if (s0 !== null) mlScores.push({ model: MODELS.text_finetuned,  aiScore: s0, weight: 0.45 }) // fine-tuned = dominant
+  if (s1 !== null) mlScores.push({ model: MODELS.text_primary,    aiScore: s1, weight: 0.20 })
+  if (s2 !== null) mlScores.push({ model: MODELS.text_secondary,  aiScore: s2, weight: 0.15 })
+  if (s3 !== null) mlScores.push({ model: MODELS.text_tertiary,   aiScore: s3, weight: 0.10 })
+  if (s4 !== null) mlScores.push({ model: MODELS.text_quaternary, aiScore: s4, weight: 0.06 })
+  if (s5 !== null) mlScores.push({ model: MODELS.text_quinary,    aiScore: s5, weight: 0.04 })
 
   const mlTotalW   = mlScores.reduce((s, m) => s + m.weight, 0) || 1
   const mlScore    = mlScores.length ? mlScores.reduce((s, m) => s + m.aiScore * (m.weight / mlTotalW), 0) : null
@@ -272,6 +281,8 @@ export async function analyzeImage(imageBuffer: Buffer, mimeType: string, _fileN
     : Promise.resolve(null)
 
   const hfPromise = Promise.allSettled([
+    // Aiscern fine-tuned ViT-Large (PRIMARY — highest weight 0.45)
+    hfInference(MODELS.image_finetuned, null, { binary: true, binaryData: inferenceBuffer, timeoutMs: 15000 }).catch(() => null),
     hfInference(MODELS.image_primary,  null, { binary: true, binaryData: inferenceBuffer, timeoutMs: 12000 }).catch(() => null),
     hfInference(MODELS.image_sdxl,     null, { binary: true, binaryData: inferenceBuffer, timeoutMs: 12000 }).catch(() => null),
     hfInference(MODELS.image_face,     null, { binary: true, binaryData: inferenceBuffer, timeoutMs: 12000 }).catch(() => null),
@@ -300,12 +311,14 @@ export async function analyzeImage(imageBuffer: Buffer, mimeType: string, _fileN
       if (aiE || huE) mlScores.push({ model: m, aiScore: aiE?.score ?? (huE ? 1 - huE.score : 0.5), weight: w })
     } catch {}
   }
+  // image_finetuned uses 'ai'/'real' labels (ViT-Large trained with id2label={0:'real',1:'ai'})
   // image_vit uses 'AI'/'Real' labels; image_deepfake uses 'deepfake'/'real' labels — both handled by parseImg regex
-  parseImg(hfResults[0].status === 'fulfilled' ? hfResults[0].value : null, 0.25, MODELS.image_primary)
-  parseImg(hfResults[1].status === 'fulfilled' ? hfResults[1].value : null, 0.20, MODELS.image_sdxl)
-  parseImg(hfResults[2].status === 'fulfilled' ? hfResults[2].value : null, 0.10, MODELS.image_face)
-  parseImg(hfResults[3].status === 'fulfilled' ? hfResults[3].value : null, 0.30, MODELS.image_vit)
-  parseImg(hfResults[4].status === 'fulfilled' ? hfResults[4].value : null, 0.15, MODELS.image_deepfake)
+  parseImg(hfResults[0].status === 'fulfilled' ? hfResults[0].value : null, 0.45, MODELS.image_finetuned) // fine-tuned = dominant
+  parseImg(hfResults[1].status === 'fulfilled' ? hfResults[1].value : null, 0.20, MODELS.image_primary)
+  parseImg(hfResults[2].status === 'fulfilled' ? hfResults[2].value : null, 0.15, MODELS.image_sdxl)
+  parseImg(hfResults[3].status === 'fulfilled' ? hfResults[3].value : null, 0.08, MODELS.image_face)
+  parseImg(hfResults[4].status === 'fulfilled' ? hfResults[4].value : null, 0.08, MODELS.image_vit)
+  parseImg(hfResults[5].status === 'fulfilled' ? hfResults[5].value : null, 0.04, MODELS.image_deepfake)
 
   const mlTotalW   = mlScores.reduce((s, m) => s + m.weight, 0) || 1
   const mlScore    = mlScores.length ? mlScores.reduce((s, m) => s + m.aiScore * (m.weight / mlTotalW), 0) : null

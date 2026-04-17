@@ -1,86 +1,108 @@
-# Complete Fine-tuning Setup Guide
-## Kaggle (Audio + Image) + Google Colab (Video)
+# Aiscern Fine-tuning — Kaggle Instructions
+## All 3 notebooks run on Kaggle (P100 GPU, ~30h/week budget)
 
 ---
 
-## KAGGLE — Audio + Image (run back-to-back, same session)
-
-### One-time setup
+## ONE-TIME KAGGLE SETUP (do this once)
 1. Go to **kaggle.com/code** → **New Notebook**
 2. Right panel → **Session options** → Accelerator: **GPU P100**
 3. Right panel → **Session options** → Internet: **On**
-4. Click **Save** on settings
-
-### Run Audio (~14.3h)
-1. **File → Import Notebook** → upload `audio_finetune.ipynb`
-2. Find Cell 2 (Config) → replace `YOUR_HF_TOKEN_HERE` with your HF token
-3. **Run All** (Shift+Enter in each cell, or Run All button)
-4. Leave the tab open — Kaggle has no session time limit
-5. Model auto-pushes to `saghi776/aiscern-audio-detector` when done ✅
-
-### Run Image (~2.3h, same session)
-1. **File → Import Notebook** → upload `image_finetune.ipynb`  
-   *(do this in a NEW Kaggle notebook tab while audio is still running, OR after it finishes)*
-2. Replace `YOUR_HF_TOKEN_HERE`
-3. **Run All**
-4. Model auto-pushes to `saghi776/aiscern-image-detector` when done ✅
-
-### Kaggle GPU time used: 16.5h / 30h budget (13.5h spare)
+4. Click **Save**
 
 ---
 
-## GOOGLE COLAB — Video (2 sessions, checkpoints on Drive)
+## NOTEBOOK 1 — Text Detection (~3.5h)
+**Model**: DeBERTa-v3-base + LoRA → `saghi776/aiscern-text-detector`  
+**Accuracy target**: 96–98% | **F1 target**: ≥ 0.96
 
-### One-time setup
-1. Go to **colab.research.google.com** → **New Notebook**
-2. **Runtime → Change runtime type** → Hardware accelerator: **T4 GPU** → Save
-3. **Runtime → Connect** (top right)
-
-### Session 1 (~12h, Colab will disconnect automatically)
-1. **File → Upload notebook** → upload `video_finetune.ipynb`
-2. **Run Cell 0** (Drive mount) → click the link → allow access → paste the code
-3. Find Cell 3 (Config) → replace `YOUR_HF_TOKEN_HERE` with your HF token
-4. **Run All**
-5. Training saves checkpoint to Google Drive every epoch
-6. When Colab disconnects (after ~12h), **epochs 1–7 are saved to Drive** ✅
-7. Model is already partially pushed to HuggingFace (hub_strategy=every_save)
-
-### Session 2 (~1.5h, finishes training)
-1. Open a **new Colab notebook** (or reopen the same file)
-2. **Runtime → Change runtime type → T4 GPU**
-3. **Run Cell 0** (Drive mount) — reconnects to your checkpoint
-4. Replace `YOUR_HF_TOKEN_HERE` in Cell 3
-5. **Run All** — auto-detects the saved checkpoint, **resumes from epoch 7**
-6. Finishes epoch 8 → pushes final model to `saghi776/aiscern-video-detector` ✅
-
----
-
-## What you get after running all 3 notebooks
-
-| Model | HuggingFace Repo | Accuracy | 
+### Datasets loaded automatically
+| Dataset | Samples | Source |
 |---|---|---|
-| Audio detector | `saghi776/aiscern-audio-detector` | **~97%** |
-| Image detector | `saghi776/aiscern-image-detector` | **~99%** |
-| Video detector | `saghi776/aiscern-video-detector` | **~95%** |
+| HC3 (Human-ChatGPT Corpus) | ~87k | Hello-SimpleAI/HC3 |
+| AI-Human text | ~50k | andythetechnerd03/AI-human-text |
+| Dogge AI generated text | ~50k | Dogge/ai_generated_text_dataset |
+| RAID benchmark | ~30k | raid-bench/raid |
+
+### Steps
+1. **File → Import Notebook** → upload `text_finetune.ipynb`
+2. **HF token is already hardcoded** — no edits needed
+3. Click **Run All**
+4. Model auto-pushes to `saghi776/aiscern-text-detector` after every epoch ✅
+5. Leave tab open — Kaggle has no session time limit
 
 ---
 
-## Quick troubleshooting
+## NOTEBOOK 2 — Image Detection (~4h, same session)
+**Model**: ViT-Large-patch16-224 + LoRA → `saghi776/aiscern-image-detector`  
+**Accuracy target**: 98–99%  
+**Note**: Upgraded from ViT-base (86M) → ViT-Large (307M) for higher accuracy
 
-**"CUDA out of memory" on Colab video notebook**  
-→ Runtime → Restart and run all  
-→ If still OOM: reduce `BATCH_SIZE` from 16 to 8 in Cell 3
+### Datasets loaded automatically
+| Dataset | Samples | Type |
+|---|---|---|
+| CIFAKE | 60k | SDXL-generated vs real CIFAR-10 |
+| Haywood AI+Real fullset | ~50k | Multi-generator AI vs real photos |
+| GenImage (Molbap) | ~30k | Midjourney, DALL-E, SD vs real |
+| FaceForensics++ | ~18k | Deepfake face swaps |
 
-**"Dataset not found" errors**  
-→ Make sure your HF token has `read` scope  
-→ Some datasets require you to accept terms at huggingface.co first  
-→ The notebook skips unavailable datasets and uses what it can
+### Steps
+1. **File → Import Notebook** → upload `image_finetune.ipynb`
+2. **HF token is already hardcoded** — no edits needed
+3. Click **Run All**
+4. Model auto-pushes to `saghi776/aiscern-image-detector` after every epoch ✅
 
-**Colab disconnected mid-training**  
-→ Just reopen the notebook and Run All — checkpoint-resume is automatic  
-→ Drive mount (Cell 0) must be run first to reconnect to checkpoints
+---
 
-**"push_to_hub failed"**  
-→ Your HF token needs `write` scope  
-→ Go to huggingface.co/settings/tokens → check token permissions
+## NOTEBOOK 3 — Audio Detection (~14.3h)
+**Model**: facebook/wav2vec2-base + LoRA → `saghi776/aiscern-audio-detector`  
+**Accuracy target**: ~97%
 
+### Steps
+1. **File → Import Notebook** → upload `audio_finetune.ipynb`
+2. **HF token is already hardcoded** — no edits needed
+3. Click **Run All**
+4. Model auto-pushes to `saghi776/aiscern-audio-detector` when done ✅
+
+---
+
+## GPU BUDGET SUMMARY
+| Notebook | Time | Budget used |
+|---|---|---|
+| Text | ~3.5h | 3.5h |
+| Image | ~4.0h | 4.0h |
+| Audio | ~14.3h | 14.3h |
+| **Total** | **~21.8h** | **21.8h / 30h (8.2h spare)** |
+
+---
+
+## HOW MODELS WIRE TO THE WEBSITE
+After training completes, **no deployment needed**. The models auto-load on the first HF Inference API request.
+
+- Text fine-tuned model runs as **primary** with 0.45 weight in the ensemble
+- Image fine-tuned model runs as **primary** with 0.45 weight in the ensemble
+- Old ensemble models (RoBERTa, ViT-base, etc.) remain as fallback
+- Cold start on first request: ~20s, then stays warm
+
+The `HUGGINGFACE_API_TOKEN` env var in Vercel already handles auth — nothing else to configure.
+
+---
+
+## TROUBLESHOOTING
+
+**"CUDA out of memory"**
+→ In Config cell, reduce `BATCH_SIZE` from 16 → 8 and add `GRAD_ACCUM = 4`
+
+**"Dataset not found" / 404**
+→ HF token has read scope — some datasets need terms accepted at huggingface.co first
+→ Notebook skips unavailable datasets and trains on what it can load
+
+**"push_to_hub failed"**
+→ Ensure HF token has `write` scope: huggingface.co/settings/tokens
+
+**Kaggle session expired mid-training**
+→ Checkpoint auto-saves every epoch to `./checkpoints`
+→ Re-import notebook → Run All → training resumes from last checkpoint automatically
+
+**Model not showing on HF after training**
+→ Check `saghi776/` namespace — may take 1–2 min to appear after push
+→ Hub pushes happen after every epoch so partial results are already there
