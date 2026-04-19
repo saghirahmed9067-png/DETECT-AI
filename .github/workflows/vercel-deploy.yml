@@ -5,18 +5,50 @@ on:
     branches: [main]
   workflow_dispatch:
 
+env:
+  VERCEL_ORG_ID: team_sUVHUcrNUc6fWYVOF1cpD1Z1
+  VERCEL_PROJECT_ID: prj_R0OLbFaz8BVYMuToCXF4hGJTBoWi
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: team_sUVHUcrNUc6fWYVOF1cpD1Z1
-          vercel-project-id: prj_R0OLbFaz8BVYMuToCXF4hGJTBoWi
-          working-directory: ./frontend
-          vercel-args: '--prod'
-          scope: team_sUVHUcrNUc6fWYVOF1cpD1Z1
+      - name: Check VERCEL_TOKEN exists
+        run: |
+          if [ -z "${{ secrets.VERCEL_TOKEN }}" ]; then
+            echo "ERROR: VERCEL_TOKEN secret is not set!"
+            exit 1
+          fi
+          echo "VERCEL_TOKEN is set (length: ${#VERCEL_TOKEN})"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+      - name: Verify token with Vercel API
+        run: |
+          echo "Testing Vercel token..."
+          RESPONSE=$(curl -sf \
+            -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" \
+            "https://api.vercel.com/v2/user" 2>&1)
+          echo "Response: $RESPONSE"
+          echo "$RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); print('Logged in as:', d.get('user',{}).get('email','unknown'))"
+
+      - name: Verify team access
+        run: |
+          echo "Checking team access..."
+          curl -sf \
+            -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" \
+            "https://api.vercel.com/v2/teams/team_sUVHUcrNUc6fWYVOF1cpD1Z1" \
+            | python3 -c "import json,sys; d=json.load(sys.stdin); print('Team:', d.get('name'), '| Slug:', d.get('slug'))"
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Deploy
+        working-directory: ./frontend
+        run: |
+          vercel deploy --prod --yes \
+            --token=${{ secrets.VERCEL_TOKEN }} \
+            --scope=team_sUVHUcrNUc6fWYVOF1cpD1Z1 \
+            2>&1
