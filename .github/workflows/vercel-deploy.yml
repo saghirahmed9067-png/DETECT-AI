@@ -12,22 +12,38 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install Vercel CLI
-        run: npm install -g vercel@latest
-
-      - name: Check token
-        run: vercel whoami --token=${{ secrets.VERCEL_TOKEN }} --scope=anas-projects-0a7d1391 || echo "whoami failed - check token scope"
-
-      - name: Deploy
-        working-directory: ./frontend
+      - name: Trigger Vercel deployment via API
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
-          vercel deploy \
-            --prod \
-            --yes \
-            --scope=anas-projects-0a7d1391 \
-            --token=${{ secrets.VERCEL_TOKEN }} \
-            --debug 2>&1 | tail -50
+          echo "Triggering deployment for commit $GITHUB_SHA..."
+
+          RESPONSE=$(curl -s -X POST \
+            "https://api.vercel.com/v13/deployments?teamId=team_sUVHUcrNUc6fWYVOF1cpD1Z1" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"name\": \"detect-ai\",
+              \"project\": \"prj_R0OLbFaz8BVYMuToCXF4hGJTBoWi\",
+              \"target\": \"production\",
+              \"gitSource\": {
+                \"type\": \"github\",
+                \"repoId\": \"1173445283\",
+                \"ref\": \"main\",
+                \"sha\": \"$GITHUB_SHA\"
+              }
+            }")
+
+          echo "Vercel API response:"
+          echo $RESPONSE | python3 -m json.tool 2>/dev/null || echo $RESPONSE
+
+          # Check for error
+          ERROR=$(echo $RESPONSE | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('error',{}).get('message',''))" 2>/dev/null)
+          if [ -n "$ERROR" ] && [ "$ERROR" != "None" ]; then
+            echo "ERROR: $ERROR"
+            exit 1
+          fi
+
+          DEPLOY_URL=$(echo $RESPONSE | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('url','no-url'))" 2>/dev/null)
+          echo "Deployment URL: https://$DEPLOY_URL"
+          echo "Deployment triggered successfully!"
