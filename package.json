@@ -1,0 +1,14 @@
+{
+  "name": "detect-ai",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm ci && npm run build",
+    "start": "cd frontend && npm run start",
+    "vercel-build": "cd frontend && npm ci && npm run build"
+  },
+  "dependencies": {
+    "next": "^15.3.9"
+  }
+}
