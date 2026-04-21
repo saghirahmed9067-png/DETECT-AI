@@ -2,7 +2,4 @@ name = "aiscern"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 
-[site]
-bucket = ".next"
-
-pages_build_output_dir = ".next"
+pages_build_output_dir = ".vercel/output/static"

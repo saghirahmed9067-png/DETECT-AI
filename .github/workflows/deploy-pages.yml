@@ -27,21 +27,22 @@ jobs:
         working-directory: ./frontend
         run: npm ci --legacy-peer-deps
 
-      - name: Build Next.js app
+      - name: Build for Cloudflare Pages
         working-directory: ./frontend
-        run: npm run build
+        run: npx @cloudflare/next-on-pages
         env:
-          # Public env vars needed at build time
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
-          NEXT_PUBLIC_R2_PUBLIC_URL: ${{ secrets.NEXT_PUBLIC_R2_PUBLIC_URL }}
-          NEXT_TELEMETRY_DISABLED: 1
-          CF_PAGES: 1
+          NEXT_PUBLIC_SUPABASE_URL: https://lpgzmruxaeikxxayjmze.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxwZ3ptcnV4YWVpa3h4YXlqbXplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNjE4OTIsImV4cCI6MjA4ODczNzg5Mn0.grbICfJk6vvJjLtcHecuA6X10kDwbaSFAejNHkvv2w0
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_live_Y2xlcmsuYWlzY2Vybi5jb20k
+          NEXT_PUBLIC_R2_PUBLIC_URL: https://pub-92e8410d303d443cbff43b58f2b17878.r2.dev
+          NEXT_PUBLIC_APP_URL: https://aiscern.com
+          CF_PAGES: "1"
+          NEXT_TELEMETRY_DISABLED: "1"
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy frontend/.next --project-name=aiscern --commit-dirty=true
+          accountId: 34400e6e147e83e95c942135f54aeba7
+          command: pages deploy .vercel/output/static --project-name=aiscern --commit-dirty=true
+          workingDirectory: ./frontend
