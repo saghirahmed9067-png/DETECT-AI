@@ -135,7 +135,7 @@ export default function ScraperPage() {
       // Save to Supabase (non-fatal)
       if (user && data.data) {
         try {
-          await (supabase as ReturnType<typeof createClient>).from('scraper_sessions').insert({
+          await (supabase as any).from('scraper_sessions').insert({
             user_id:          user.uid,
             target_url:       scanUrl,
             domain:           data.data.domain,

@@ -60,7 +60,7 @@ export default function DashboardPage() {
     if (!user?.uid) return
     async function load() {
       const [rpcRes, scansRes] = await Promise.all([
-        supabase.rpc('get_user_stats', { p_user_id: user!.uid }),
+        (supabase as any).rpc('get_user_stats', { p_user_id: user!.uid }),
         (supabase as any).from('scans').select('id,media_type,verdict,confidence_score,created_at,content_preview')
           .eq('user_id', user!.uid).order('created_at', { ascending: false }).limit(8),
       ])
