@@ -1,4 +1,5 @@
 'use client'
+import { Suspense } from 'react'
 import { useEffect, useState } from 'react'
 import { SignUp, useAuth } from '@clerk/nextjs'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -6,7 +7,7 @@ import Image from 'next/image'
 import { Loader2 } from 'lucide-react'
 import Link from 'next/link'
 
-export default function SignUpPage() {
+function SignUpContent() {
   const { isSignedIn, isLoaded } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -105,5 +106,17 @@ export default function SignUpPage() {
 
       <p className="mt-3 text-[11px] text-[#252535] relative z-10">© 2026 Aiscern · Secured by Clerk</p>
     </div>
+  )
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#06060e] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
+      </div>
+    }>
+      <SignUpContent />
+    </Suspense>
   )
 }
