@@ -156,17 +156,6 @@ export const processFeedbackJob = inngest.createFunction(
   }
 )
 
-// ── All functions export (registered in the serve route) ─────────────────────
-export const INNGEST_FUNCTIONS = [
-  onScanCompleted,
-  onScanFeedback,
-  scheduledPipelineCheck,
-  processFeedbackJob,
-  hfModelWarmup,
-  vercelWarmup,
-  supabaseKeepAlive,
-]
-
 // ── 5. Keep HuggingFace models warm (every 14 min) ───────────────────────────
 export const hfModelWarmup = inngest.createFunction(
   { id: 'hf-model-warmup', name: 'Keep HuggingFace models warm' },
@@ -244,3 +233,14 @@ export const supabaseKeepAlive = inngest.createFunction(
     return { kept_alive_at: new Date().toISOString() }
   }
 )
+
+// ── All functions export (registered in the serve route) ─────────────────────
+export const INNGEST_FUNCTIONS = [
+  onScanCompleted,
+  onScanFeedback,
+  scheduledPipelineCheck,
+  processFeedbackJob,
+  hfModelWarmup,
+  vercelWarmup,
+  supabaseKeepAlive,
+]
