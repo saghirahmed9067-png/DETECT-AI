@@ -1,6 +1,6 @@
 import Link       from 'next/link'
 import { notFound } from 'next/navigation'
-import { Shield, CheckCircle, AlertTriangle, HelpCircle, Clock, Share2 } from 'lucide-react'
+import { Shield, CheckCircle, AlertTriangle, HelpCircle, Clock } from 'lucide-react'
 import { getSupabaseAdmin } from '@/lib/supabase/admin'
 
 export const dynamic = 'force-dynamic'

@@ -2,7 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { SiteNav }    from '@/components/SiteNav'
 import { SiteFooter } from '@/components/site-footer'
-import { Shield, Brain, Zap, Globe, Users, GitBranch, MapPin, Code2, Briefcase } from 'lucide-react'
+import { Shield, Brain, Zap, Globe, Users, GitBranch, MapPin, Briefcase } from 'lucide-react'
 
 export const metadata = {
   title: 'About Aiscern — Free AI Content Detection',

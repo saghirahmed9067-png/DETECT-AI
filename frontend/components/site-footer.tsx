@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Mail, Twitter } from 'lucide-react'
+import { Mail } from 'lucide-react'
 
 export function SiteFooter() {
   return (

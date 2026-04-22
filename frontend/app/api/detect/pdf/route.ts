@@ -96,7 +96,6 @@ export async function POST(req: NextRequest) {
       const bytes  = await file.arrayBuffer()
       const buffer = Buffer.from(bytes)
       // pdf-parse v2: use PDFParse class (named export, ESM compatible)
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const pdfParse = require('pdf-parse')
       const parser   = new pdfParse.PDFParse()
       const pdfData  = await parser.pdf(buffer, {

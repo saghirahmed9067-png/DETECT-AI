@@ -3,9 +3,8 @@ import { ScrollToTop } from '@/components/ScrollToTop'
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
-  Bell, Shield, Settings, Save, Loader2, Trash2,
-  Sliders, Key, Palette, Globe, Download, AlertTriangle,
-  Eye, EyeOff, Copy, Check, RefreshCw, Lock, Smartphone, Mail
+  Bell, Shield, Save, Loader2, Trash2,
+  Sliders, Key, Palette, Globe, Download, AlertTriangle, Copy, Check, Lock, Smartphone
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/auth-provider'

@@ -1,8 +1,8 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import { RoleGuard } from '@/components/dashboard/RoleGuard'
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis } from 'recharts'
-import { Scan, Users, Activity, AlertTriangle, CheckCircle, Clock, RefreshCw, Shield, Ban, Eye, TrendingUp, Database, Globe } from 'lucide-react'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis } from 'recharts'
+import { Scan, Users, Activity, RefreshCw, Shield } from 'lucide-react'
 
 const C = { primary:'#7c3aed', success:'#10b981', warning:'#f59e0b', danger:'#f43f5e', muted:'#64748b', blue:'#3b82f6' }
 

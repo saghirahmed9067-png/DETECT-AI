@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import { Star, ThumbsUp, CheckCircle, PenLine, Filter, ChevronLeft, ChevronRight, User, EyeOff, Loader2 } from 'lucide-react'
+import { Star, ThumbsUp, CheckCircle, PenLine, Filter, ChevronLeft, ChevronRight, EyeOff, Loader2 } from 'lucide-react'
 import { SiteFooter } from '@/components/site-footer'
 import { useAuth } from '@/components/auth-provider'
 import { ReviewModal } from '@/components/ReviewModal'

@@ -47,10 +47,10 @@ function formatDuration(secs: number) {
 }
 
 export default function AudioDetectionPage() {
-  const { user: currentUser } = useAuth()
+  const { user: _currentUser } = useAuth()
   const [file, setFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState(0)
+  const [_uploadProgress, setUploadProgress] = useState(0)
   const [result, setResult] = useState<DetectionResult | null>(null)
   const [scanId, setScanId] = useState<string | null>(null)
 

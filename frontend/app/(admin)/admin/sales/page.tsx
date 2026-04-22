@@ -1,7 +1,7 @@
 'use client'
 import { RoleGuard } from '@/components/dashboard/RoleGuard'
 import { StatCard }  from '@/components/dashboard/StatCard'
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { DollarSign, TrendingUp, UserMinus, ArrowUpRight } from 'lucide-react'
 
 const C = { primary:'#0ea5e9', secondary:'#6366f1', success:'#10b981', warning:'#f59e0b', danger:'#ef4444' }

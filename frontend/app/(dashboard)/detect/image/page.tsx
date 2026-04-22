@@ -9,7 +9,6 @@ import { Image as ImageIcon, Upload, X, AlertTriangle, CheckCircle, HelpCircle, 
 import { useAuth } from '@/components/auth-provider'
 import type { DetectionResult, Verdict } from '@/types'
 import { formatConfidence, formatFileSize } from '@/lib/utils/helpers'
-import { SignupGate, incrementGlobalScanCount } from '@/components/SignupGate'
 import { ReviewSuggestion } from '@/components/ReviewSuggestion'
 import { FeedbackBar } from '@/components/FeedbackBar'
 
@@ -22,7 +21,7 @@ const verdictConfig = {
 }
 
 export default function ImageDetectionPage() {
-  const { user: currentUser } = useAuth()
+  const { user: _currentUser } = useAuth()
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)

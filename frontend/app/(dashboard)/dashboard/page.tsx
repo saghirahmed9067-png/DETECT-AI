@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import {
-  Brain, Eye, FileText, Mic, BarChart3, Clock,
+  Brain, FileText, Mic, BarChart3,
   Zap, ArrowRight, Shield, CheckCircle, AlertTriangle,
   HelpCircle, Image as ImageIcon, Video, Music, Sparkles, Layers
 } from 'lucide-react'

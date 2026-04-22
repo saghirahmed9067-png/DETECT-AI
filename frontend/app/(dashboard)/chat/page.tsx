@@ -1,6 +1,5 @@
 'use client'
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { useAuth } from '@/components/auth-provider'
 import Link from 'next/link'
 import { ReviewSuggestion } from '@/components/ReviewSuggestion'
 

@@ -1,8 +1,8 @@
 'use client'
 import { RoleGuard } from '@/components/dashboard/RoleGuard'
 import { StatCard }  from '@/components/dashboard/StatCard'
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
-import { Code2, Users, AlertTriangle, Clock } from 'lucide-react'
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import { Code2, Users, AlertTriangle } from 'lucide-react'
 
 const C = { primary:'#0ea5e9', secondary:'#6366f1', success:'#10b981', warning:'#f59e0b', danger:'#ef4444' }
 const daily = Array.from({length:30},(_,i)=>({d:`${i+1}`,calls:Math.floor(Math.random()*5000+2000),errors:Math.floor(Math.random()*80+20)}))

@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import Image from 'next/image'
-import { CheckCircle, Zap, Shield, Menu, X } from 'lucide-react'
+import { CheckCircle, Zap, Shield } from 'lucide-react'
 import { useState } from 'react'
 import { SiteFooter } from '@/components/site-footer'
 import { useAuth } from '@/components/auth-provider'
@@ -21,7 +21,7 @@ const features = [
 
 export default function PricingPage() {
   const { user } = useAuth()
-  const [mobileOpen, setMobileOpen] = useState(false)
+  const [setMobileOpen] = useState(false)
 
   return (
     <div className="min-h-screen bg-background">

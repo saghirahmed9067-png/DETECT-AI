@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import { RoleGuard } from '@/components/dashboard/RoleGuard'
-import { Users, Search, Ban, CheckCircle, ShieldOff, ShieldCheck, RefreshCw, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react'
+import { Search, Ban, CheckCircle, ShieldOff, ShieldCheck, RefreshCw, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react'
 
 type User = {
   id: string; email: string; display_name: string | null; plan: string

@@ -30,7 +30,7 @@ function generateRawKey(): string {
 }
 
 // ── GET — list keys for authenticated user ────────────────────────────────────
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   const userId = await getUserId()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -48,11 +48,11 @@ export async function GET(req: NextRequest) {
 }
 
 // ── POST — generate a new key ─────────────────────────────────────────────────
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   const userId = await getUserId()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const body = await req.json().catch(() => ({}))
+  const body = await _req.json().catch(() => ({}))
   const name = typeof body.name === 'string' && body.name.trim()
     ? body.name.trim().slice(0, 64)
     : 'My API Key'

@@ -22,7 +22,7 @@ const PERKS = [
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
   const [checked, setChecked]   = useState(false)
-  const router = useRouter()
+  // const router = useRouter()
 
   useEffect(() => {
     const t = setTimeout(() => setChecked(true), 150)

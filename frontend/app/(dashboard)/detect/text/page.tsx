@@ -8,7 +8,7 @@ import type { DetectionResult, Verdict } from '@/types'
 import { formatConfidence } from '@/lib/utils/helpers'
 import { ReviewSuggestion } from '@/components/ReviewSuggestion'
 import { FeedbackBar } from '@/components/FeedbackBar'
-import { SignupGate, incrementGlobalScanCount } from '@/components/SignupGate'
+import { incrementGlobalScanCount } from '@/components/SignupGate'
 
 
 
@@ -30,7 +30,7 @@ function avgSentenceLen(text: string) {
 }
 
 export default function TextDetectionPage() {
-  const { user: currentUser } = useAuth()
+  const { user: _currentUser } = useAuth()
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<DetectionResult | null>(null)

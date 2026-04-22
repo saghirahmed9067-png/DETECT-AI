@@ -1,6 +1,6 @@
 import Link       from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, Clock, Calendar, User, Tag } from 'lucide-react'
+import { Clock, Calendar, User, Tag } from 'lucide-react'
 import { SiteFooter }                from '@/components/site-footer'
 import { getPostBySlug, getAllSlugs } from '@/lib/blog'
 import { SiteNav } from '@/components/SiteNav'
