@@ -588,3 +588,57 @@ html { scroll-behavior: smooth; }
 
 /* node-bob-a / node-bob-b removed — node-in-bob-a / node-in-bob-b (above) handle both
    fade-in and bob. Duplicate declarations here were overriding opacity and keeping cards invisible. */
+
+/* ── Clerk auth form deep overrides ───────────────────────── */
+
+/* Remove white background flash on Clerk card mount */
+.cl-rootBox, .cl-card { background: transparent !important; }
+
+/* Ensure form inputs don't get browser autofill yellow */
+.cl-formFieldInput:-webkit-autofill,
+.cl-formFieldInput:-webkit-autofill:hover,
+.cl-formFieldInput:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #12122a inset !important;
+  -webkit-text-fill-color: #eef2ff !important;
+  caret-color: #eef2ff !important;
+  border-color: #2a2a55 !important;
+}
+
+/* OTP code inputs spacing */
+.cl-otpCodeField { gap: 8px !important; }
+
+/* Password strength indicator */
+.cl-passwordStrengthBar div {
+  border-radius: 4px !important;
+  height: 3px !important;
+}
+
+/* Make "Forgot password?" link always visible */
+.cl-formFieldAction {
+  color: #7c64c8 !important;
+  font-size: 12px !important;
+}
+.cl-formFieldAction:hover { color: #a78bfa !important; }
+
+/* Error message icon alignment */
+.cl-formFieldErrorText {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+/* Social button icon sizing */
+.cl-socialButtonsBlockButton__google img,
+.cl-socialButtonsBlockButton__github img {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+/* Loading dots color */
+.cl-internal-spinner { color: #7c3aed !important; }
+
+/* Verification success checkmark */
+.cl-verificationLinkStatusIconBox { color: #34d399 !important; }
+
+/* Remove Clerk branding if shown */
+.cl-powered-by { display: none !important; }

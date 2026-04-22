@@ -35,16 +35,18 @@ function SignUpContent() {
 
   return (
     <div className="min-h-screen bg-[#06060e] flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      {/* Background glows */}
       <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[700px] h-[500px] rounded-full bg-violet-600/[0.07] blur-[140px] pointer-events-none" />
       <div className="absolute bottom-[-10%] left-1/2 -translate-x-1/2 w-[500px] h-[300px] rounded-full bg-indigo-600/[0.05] blur-[120px] pointer-events-none" />
 
-      <Link href="/" className="flex items-center gap-2.5 mb-10 relative z-10 group">
+      {/* Logo */}
+      <Link href="/" className="flex items-center gap-2.5 mb-8 relative z-10 group">
         <Image src="/logo.png" alt="Aiscern logo" width={38} height={26}
           className="object-contain drop-shadow-[0_0_12px_rgba(245,100,0,0.55)] group-hover:drop-shadow-[0_0_16px_rgba(245,100,0,0.7)] transition-all" priority />
         <span className="text-xl font-black gradient-text">Aiscern</span>
       </Link>
 
-      <div className="relative z-10 w-full max-w-[400px] overflow-hidden">
+      <div className="relative z-10 w-full max-w-[420px]">
         <SignUp
           routing="path"
           path="/signup"
@@ -59,52 +61,134 @@ function SignUpContent() {
             },
             variables: {
               colorPrimary:                 '#7c3aed',
-              colorBackground:              '#0c0c1d',
-              colorInputBackground:         '#13132b',
+              colorBackground:              '#0d0d1f',
+              colorInputBackground:         '#12122a',
               colorInputText:               '#f0f4ff',
               colorText:                    '#eef2ff',
               colorTextSecondary:           '#8892a4',
               colorTextOnPrimaryBackground: '#ffffff',
-              colorNeutral:                 '#334155',
+              colorNeutral:                 '#2a2a4a',
               colorDanger:                  '#f87171',
-              borderRadius:                 '12px',
+              colorSuccess:                 '#34d399',
+              colorWarning:                 '#fbbf24',
+              borderRadius:                 '10px',
               fontFamily:                   'inherit',
               fontSize:                     '14px',
-              spacingUnit:                  '18px',
+              spacingUnit:                  '16px',
+              fontWeight: {
+                normal: 400,
+                medium: 500,
+                bold:   700,
+              },
             },
             elements: {
-              rootBox:        'w-full',
-              card:           'bg-[#0c0c1d] border border-[#1e1e3a] shadow-[0_32px_64px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.04)] rounded-2xl',
-              cardBox:        'rounded-2xl overflow-hidden',
-              header:         'pb-2',
-              headerTitle:    'text-white font-bold text-[22px] tracking-tight',
-              headerSubtitle: 'text-[#8892a4] text-[13px]',
-              main:           'px-1',
-              formFieldRow:   'mb-1',
-              formFieldLabel: 'text-[11px] font-semibold tracking-widest uppercase text-[#5a647a] mb-1.5',
-              formFieldInput: 'bg-[#13132b] border border-[#1e1e3a] text-[#eef2ff] placeholder:text-[#3a4055] rounded-xl text-[14px] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 focus:bg-[#15153a]',
-              formFieldInputShowPasswordButton: 'text-[#3a4055] hover:text-[#94a3b8] transition-colors',
-              formFieldErrorText: 'text-rose-400 text-[12px] mt-1',
-              formButtonPrimary: 'bg-violet-600 hover:bg-violet-500 active:bg-violet-700 text-white font-semibold text-[14px] rounded-xl shadow-[0_4px_24px_rgba(124,58,237,0.35)] hover:shadow-[0_6px_32px_rgba(124,58,237,0.45)] transition-all duration-200 border-0',
-              dividerRow:     'my-4',
-              dividerLine:    'bg-[#1e1e3a]',
-              dividerText:    'text-[#3a4055] text-[12px] px-3',
-              socialButtonsBlockButton: 'bg-[#11112a] border border-[#1e1e3a] text-[#94a3b8] rounded-xl hover:bg-[#16163a] hover:border-[#2a2a55] hover:text-[#c4cce0] transition-all duration-200',
-              socialButtonsBlockButtonText: 'text-[13px] font-medium',
-              footer:          'pt-4 pb-2',
-              footerAction:    'text-center',
-              footerActionText: 'text-[#5a647a] text-[13px]',
-              footerActionLink: 'text-violet-400 hover:text-violet-300 font-semibold text-[13px] transition-colors',
-              alert:          'bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-300 text-[13px]',
-              alertText:      'text-rose-300',
-              identityPreviewText:       'text-[#c4cce0]',
-              identityPreviewEditButton: 'text-violet-400 hover:text-violet-300 text-[13px]',
+              // ── Card shell ──────────────────────────────────────
+              rootBox: 'w-full',
+              card:    'bg-[#0d0d1f] border border-[#1e1e3a] shadow-[0_24px_64px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,255,255,0.03)] rounded-2xl overflow-hidden p-0',
+              cardBox: 'rounded-2xl',
+
+              // ── Header ──────────────────────────────────────────
+              header:         'px-7 pt-7 pb-3',
+              headerTitle:    'text-white font-bold text-[22px] tracking-tight leading-tight',
+              headerSubtitle: 'text-[#6b7a99] text-[13px] mt-1',
+              headerBackRow:  'mb-4',
+              headerBackLink: 'text-violet-400 hover:text-violet-300 text-[13px] font-medium transition-colors flex items-center gap-1',
+              headerBackIcon: 'text-violet-400',
+
+              // ── Main form area ───────────────────────────────────
+              main: 'px-7 pb-2',
+
+              // ── Form fields ──────────────────────────────────────
+              formFieldRow:      'mb-4',
+              formFieldLabelRow: 'flex items-center justify-between mb-1.5',
+              formFieldLabel:    'text-[11px] font-semibold tracking-[0.08em] uppercase text-[#5a6480]',
+              formFieldHintText: 'text-[#5a6480] text-[11px]',
+              formFieldInput: [
+                'w-full bg-[#12122a] border border-[#1e1e3a] text-[#eef2ff]',
+                'placeholder:text-[#35385a] rounded-[10px] text-[14px] px-3.5 py-2.5',
+                'transition-all duration-150',
+                'focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/60 focus:bg-[#14143a]',
+                'hover:border-[#2a2a55]',
+              ].join(' '),
+              formFieldInputShowPasswordButton: 'text-[#3a4060] hover:text-[#7c8caa] transition-colors pr-1',
+              formFieldAction: 'text-violet-400 hover:text-violet-300 text-[12px] font-medium transition-colors',
+              formFieldErrorText:   'text-rose-400 text-[12px] mt-1.5 flex items-center gap-1',
+              formFieldSuccessText: 'text-emerald-400 text-[12px] mt-1.5',
+              formFieldWarningText: 'text-amber-400 text-[12px] mt-1.5',
+
+              // ── OTP / email verification code inputs ─────────────
+              otpCodeFieldInput: [
+                'bg-[#12122a] border border-[#1e1e3a] text-white font-mono text-[18px] font-semibold',
+                'rounded-[10px] text-center w-11 h-12',
+                'focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500',
+                'transition-all duration-150',
+              ].join(' '),
+
+              // ── Primary button ───────────────────────────────────
+              formButtonPrimary: [
+                'w-full bg-violet-600 hover:bg-violet-500 active:bg-violet-700',
+                'text-white font-semibold text-[14px] rounded-[10px] py-2.5',
+                'shadow-[0_4px_20px_rgba(124,58,237,0.4)] hover:shadow-[0_6px_28px_rgba(124,58,237,0.5)]',
+                'transition-all duration-200 border-0',
+                'disabled:opacity-60 disabled:cursor-not-allowed',
+              ].join(' '),
+
+              // ── Secondary / ghost button ─────────────────────────
+              formButtonReset: 'text-violet-400 hover:text-violet-300 text-[13px] font-medium transition-colors',
+
+              // ── Divider ──────────────────────────────────────────
+              dividerRow:  'my-5',
+              dividerLine: 'bg-[#1e1e3a]',
+              dividerText: 'text-[#35385a] text-[11px] px-3 uppercase tracking-widest',
+
+              // ── Social buttons ───────────────────────────────────
+              socialButtonsBlockButton: [
+                'w-full bg-[#10102a] border border-[#1e1e3a] text-[#94a3b8] rounded-[10px]',
+                'hover:bg-[#15153a] hover:border-[#2e2e5a] hover:text-[#c4cce0]',
+                'transition-all duration-200 py-2.5',
+              ].join(' '),
+              socialButtonsBlockButtonText:  'text-[13px] font-medium',
+              socialButtonsBlockButtonArrow: 'hidden',
+              socialButtonsProviderIcon:     'w-4 h-4',
+
+              // ── Alert / error banner ─────────────────────────────
+              alert: [
+                'bg-rose-500/10 border border-rose-500/25 rounded-[10px]',
+                'text-rose-300 text-[13px] px-4 py-3 my-4',
+              ].join(' '),
+              alertText:        'text-rose-300 leading-relaxed',
+              alertTextDanger:  'text-rose-300',
+              alertTextWarning: 'text-amber-300',
+
+              // ── Footer ───────────────────────────────────────────
+              footer:           'px-7 pt-3 pb-6',
+              footerAction:     'text-center',
+              footerActionText: 'text-[#4a5270] text-[13px]',
+              footerActionLink: 'text-violet-400 hover:text-violet-300 font-semibold text-[13px] transition-colors ml-1',
+              footerPages:      'hidden',
+
+              // ── Identity preview (after email entered) ───────────
+              identityPreviewText:       'text-[#c4cce0] text-[14px]',
+              identityPreviewEditButton: 'text-violet-400 hover:text-violet-300 text-[13px] transition-colors',
+
+              // ── Loading spinner ──────────────────────────────────
+              spinner: 'text-violet-400',
+
+              // ── Alternative methods ──────────────────────────────
+              alternativeMethodsBlockButton: [
+                'w-full bg-[#10102a] border border-[#1e1e3a] text-[#8892a4] rounded-[10px]',
+                'hover:bg-[#15153a] hover:text-[#c4cce0] transition-all duration-200 py-2.5 text-[13px]',
+              ].join(' '),
+
+              // ── T&C and privacy links ────────────────────────────
+              formFieldCheckboxInput: 'accent-violet-600 w-4 h-4 rounded',
+              formFieldCheckboxLabel: 'text-[#6b7a99] text-[12px]',
             },
           }}
         />
       </div>
 
-      <p className="mt-3 text-[11px] text-[#252535] relative z-10">© 2026 Aiscern · Secured by Clerk</p>
+      <p className="mt-4 text-[11px] text-[#1e2035] relative z-10">© 2026 Aiscern · Secured by Clerk</p>
     </div>
   )
 }
