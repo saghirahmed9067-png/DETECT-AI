@@ -1,18 +1,18 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase/admin'
-import { auth } from '@clerk/nextjs/server'
+import { verifyAdmin, isAdminError } from '@/lib/auth/verify-admin'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
+  const admin = await verifyAdmin()
+  if (isAdminError(admin)) return admin
+
   try {
-    const { userId } = await auth()
-    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    
     const db = getSupabaseAdmin()
     const now = new Date()
-    const todayStart = new Date(now.setHours(0,0,0,0)).toISOString()
-    
+    const todayStart = new Date(now.setHours(0, 0, 0, 0)).toISOString()
+
     const [
       { count: totalUsers },
       { count: signupsToday },
@@ -35,13 +35,11 @@ export async function GET() {
       db.from('scans').select('scan_type').limit(1000),
     ])
 
-    // Active users in last 24h from sessions
     const { count: activeToday } = await db
       .from('user_sessions')
       .select('*', { count: 'exact', head: true })
       .gte('created_at', new Date(Date.now() - 86400000).toISOString())
-    
-    // Scans by modality
+
     const modalityCount: Record<string, number> = {}
     ;(scansByModality || []).forEach((s: any) => {
       modalityCount[s.scan_type] = (modalityCount[s.scan_type] || 0) + 1

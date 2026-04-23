@@ -202,7 +202,7 @@ export default function BatchPage() {
       doc.setFontSize(10); doc.setTextColor(160,160,160); doc.setFont('helvetica','normal')
       doc.text(`Generated: ${new Date().toLocaleString()}`, margin, 75)
       doc.text(`Files analyzed: ${done.length}`, margin, 83)
-      doc.text(`Report ID: DETECT-${Date.now()}`, margin, 91)
+      doc.text(`Report ID: AISCERN-${Date.now()}`, margin, 91)
       const aiCount = done.filter(f=>f.verdict==='AI').length
       const humanCount = done.filter(f=>f.verdict==='HUMAN').length
       const overallRisk = Math.round((aiCount/done.length)*100)
