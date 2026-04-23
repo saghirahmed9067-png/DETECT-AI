@@ -92,7 +92,7 @@ export default function ScraperPage() {
 
       if (user && data.data) {
         try {
-          await supabase.from('scraper_sessions').insert({
+          await (supabase as any).from('scraper_sessions').insert({
             user_id: user.uid, target_url: scanUrl, domain: data.data.domain,
             page_title: data.data.title, page_description: data.data.description,
             total_assets: (data.data.sub_pages?.length ?? 0) + 1,
