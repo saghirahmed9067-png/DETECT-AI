@@ -89,8 +89,9 @@ export default function BatchPage() {
       if (!data.success) return { status: 'error', error: data.error?.message || 'Failed' }
 
       const processingTime = Date.now() - start
-      // FIX: removed duplicate supabase.from('scans').insert() — API route already saves per scan
-      return { status: 'done', verdict: data.result?.verdict, confidence: data.result?.confidence, processingTime }
+      // PDF API returns { success, data: {...} }; all other APIs return { success, result: {...} }
+      const payload = data.data ?? data.result
+      return { status: 'done', verdict: payload?.verdict, confidence: payload?.confidence, processingTime }
     } catch (e: any) {
       return { status: 'error', error: e?.message || 'Network error' }
     }
@@ -458,7 +459,7 @@ export default function BatchPage() {
           <h3 className="font-semibold text-text-primary mb-2">No files added yet</h3>
           <p className="text-text-muted text-sm max-w-xs">Drop images, audio, video, or text files above to start batch analysis</p>
           <div className="mt-5 grid grid-cols-2 gap-2 text-xs text-text-muted w-full max-w-xs">
-            {['Up to 25 files', '3 concurrent workers', 'Auto-saves to history', 'CSV export'].map(f => (
+            {['Up to 20 files', '5 concurrent workers', 'Auto-saves to history', 'CSV + PDF export'].map(f => (
               <div key={f} className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-surface-active/50">
                 <span className="w-1.5 h-1.5 rounded-full bg-secondary/60 shrink-0" />{f}
               </div>

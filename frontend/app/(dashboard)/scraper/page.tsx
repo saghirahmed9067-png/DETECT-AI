@@ -4,181 +4,134 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Globe, Search, AlertTriangle, CheckCircle, HelpCircle,
   Loader2, ExternalLink, Link2, ChevronDown, Database, Info,
+  Monitor, FileText, BookOpen, Zap, Shield,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/auth-provider'
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-interface SubPage {
-  url: string; title: string; content_type: string
-  word_count: number; ai_score: number; verdict: string; snippet: string
-}
-interface DiscoveredLink {
-  url: string; text: string; is_internal: boolean
-}
-interface Signal {
-  name: string; flagged: boolean; description: string
-}
+// ── Types ──────────────────────────────────────────────────────────────────────
+interface Signal { name: string; flagged: boolean; description: string; weight?: number }
+interface SubPage { url: string; title: string; content_type: string; word_count: number; ai_score: number; verdict: string; snippet: string }
+interface DiscoveredLink { url: string; text: string; is_internal: boolean }
 interface ScrapeResult {
   url: string; domain: string; title: string; description: string
-  author?: string; publish_date?: string; content_type: string
-  word_count: number; content_quality: 'high' | 'medium' | 'low'
+  author?: string; language?: string; publish_date?: string
+  content_type: string; word_count: number; content_quality: 'high' | 'medium' | 'low'
   overall_ai_score: number; verdict: 'AI' | 'HUMAN' | 'UNCERTAIN'
-  confidence: number; summary: string; signals: Signal[]
-  image_urls: string[]; sub_pages: SubPage[]
-  discovered_links: DiscoveredLink[]; total_links: number
-  status: string; engine_used: string
+  confidence: number; summary: string; reasoning?: string; writing_style?: string
+  signals: Signal[]; screenshot_url?: string; image_urls: string[]
+  headings?: string[]; sub_pages: SubPage[]; discovered_links: DiscoveredLink[]
+  total_links: number; status: string; engine_used: string
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-function verdictIcon(v: string, cls = 'w-4 h-4') {
+// ── Helpers ────────────────────────────────────────────────────────────────────
+const verdictColor = (v: string) =>
+  v === 'AI' ? 'text-rose-400' : v === 'HUMAN' ? 'text-emerald-400' : 'text-amber-400'
+
+const verdictBg = (v: string) =>
+  v === 'AI' ? 'bg-rose-500/15 border-rose-500/30' : v === 'HUMAN' ? 'bg-emerald-500/15 border-emerald-500/30' : 'bg-amber-500/15 border-amber-500/30'
+
+function VerdictIcon({ v, cls = 'w-5 h-5' }: { v: string; cls?: string }) {
   if (v === 'AI')    return <AlertTriangle className={`${cls} text-rose-400`} />
   if (v === 'HUMAN') return <CheckCircle   className={`${cls} text-emerald-400`} />
   return               <HelpCircle       className={`${cls} text-amber-400`} />
 }
 
-function verdictColor(v: string) {
-  if (v === 'AI')    return 'text-rose-400'
-  if (v === 'HUMAN') return 'text-emerald-400'
-  return               'text-amber-400'
-}
-
-function qualityBadge(q: 'high' | 'medium' | 'low') {
-  const map = {
-    high:   'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-    medium: 'bg-amber-500/20   text-amber-400   border-amber-500/30',
-    low:    'bg-rose-500/20    text-rose-400    border-rose-500/30',
-  }
-  return (
-    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${map[q]}`}>
-      {q.toUpperCase()} QUALITY
-    </span>
-  )
-}
-
-function ScoreRing({ score }: { score: number }) {
-  const r = 54; const c = 2 * Math.PI * r
+function ScoreRing({ score, size = 140 }: { score: number; size?: number }) {
+  const r = 48; const c = 2 * Math.PI * r
   const fill  = (score / 100) * c
   const color = score >= 60 ? '#F43F5E' : score >= 35 ? '#F59E0B' : '#10B981'
   return (
-    <div className="relative w-36 h-36 flex items-center justify-center mx-auto">
-      <svg className="absolute inset-0 -rotate-90" viewBox="0 0 120 120">
-        <circle cx="60" cy="60" r={r} fill="none" stroke="#1e1e2e" strokeWidth="10" />
-        <circle cx="60" cy="60" r={r} fill="none" stroke={color} strokeWidth="10"
+    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+      <svg className="absolute inset-0 -rotate-90" viewBox="0 0 110 110">
+        <circle cx="55" cy="55" r={r} fill="none" stroke="#1e1e2e" strokeWidth="9" />
+        <circle cx="55" cy="55" r={r} fill="none" stroke={color} strokeWidth="9"
           strokeDasharray={`${fill} ${c}`} strokeLinecap="round"
-          style={{ transition: 'stroke-dasharray 1s ease' }} />
+          style={{ transition: 'stroke-dasharray 1.2s cubic-bezier(.4,0,.2,1)' }} />
       </svg>
-      <div className="text-center z-10">
-        <p className="text-3xl font-black" style={{ color }}>{score}%</p>
-        <p className="text-[10px] text-slate-400 font-medium">AI score</p>
+      <div className="z-10 text-center">
+        <p className="text-3xl font-black tabular-nums" style={{ color }}>{score}%</p>
+        <p className="text-[10px] text-slate-400 font-medium mt-0.5">AI Score</p>
       </div>
     </div>
   )
 }
 
-// ── Sub-page Row ──────────────────────────────────────────────────────────────
-function SubPageRow({ sp }: { sp: SubPage }) {
-  return (
-    <div className="flex items-center gap-3 p-3 rounded-xl bg-[#141420] border border-white/5 hover:border-violet-500/30 transition-colors">
-      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-        sp.verdict === 'AI' ? 'bg-rose-400' : sp.verdict === 'HUMAN' ? 'bg-emerald-400' : 'bg-amber-400'
-      }`} />
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium text-slate-300 truncate">{sp.title}</p>
-        <a href={sp.url} target="_blank" rel="noreferrer"
-          className="text-[10px] text-slate-500 hover:text-violet-400 transition-colors truncate block">
-          {(() => { try { const u = new URL(sp.url); return u.hostname + u.pathname.slice(0, 40) } catch { return sp.url } })()}
-        </a>
-      </div>
-      <div className="text-right flex-shrink-0">
-        <p className={`text-sm font-bold ${verdictColor(sp.verdict)}`}>{sp.ai_score}%</p>
-        <p className="text-[10px] text-slate-500">{sp.word_count.toLocaleString()} words</p>
-      </div>
-    </div>
-  )
-}
+const EXAMPLES = [
+  { label: 'AI blog', url: 'https://www.jasper.ai/blog/ai-marketing-tools' },
+  { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Artificial_intelligence' },
+  { label: 'HN post',  url: 'https://news.ycombinator.com' },
+]
 
-// ── Main Page ─────────────────────────────────────────────────────────────────
+// ── Main Page ──────────────────────────────────────────────────────────────────
 export default function ScraperPage() {
-  const { user }                   = useAuth()
-  const [url, setUrl]              = useState('')
-  const [depth, setDepth]          = useState(1)
-  const [loading, setLoading]      = useState(false)
-  const [result, setResult]        = useState<ScrapeResult | null>(null)
-  const [error, setError]          = useState<string | null>(null)
-  const supabase                   = createClient()
+  const { user }              = useAuth()
+  const [url, setUrl]         = useState('')
+  const [depth, setDepth]     = useState(1)
+  const [loading, setLoading] = useState(false)
+  const [result, setResult]   = useState<ScrapeResult | null>(null)
+  const [error, setError]     = useState<string | null>(null)
+  const [screenshotError, setScreenshotError] = useState(false)
+  const supabase = createClient()
 
   const handleScrape = async (targetUrl?: string) => {
     const scanUrl = (targetUrl ?? url).trim()
     if (!scanUrl) return
     if (targetUrl) setUrl(targetUrl)
-
-    setLoading(true)
-    setError(null)
-    setResult(null)
+    setLoading(true); setError(null); setResult(null); setScreenshotError(false)
 
     try {
       const res  = await fetch('/api/scraper', {
-        method:  'POST',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ url: scanUrl, depth, maxSubPages: 5 }),
+        body: JSON.stringify({ url: scanUrl, depth, maxSubPages: 5 }),
       })
       const data = await res.json()
-
-      if (!data.success) {
-        setError(data.error?.message || 'Scan failed')
-        return
-      }
-
+      if (!data.success) { setError(data.error?.message || 'Scan failed'); return }
       setResult(data.data)
 
-      // Save to Supabase (non-fatal)
       if (user && data.data) {
         try {
-          await (supabase as any).from('scraper_sessions').insert({
-            user_id:          user.uid,
-            target_url:       scanUrl,
-            domain:           data.data.domain,
-            page_title:       data.data.title,
-            page_description: data.data.description,
-            total_assets:     (data.data.sub_pages?.length ?? 0) + 1,
-            ai_asset_count:   data.data.verdict === 'AI' ? 1 : 0,
+          await supabase.from('scraper_sessions').insert({
+            user_id: user.uid, target_url: scanUrl, domain: data.data.domain,
+            page_title: data.data.title, page_description: data.data.description,
+            total_assets: (data.data.sub_pages?.length ?? 0) + 1,
+            ai_asset_count: data.data.verdict === 'AI' ? 1 : 0,
             overall_ai_score: data.data.overall_ai_score,
-            scraped_content:  data.data.signals,
-            status:           'complete',
+            scraped_content: data.data.signals, status: 'complete',
           })
         } catch {}
       }
     } catch (e: unknown) {
       setError((e as Error)?.message || 'Unexpected error')
-    } finally {
-      setLoading(false)
-    }
+    } finally { setLoading(false) }
   }
 
   return (
-    <div className="min-h-screen bg-[#08080d] pb-20 lg:pb-0">
+    <div className="min-h-screen bg-[#08080d] pb-24 lg:pb-8">
       <div className="max-w-5xl mx-auto px-4 py-6 sm:py-8">
 
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
-            <Globe className="w-6 h-6 text-violet-400" />
-            Web Scanner
-          </h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Scan any website for AI-generated content. Follows links and analyzes sub-pages.
+          <div className="flex items-center gap-3 mb-1">
+            <div className="w-9 h-9 rounded-xl bg-violet-500/15 flex items-center justify-center">
+              <Globe className="w-5 h-5 text-violet-400" />
+            </div>
+            <h1 className="text-xl sm:text-2xl font-black text-white">Web Scanner</h1>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-400 border border-violet-500/25">RAG</span>
+          </div>
+          <p className="text-sm text-slate-400 ml-12">
+            Analyze any website for AI-generated content. Crawls sub-pages, captures screenshot, and uses Gemini RAG for 12-signal detection.
           </p>
         </div>
 
-        {/* Input Row */}
-        <div className="bg-[#0f0f17] border border-white/10 rounded-2xl p-4 sm:p-5 mb-6">
+        {/* Input */}
+        <div className="bg-[#0f0f17] border border-white/10 rounded-2xl p-4 sm:p-5 mb-5">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
               <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
               <input
-                type="url"
-                value={url}
+                type="url" value={url}
                 onChange={e => setUrl(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleScrape()}
                 placeholder="https://example.com/article"
@@ -186,192 +139,277 @@ export default function ScraperPage() {
               />
             </div>
             <button
-              onClick={() => handleScrape()}
-              disabled={loading || !url.trim()}
+              onClick={() => handleScrape()} disabled={loading || !url.trim()}
               className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 text-white text-sm font-bold disabled:opacity-50 hover:opacity-90 transition-opacity whitespace-nowrap"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-              {loading ? 'Scanning…' : 'Scan'}
+              {loading ? 'Scanning…' : 'Scan Site'}
             </button>
           </div>
 
-          {/* Depth control */}
-          <div className="flex items-center gap-3 mt-3 flex-wrap">
-            <span className="text-xs text-slate-500">Crawl depth</span>
-            <div className="flex gap-1">
-              {[1, 2].map(d => (
-                <button key={d} onClick={() => setDepth(d)}
-                  className={`w-7 h-7 rounded-lg text-xs font-bold transition-colors ${
-                    depth === d ? 'bg-violet-600 text-white' : 'bg-[#141420] text-slate-400 hover:bg-violet-500/20'
-                  }`}>
-                  {d}
+          {/* Options row */}
+          <div className="flex items-center gap-4 mt-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-500">Crawl depth</span>
+              <div className="flex gap-1">
+                {[1, 2].map(d => (
+                  <button key={d} onClick={() => setDepth(d)}
+                    className={`w-7 h-7 rounded-lg text-xs font-bold transition-colors ${depth === d ? 'bg-violet-600 text-white' : 'bg-[#141420] text-slate-400 hover:bg-violet-500/20'}`}>
+                    {d}
+                  </button>
+                ))}
+              </div>
+              <span className="text-[10px] text-slate-500">{depth === 1 ? 'Main page only' : 'Follow internal links'}</span>
+            </div>
+          </div>
+
+          {/* Example URLs */}
+          {!result && !loading && (
+            <div className="flex items-center gap-2 mt-3 flex-wrap">
+              <span className="text-[10px] text-slate-600 font-medium">Try:</span>
+              {EXAMPLES.map(ex => (
+                <button key={ex.url} onClick={() => handleScrape(ex.url)}
+                  className="text-[10px] px-2 py-1 rounded-lg bg-[#141420] text-violet-400 hover:bg-violet-500/15 border border-white/5 hover:border-violet-500/30 transition-colors">
+                  {ex.label}
                 </button>
               ))}
             </div>
-            <span className="text-[10px] text-slate-500">
-              {depth === 1 ? 'Main page only' : 'Follow internal links'}
-            </span>
-          </div>
+          )}
         </div>
 
         {/* Error */}
         <AnimatePresence>
           {error && (
             <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              className="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-3">
-              <AlertTriangle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
+              className="mb-5 p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-3">
+              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
               <p className="text-sm text-rose-300">{error}</p>
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Loading skeleton */}
+        {loading && (
+          <div className="space-y-4">
+            <div className="bg-[#0f0f17] border border-white/10 rounded-2xl p-5 animate-pulse">
+              <div className="flex gap-4">
+                <div className="w-36 h-36 rounded-xl bg-white/5 shrink-0" />
+                <div className="flex-1 space-y-3">
+                  <div className="h-4 bg-white/5 rounded w-3/4" />
+                  <div className="h-3 bg-white/5 rounded w-1/2" />
+                  <div className="h-3 bg-white/5 rounded w-2/3" />
+                  <div className="h-3 bg-white/5 rounded w-1/3" />
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-slate-500">
+              <Loader2 className="w-4 h-4 animate-spin text-violet-400" />
+              Fetching page, extracting content, running Gemini RAG analysis…
+            </div>
+          </div>
+        )}
 
         {/* Results */}
         <AnimatePresence>
           {result && (
             <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
 
-              {/* Top row: score + meta | sub-pages */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Screenshot + Score row */}
+              <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
 
-                {/* Left — main analysis */}
-                <div className="bg-[#0f0f17] border border-white/10 rounded-2xl p-5 space-y-4">
-                  <ScoreRing score={result.overall_ai_score} />
-
-                  {/* Verdict + badges */}
-                  <div className="text-center space-y-2">
-                    <div className="flex items-center justify-center gap-2">
-                      {verdictIcon(result.verdict, 'w-5 h-5')}
-                      <span className={`text-lg font-black ${verdictColor(result.verdict)}`}>
+                {/* Screenshot panel */}
+                <div className="lg:col-span-2 bg-[#0f0f17] border border-white/10 rounded-2xl overflow-hidden">
+                  <div className="relative">
+                    {!screenshotError && result.screenshot_url ? (
+                      <img
+                        src={result.screenshot_url}
+                        alt={`Screenshot of ${result.domain}`}
+                        className="w-full object-cover"
+                        style={{ maxHeight: 220 }}
+                        onError={() => setScreenshotError(true)}
+                      />
+                    ) : (
+                      <div className="w-full h-44 flex flex-col items-center justify-center bg-[#141420] text-slate-600">
+                        <Monitor className="w-10 h-10 mb-2 opacity-30" />
+                        <p className="text-xs">Screenshot unavailable</p>
+                      </div>
+                    )}
+                    {/* Overlay badge */}
+                    <div className={`absolute top-2 right-2 flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold backdrop-blur-sm ${verdictBg(result.verdict)}`}>
+                      <VerdictIcon v={result.verdict} cls="w-3.5 h-3.5" />
+                      <span className={verdictColor(result.verdict)}>
                         {result.verdict === 'AI' ? 'AI Generated' : result.verdict === 'HUMAN' ? 'Human Written' : 'Uncertain'}
                       </span>
                     </div>
-                    <div className="flex items-center justify-center gap-2 flex-wrap">
-                      {qualityBadge(result.content_quality)}
-                      <span className="text-[10px] bg-violet-500/20 text-violet-400 border border-violet-500/30 px-2 py-0.5 rounded-full font-semibold">
-                        {result.content_type.toUpperCase()}
-                      </span>
-                    </div>
                   </div>
+                  <div className="p-3">
+                    <p className="text-xs font-semibold text-white truncate">{result.title}</p>
+                    <a href={result.url} target="_blank" rel="noreferrer"
+                      className="text-[10px] text-violet-400 hover:underline flex items-center gap-1 mt-0.5">
+                      <ExternalLink className="w-3 h-3" />{result.domain}
+                    </a>
+                    {result.description && (
+                      <p className="text-[10px] text-slate-500 mt-1.5 line-clamp-2">{result.description}</p>
+                    )}
+                  </div>
+                </div>
 
-                  {/* Meta */}
-                  <div className="space-y-1.5 text-xs">
-                    <div className="flex justify-between text-slate-400">
-                      <span>Domain</span>
-                      <span className="text-slate-200 font-medium truncate max-w-[180px]">{result.domain}</span>
-                    </div>
-                    <div className="flex justify-between text-slate-400">
-                      <span>Word count</span>
-                      <span className="text-slate-200 font-medium">{result.word_count.toLocaleString()}</span>
-                    </div>
-                    {result.author && (
-                      <div className="flex justify-between text-slate-400">
-                        <span>Author</span>
-                        <span className="text-slate-200 font-medium truncate max-w-[160px]">{result.author}</span>
+                {/* Score + meta panel */}
+                <div className="lg:col-span-3 bg-[#0f0f17] border border-white/10 rounded-2xl p-5">
+                  <div className="flex items-start gap-5">
+                    <ScoreRing score={result.overall_ai_score} />
+                    <div className="flex-1 min-w-0 space-y-2">
+                      {/* Badges */}
+                      <div className="flex flex-wrap gap-1.5">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-700/60 text-slate-300 border border-white/10">
+                          {result.content_type.toUpperCase()}
+                        </span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                          result.content_quality === 'high' ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25' :
+                          result.content_quality === 'low'  ? 'bg-rose-500/15 text-rose-400 border-rose-500/25' :
+                          'bg-amber-500/15 text-amber-400 border-amber-500/25'}`}>
+                          {result.content_quality.toUpperCase()} QUALITY
+                        </span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-400 border border-violet-500/25">
+                          {result.engine_used}
+                        </span>
                       </div>
-                    )}
-                    {result.publish_date && (
-                      <div className="flex justify-between text-slate-400">
-                        <span>Published</span>
-                        <span className="text-slate-200 font-medium">{result.publish_date.slice(0, 10)}</span>
+
+                      {/* Meta grid */}
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs mt-2">
+                        {[
+                          ['Domain', result.domain],
+                          ['Words', result.word_count.toLocaleString()],
+                          result.author    ? ['Author', result.author]                       : null,
+                          result.publish_date ? ['Published', result.publish_date.slice(0,10)] : null,
+                          result.language  ? ['Language', result.language.toUpperCase()]     : null,
+                          ['Confidence', `${result.confidence}%`],
+                        ].filter(Boolean).map(([label, value]) => (
+                          <div key={label} className="flex justify-between gap-2">
+                            <span className="text-slate-500 shrink-0">{label}</span>
+                            <span className="text-slate-200 font-medium truncate text-right">{value}</span>
+                          </div>
+                        ))}
                       </div>
-                    )}
-                    <div className="flex justify-between text-slate-400">
-                      <span>Engine</span>
-                      <span className="text-slate-200 font-medium text-right">{result.engine_used}</span>
                     </div>
                   </div>
 
                   {/* Summary */}
-                  <p className="text-xs text-slate-400 leading-relaxed border-t border-white/5 pt-3">
-                    {result.summary}
-                  </p>
-
-                  {/* Signals */}
-                  {result.signals.length > 0 && (
-                    <div className="space-y-1.5 border-t border-white/5 pt-3">
-                      <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Detection Signals</p>
-                      {result.signals.slice(0, 6).map((sig, i) => (
-                        <div key={i} className="flex items-start gap-2">
-                          <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${sig.flagged ? 'bg-rose-400' : 'bg-emerald-400'}`} />
-                          <div className="min-w-0">
-                            <p className="text-xs font-medium text-slate-300">{sig.name}</p>
-                            <p className="text-[10px] text-slate-500 line-clamp-2">{sig.description}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Right — sub-pages */}
-                <div className="bg-[#0f0f17] border border-white/10 rounded-2xl p-5">
-                  <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
-                    <Globe className="w-4 h-4 text-violet-400" />
-                    Sub-pages Analyzed
-                    <span className="ml-auto text-[10px] text-slate-500 font-normal">{result.sub_pages.length} pages</span>
-                  </h3>
-
-                  {result.sub_pages.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-32 text-slate-600">
-                      <Globe className="w-8 h-8 mb-2 opacity-40" />
-                      <p className="text-xs">
-                        {depth === 1 ? 'Set crawl depth to 2 to follow links' : 'No sub-pages found'}
+                  <div className="mt-4 pt-3 border-t border-white/5 space-y-2">
+                    <p className="text-xs text-slate-300 leading-relaxed">{result.summary}</p>
+                    {result.reasoning && (
+                      <p className="text-[10px] text-slate-500 leading-relaxed italic">"{result.reasoning}"</p>
+                    )}
+                    {result.writing_style && (
+                      <p className="text-[10px] text-slate-500">
+                        <span className="text-slate-400 font-medium">Writing style:</span> {result.writing_style}
                       </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
-                      {result.sub_pages.map((sp, i) => <SubPageRow key={i} sp={sp} />)}
-                    </div>
-                  )}
-
-                  {/* Title of page */}
-                  <div className="mt-4 pt-4 border-t border-white/5">
-                    <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider mb-1">Page Title</p>
-                    <p className="text-xs text-slate-300 font-medium">{result.title}</p>
-                    {result.description && (
-                      <p className="text-[10px] text-slate-500 mt-1 line-clamp-2">{result.description}</p>
                     )}
                   </div>
                 </div>
               </div>
 
-              {/* Discovered Links Panel */}
-              <details className="bg-[#0f0f17] border border-white/10 rounded-2xl p-4">
-                <summary className="cursor-pointer text-sm font-semibold text-slate-300 flex items-center justify-between list-none">
-                  <span className="flex items-center gap-2">
-                    <Link2 className="w-4 h-4 text-violet-400" />
-                    Discovered Links
-                    <span className="text-xs text-slate-500 font-normal">
-                      {result.discovered_links.length} of {result.total_links} total
-                    </span>
-                  </span>
-                  <ChevronDown className="w-4 h-4 text-slate-500" />
+              {/* Signals grid */}
+              {result.signals.length > 0 && (
+                <div className="bg-[#0f0f17] border border-white/10 rounded-2xl p-5">
+                  <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-violet-400" />
+                    Detection Signals
+                    <span className="ml-auto text-[10px] text-slate-500 font-normal">{result.signals.filter(s => s.flagged).length} flagged of {result.signals.length}</span>
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {result.signals.map((sig, i) => (
+                      <div key={i} className={`flex items-start gap-2.5 p-2.5 rounded-xl border ${sig.flagged ? 'bg-rose-500/5 border-rose-500/15' : 'bg-emerald-500/5 border-emerald-500/10'}`}>
+                        <div className={`w-2 h-2 rounded-full mt-1 shrink-0 ${sig.flagged ? 'bg-rose-400' : 'bg-emerald-400'}`} />
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-slate-200">{sig.name}</p>
+                          <p className="text-[10px] text-slate-500 leading-relaxed">{sig.description}</p>
+                        </div>
+                        {sig.weight != null && (
+                          <span className="text-[9px] text-slate-600 shrink-0 mt-0.5">{Math.round((sig.weight ?? 0) * 10)}/10</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Sub-pages */}
+              {result.sub_pages.length > 0 && (
+                <div className="bg-[#0f0f17] border border-white/10 rounded-2xl p-5">
+                  <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                    <BookOpen className="w-4 h-4 text-violet-400" />
+                    Sub-pages Analyzed
+                    <span className="ml-auto text-[10px] text-slate-500 font-normal">{result.sub_pages.length} pages</span>
+                  </h3>
+                  <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                    {result.sub_pages.map((sp, i) => (
+                      <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-[#141420] border border-white/5 hover:border-violet-500/20 transition-colors">
+                        <div className={`w-2 h-2 rounded-full shrink-0 ${sp.verdict === 'AI' ? 'bg-rose-400' : sp.verdict === 'HUMAN' ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-slate-300 truncate">{sp.title}</p>
+                          <a href={sp.url} target="_blank" rel="noreferrer"
+                            className="text-[10px] text-slate-500 hover:text-violet-400 transition-colors truncate block">
+                            {(() => { try { const u = new URL(sp.url); return u.hostname + u.pathname.slice(0, 40) } catch { return sp.url } })()}
+                          </a>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className={`text-sm font-bold ${verdictColor(sp.verdict)}`}>{sp.ai_score}%</p>
+                          <p className="text-[10px] text-slate-500">{sp.word_count.toLocaleString()} words</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Headings preview */}
+              {result.headings && result.headings.length > 0 && (
+                <div className="bg-[#0f0f17] border border-white/10 rounded-2xl p-4">
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <FileText className="w-3.5 h-3.5" />Page Structure
+                  </h3>
+                  <div className="flex flex-wrap gap-1.5">
+                    {result.headings.map((h, i) => (
+                      <span key={i} className="text-[10px] px-2 py-1 rounded-lg bg-[#141420] text-slate-300 border border-white/5">
+                        {h.slice(0, 60)}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Discovered Links */}
+              <details className="bg-[#0f0f17] border border-white/10 rounded-2xl p-4 group">
+                <summary className="cursor-pointer text-sm font-semibold text-slate-300 flex items-center gap-2 list-none select-none">
+                  <Link2 className="w-4 h-4 text-violet-400" />
+                  Discovered Links
+                  <span className="text-xs text-slate-500 font-normal">{result.discovered_links.length} of {result.total_links} total</span>
+                  <ChevronDown className="w-4 h-4 text-slate-500 ml-auto group-open:rotate-180 transition-transform" />
                 </summary>
-                <div className="mt-3 space-y-1 max-h-64 overflow-y-auto">
+                <div className="mt-3 space-y-1 max-h-56 overflow-y-auto">
                   {result.discovered_links.map((link, i) => (
-                    <div key={i} className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-[#141420] text-xs group">
-                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${link.is_internal ? 'bg-violet-400' : 'bg-cyan-400'}`} />
-                      <span className="text-slate-400 truncate flex-1">{link.text.slice(0, 60)}</span>
+                    <div key={i} className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-[#141420] text-xs group/row">
+                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${link.is_internal ? 'bg-violet-400' : 'bg-cyan-400'}`} />
+                      <span className="text-slate-400 truncate flex-1">{link.text.slice(0, 55)}</span>
                       <a href={link.url} target="_blank" rel="noreferrer"
-                        className="text-violet-400 hover:underline truncate max-w-[160px] hidden sm:block">
+                        className="text-violet-400 hover:underline truncate max-w-[140px] hidden sm:block text-[10px]">
                         {(() => { try { return new URL(link.url).hostname } catch { return link.url } })()}
                       </a>
-                      <button
-                        onClick={() => handleScrape(link.url)}
-                        title="Analyze this link"
-                        className="text-slate-500 hover:text-violet-400 transition-colors flex-shrink-0">
-                        <ExternalLink className="w-3.5 h-3.5" />
+                      <button onClick={() => handleScrape(link.url)} title="Scan this page"
+                        className="text-slate-500 hover:text-violet-400 transition-colors shrink-0 ml-1">
+                        <Zap className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   ))}
                 </div>
               </details>
 
-              {/* Dataset Info */}
+              {/* Datasets info */}
               <details className="bg-[#0f0f17] border border-white/10 rounded-2xl p-4">
-                <summary className="cursor-pointer text-sm font-semibold text-slate-300 flex items-center gap-2 list-none">
-                  <Info className="w-4 h-4 text-violet-400" />
-                  Detection Models &amp; Datasets
+                <summary className="cursor-pointer text-sm font-semibold text-slate-300 flex items-center gap-2 list-none select-none">
+                  <Info className="w-4 h-4 text-violet-400" />Detection Models &amp; Reference Datasets
+                  <ChevronDown className="w-4 h-4 text-slate-500 ml-auto" />
                 </summary>
                 <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-500">
                   {[
@@ -382,7 +420,7 @@ export default function ScraperPage() {
                   ].map(d => (
                     <a key={d.url} href={d.url} target="_blank" rel="noreferrer"
                       className="flex items-start gap-2 p-2 rounded-lg hover:bg-[#141420] transition-colors group">
-                      <Database className="w-3.5 h-3.5 text-violet-400 mt-0.5 flex-shrink-0" />
+                      <Database className="w-3.5 h-3.5 text-violet-400 mt-0.5 shrink-0" />
                       <div>
                         <p className="text-slate-300 font-medium group-hover:text-violet-400 transition-colors">{d.name}</p>
                         <p>{d.desc}</p>
@@ -398,10 +436,14 @@ export default function ScraperPage() {
 
         {/* Empty state */}
         {!result && !loading && !error && (
-          <div className="flex flex-col items-center justify-center py-20 text-slate-600">
-            <Globe className="w-12 h-12 mb-4 opacity-30" />
-            <p className="text-sm">Enter a URL above to start scanning</p>
-            <p className="text-xs mt-1 opacity-70">Works with articles, blogs, Wikipedia, and more</p>
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-violet-500/10 flex items-center justify-center mb-4">
+              <Globe className="w-8 h-8 text-violet-400 opacity-60" />
+            </div>
+            <p className="text-sm text-slate-400 font-medium">Enter any website URL above</p>
+            <p className="text-xs text-slate-600 mt-1 max-w-xs">
+              Works best with articles, blog posts, and content-heavy pages. Gets a screenshot and runs 12-signal AI detection.
+            </p>
           </div>
         )}
       </div>

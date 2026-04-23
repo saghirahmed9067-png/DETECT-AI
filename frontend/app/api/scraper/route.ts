@@ -1,204 +1,265 @@
 export const maxDuration = 60
 
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
+import { auth }                       from '@clerk/nextjs/server'
 import { checkRateLimit, rateLimitResponse } from '@/lib/ratelimit'
-import { fetchWithProxy } from '@/lib/proxy/fetch-with-proxy'
-import { geminiAvailable } from '@/lib/inference/gemini-analyzer'
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { fetchWithProxy }             from '@/lib/proxy/fetch-with-proxy'
+import { geminiAvailable }            from '@/lib/inference/gemini-analyzer'
+import { GoogleGenerativeAI }         from '@google/generative-ai'
+import { assertSafeUrl }              from '@/lib/utils/ssrf-guard'
+import * as cheerio                   from 'cheerio'
 
-export const dynamic     = 'force-dynamic'
+export const dynamic = 'force-dynamic'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface PageData {
-  url: string
-  title: string
+  url:         string
+  title:       string
   description: string
   textContent: string
-  wordCount: number
+  wordCount:   number
   contentType: 'article' | 'product' | 'homepage' | 'forum' | 'documentation' | 'other'
-  links: { url: string; text: string; isInternal: boolean }[]
-  imageUrls: string[]
+  links:       { url: string; text: string; isInternal: boolean }[]
+  imageUrls:   string[]
   publishDate?: string
-  author?: string
+  author?:     string
+  language?:   string
+  headings:    string[]
+  metaKeywords?: string
+}
+
+interface DetectionSignal {
+  name:        string
+  flagged:     boolean
+  description: string
+  weight:      number
 }
 
 interface ContentAnalysis {
-  aiScore: number
-  verdict: 'AI' | 'HUMAN' | 'UNCERTAIN'
-  confidence: number
-  contentQuality: 'high' | 'medium' | 'low'
-  signals: { name: string; flagged: boolean; description: string }[]
-  summary: string
+  aiScore:       number
+  verdict:       'AI' | 'HUMAN' | 'UNCERTAIN'
+  confidence:    number
+  contentQuality:'high' | 'medium' | 'low'
+  signals:       DetectionSignal[]
+  summary:       string
+  reasoning:     string
+  writingStyle:  string
 }
 
 interface SubPageResult {
-  url: string
-  title: string
+  url:         string
+  title:       string
   contentType: string
-  wordCount: number
-  aiScore: number
-  verdict: string
-  snippet: string
+  wordCount:   number
+  aiScore:     number
+  verdict:     string
+  snippet:     string
 }
 
-// ── HTML Parser ───────────────────────────────────────────────────────────────
+// ── Cheerio HTML Parser ────────────────────────────────────────────────────────
 function parseHTML(html: string, baseUrl: string): PageData {
   const url = new URL(baseUrl)
+  const $   = cheerio.load(html)
 
-  const title = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.trim() || url.hostname
+  // Remove noise
+  $('script, style, nav, footer, header, aside, .ads, .advertisement, #cookie-banner, .popup').remove()
 
-  const description =
-    html.match(/<meta[^>]+name=[\"']description[\"'][^>]+content=[\"']([^\"']+)/i)?.[1]?.trim() ||
-    html.match(/<meta[^>]+content=[\"']([^\"']+)[\"'][^>]+name=[\"']description[\"']/i)?.[1]?.trim() || ''
+  const title       = $('title').text().trim() || $('h1').first().text().trim() || url.hostname
+  const description = $('meta[name="description"]').attr('content')?.trim() ||
+                      $('meta[property="og:description"]').attr('content')?.trim() || ''
+  const author      = $('meta[name="author"]').attr('content')?.trim() ||
+                      $('[rel="author"]').first().text().trim() ||
+                      $('.author, .byline, [class*="author"]').first().text().trim() || undefined
+  const publishDate = $('meta[property="article:published_time"]').attr('content') ||
+                      $('time[datetime]').first().attr('datetime') || undefined
+  const language    = $('html').attr('lang')?.slice(0, 2) || undefined
+  const metaKeywords= $('meta[name="keywords"]').attr('content')?.trim() || undefined
 
-  const author =
-    html.match(/<meta[^>]+name=[\"']author[\"'][^>]+content=[\"']([^\"']+)/i)?.[1]?.trim() ||
-    html.match(/<span[^>]+class=[\"'][^\"']*author[^\"']*[\"'][^>]*>([^<]+)<\/span>/i)?.[1]?.trim()
+  // Extract headings for structure analysis
+  const headings: string[] = []
+  $('h1, h2, h3').each((_, el) => {
+    const t = $(el).text().trim()
+    if (t.length > 3 && headings.length < 15) headings.push(t)
+  })
 
-  const publishDate =
-    html.match(/<meta[^>]+property=[\"']article:published_time[\"'][^>]+content=[\"']([^\"']+)/i)?.[1] ||
-    html.match(/<time[^>]+datetime=[\"']([^\"']+)[\"']/i)?.[1]
-
-  let cleaned = html
-    .replace(/<script[\s\S]*?<\/script>/gi, '')
-    .replace(/<style[\s\S]*?<\/style>/gi, '')
-    .replace(/<nav[\s\S]*?<\/nav>/gi, '')
-    .replace(/<footer[\s\S]*?<\/footer>/gi, '')
-    .replace(/<header[\s\S]*?<\/header>/gi, '')
-    .replace(/<aside[\s\S]*?<\/aside>/gi, '')
-    .replace(/<!--[\s\S]*?-->/g, '')
-
+  // Extract main text blocks — priority order: article > main > body paragraphs
   const textBlocks: string[] = []
-  const contentTags = /<(p|h[1-6]|article|section|main)[^>]*>([\s\S]*?)<\/\1>/gi
-  let m: RegExpExecArray | null
-  while ((m = contentTags.exec(cleaned)) !== null && textBlocks.length < 50) {
-    const text = m[2].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
-    if (text.length > 60) textBlocks.push(text.slice(0, 800))
+  const mainSelectors = ['article', 'main', '[role="main"]', '.post-content', '.article-content', '.entry-content', '.content', '#content']
+  let $main = $()
+  for (const sel of mainSelectors) {
+    if ($(sel).length) { $main = $(sel).first(); break }
   }
-  const textContent = textBlocks.join('\n\n')
-  const wordCount = textContent.split(/\s+/).filter(Boolean).length
+  const $container = $main.length ? $main : $('body')
 
-  const isArticle = /article|blog|post|news|story/i.test(html) || /article/i.test(url.pathname)
-  const isProduct = /product|shop|buy|price|cart|ecommerce/i.test(html)
-  const isForum   = /forum|community|discuss|comment|reply/i.test(url.hostname + url.pathname)
+  $container.find('p, h1, h2, h3, h4, blockquote, li').each((_, el) => {
+    const text = $(el).text().replace(/\s+/g, ' ').trim()
+    if (text.length > 40 && textBlocks.length < 80) textBlocks.push(text.slice(0, 1000))
+  })
+
+  const textContent = textBlocks.join('\n\n')
+  const wordCount   = textContent.split(/\s+/).filter(Boolean).length
+
+  // Content type detection
+  const fullText = html.toLowerCase()
+  const isArticle = /article|blog|post|news|story/i.test(fullText) || /\/(blog|news|article|post)\//i.test(url.pathname)
+  const isProduct = /product|shop|buy|price|cart|add.to.bag/i.test(fullText)
+  const isForum   = /forum|community|discuss|comment|reply|thread/i.test(url.hostname + url.pathname)
   const isDocs    = /docs|documentation|api|reference|guide/i.test(url.pathname)
   const contentType = isArticle ? 'article' : isProduct ? 'product' : isForum ? 'forum' : isDocs ? 'documentation' : url.pathname === '/' ? 'homepage' : 'other'
 
+  // Extract links
   const links: PageData['links'] = []
-  const linkRegex = /<a[^>]+href=[\"']([^\"'#]+)[\"'][^>]*>([^<]*(?:<[^>]*>[^<]*)*)<\/a>/gi
-  while ((m = linkRegex.exec(html)) !== null && links.length < 30) {
+  $('a[href]').each((_, el) => {
+    if (links.length >= 40) return
     try {
-      let href = m[1].trim()
+      let href = $(el).attr('href')?.trim() || ''
       if (href.startsWith('//')) href = `https:${href}`
       else if (href.startsWith('/')) href = `${url.origin}${href}`
-      const linkUrl = new URL(href)
-      const linkText = m[2].replace(/<[^>]+>/g, '').trim().slice(0, 100)
+      const linkUrl  = new URL(href)
+      const linkText = $(el).text().replace(/\s+/g, ' ').trim().slice(0, 100)
       if (linkUrl.protocol.startsWith('http') && linkText.length > 2) {
         links.push({ url: linkUrl.href, text: linkText, isInternal: linkUrl.hostname === url.hostname })
       }
     } catch {}
-  }
+  })
 
+  // Extract images
   const imageUrls: string[] = []
-  const imgRegex = /<img[^>]+src=[\"']([^\"']+)[\"']/gi
-  while ((m = imgRegex.exec(html)) !== null && imageUrls.length < 15) {
+  $('img[src]').each((_, el) => {
+    if (imageUrls.length >= 12) return
     try {
-      let src = m[1]
+      let src = $(el).attr('src') || $(el).attr('data-src') || ''
       if (src.startsWith('//')) src = `https:${src}`
       else if (src.startsWith('/')) src = `${url.origin}${src}`
-      if (src.startsWith('http') && !src.includes('tracking') && !src.includes('pixel')) {
+      if (src.startsWith('http') && !src.includes('tracking') && !src.includes('pixel') && !src.includes('1x1')) {
         imageUrls.push(src)
       }
     } catch {}
-  }
+  })
 
-  return { url: baseUrl, title, description, textContent, wordCount, contentType, links, imageUrls, publishDate, author }
+  return { url: baseUrl, title, description, textContent, wordCount, contentType, links, imageUrls, publishDate, author, language, headings, metaKeywords }
 }
 
-function detectContentQuality(textContent: string, wordCount: number): 'high' | 'medium' | 'low' {
-  if (wordCount < 100) return 'low'
-  if (wordCount > 500 && textContent.includes(' ') && !textContent.includes('Lorem ipsum')) return 'high'
-  return 'medium'
+// ── Screenshot via thum.io (free, no API key) ─────────────────────────────────
+function getScreenshotUrl(targetUrl: string): string {
+  // thum.io: free screenshot service, no key required
+  return `https://image.thum.io/get/width/1280/crop/800/noanimate/${encodeURIComponent(targetUrl)}`
 }
 
-// ── Gemini RAG Analysis ───────────────────────────────────────────────────────
-async function analyzeContentWithGemini(
-  textContent: string,
-  pageTitle: string,
-  contentType: string,
-  subPageTexts: string[]
+// ── Content quality scorer ─────────────────────────────────────────────────────
+function scoreContentQuality(text: string, wordCount: number, headings: string[]): 'high' | 'medium' | 'low' {
+  if (wordCount < 80) return 'low'
+  const hasStructure = headings.length >= 2
+  const hasDepth     = wordCount > 400
+  const noLorem      = !text.includes('Lorem ipsum')
+  if (hasStructure && hasDepth && noLorem) return 'high'
+  if (wordCount > 150 && noLorem) return 'medium'
+  return 'low'
+}
+
+// ── Gemini RAG Analysis — 12 structured signals ───────────────────────────────
+async function analyzeWithGemini(
+  page:         PageData,
+  subPageTexts: string[],
 ): Promise<ContentAnalysis> {
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
   const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
 
+  const headingBlock = page.headings.length
+    ? `HEADINGS: ${page.headings.slice(0, 8).join(' | ')}`
+    : ''
+
+  const subContext = subPageTexts.slice(0, 3)
+    .map((t, i) => `SUB-PAGE ${i + 1}:\n${t.slice(0, 800)}`)
+    .join('\n\n---\n\n')
+
   const combinedContext = [
-    `MAIN PAGE (${contentType}): ${textContent.slice(0, 3000)}`,
-    ...subPageTexts.slice(0, 3).map((t, i) => `SUB-PAGE ${i + 1}: ${t.slice(0, 1000)}`),
-  ].join('\n\n---\n\n')
+    `MAIN PAGE (${page.contentType}, ${page.wordCount} words):`,
+    headingBlock,
+    page.textContent.slice(0, 3500),
+    subContext ? '\n\n=== SUB-PAGES ===\n' + subContext : '',
+  ].filter(Boolean).join('\n')
 
-  const prompt = `You are an expert AI content detection system analyzing a website's content.
+  const prompt = `You are Aiscern's production AI content detection engine analyzing a live website.
 
-Title: "${pageTitle}"
-Content Type: ${contentType}
+WEBSITE METADATA:
+- Title: "${page.title}"
+- Domain: ${new URL(page.url).hostname}
+- Content type: ${page.contentType}
+- Word count: ${page.wordCount}
+- Language: ${page.language || 'en'}
+- Author detected: ${page.author || 'none'}
+- Published: ${page.publishDate || 'unknown'}
 
-Full Context (main page + sub-pages):
+CONTENT TO ANALYZE:
 ${combinedContext}
 
-Analyze ALL this content and respond ONLY in this exact JSON format:
+Analyze all signals and respond ONLY in this exact JSON format (no markdown, no preamble):
 {
   "ai_probability": 0.0,
   "verdict": "AI",
   "content_quality": "high",
-  "signals": [{"name": "signal name", "flagged": true, "description": "brief explanation"}],
-  "summary": "2-3 sentence analysis summary",
-  "reasoning": "key evidence for the verdict"
+  "writing_style": "one sentence describing the writing style",
+  "summary": "2-3 sentence analysis for the user",
+  "reasoning": "key evidence supporting verdict",
+  "signals": [
+    {"name": "Signal Name", "flagged": true, "description": "brief explanation", "weight": 0.8}
+  ]
 }
 
-AI content signals to detect:
-- Unnaturally uniform sentence lengths and structure
-- Overuse of transition phrases (Furthermore, Moreover, Additionally, In conclusion)
-- Generic hedging without specific personal voice or lived experience
-- Suspiciously comprehensive coverage without depth
-- Lack of typos, colloquialisms, or natural human imperfections
-- Repetitive semantic patterns across paragraphs
-- Over-optimization with keywords
-- Missing authorship personality or point of view
-- For multi-page context: same writing style and cadence across all pages`
+Evaluate ALL 12 signals:
+1. Transition overuse — "Furthermore", "Moreover", "Additionally", "In conclusion", "It is important to note"
+2. Sentence uniformity — suspiciously consistent length and rhythm across all paragraphs
+3. Personal voice absence — no first-person anecdotes, lived experience, or idiosyncratic opinions
+4. Hedging language — generic qualifiers without specific claims or data
+5. Structural perfection — every section perfectly parallel, numbered lists too neat
+6. Keyword stuffing — obvious SEO over-optimization patterns
+7. Factual vagueness — broad claims without specific names, dates, or numbers
+8. Tonal flatness — no humor, sarcasm, frustration, or genuine emotional variance
+9. Cross-page consistency — all sub-pages share identical style, cadence, and structure
+10. Authorship signals — missing byline, bio, or any personal attribution
+11. Natural imperfections — absence of typos, colloquialisms, contractions, broken sentences
+12. Human specificity — lack of specific references to time, place, culture, or personal network
+
+For each signal: flagged=true means it indicates AI generation. weight is 0.0-1.0 importance.`
 
   const result = await model.generateContent(prompt)
-  const raw = result.response.text()
+  const raw    = result.response.text()
 
   try {
-    const clean = raw.replace(/```json\n?|\n?```/g, '').trim()
+    const clean  = raw.replace(/```json\n?|\n?```/g, '').trim()
     const parsed = JSON.parse(clean)
-    const aiScore = parsed.ai_probability ?? 0.5
+    const aiScore = Math.max(0, Math.min(1, parsed.ai_probability ?? 0.5))
     return {
       aiScore,
-      verdict: aiScore >= 0.60 ? 'AI' : aiScore <= 0.38 ? 'HUMAN' : 'UNCERTAIN',
-      confidence: Math.round(Math.abs(aiScore - 0.5) * 200),
-      contentQuality: parsed.content_quality ?? 'medium',
-      signals: parsed.signals ?? [],
-      summary: parsed.summary ?? `Analysis complete. AI probability: ${Math.round(aiScore * 100)}%`,
+      verdict:       aiScore >= 0.60 ? 'AI' : aiScore <= 0.38 ? 'HUMAN' : 'UNCERTAIN',
+      confidence:    Math.round(Math.abs(aiScore - 0.5) * 200),
+      contentQuality:parsed.content_quality ?? 'medium',
+      signals:       Array.isArray(parsed.signals) ? parsed.signals.slice(0, 12) : [],
+      summary:       parsed.summary ?? `Analysis complete. AI probability: ${Math.round(aiScore * 100)}%`,
+      reasoning:     parsed.reasoning ?? '',
+      writingStyle:  parsed.writing_style ?? '',
     }
   } catch {
     return {
       aiScore: 0.5, verdict: 'UNCERTAIN', confidence: 0,
-      contentQuality: 'medium', signals: [], summary: 'Analysis parsing failed',
+      contentQuality: 'medium', signals: [],
+      summary: 'Analysis could not be parsed — please retry.',
+      reasoning: '', writingStyle: '',
     }
   }
 }
 
-// ── HF Text Fallback ─────────────────────────────────────────────────────────
+// ── HuggingFace Fallback ──────────────────────────────────────────────────────
 async function analyzeTextHF(text: string): Promise<{ aiScore: number; verdict: string }> {
-  const HF_TOKEN = process.env.HUGGINGFACE_API_TOKEN || process.env.HF_TOKEN || ''
-  if (!HF_TOKEN) return { aiScore: 0.5, verdict: 'UNCERTAIN' }
+  const token = process.env.HUGGINGFACE_API_TOKEN || process.env.HF_TOKEN || ''
+  if (!token) return { aiScore: 0.5, verdict: 'UNCERTAIN' }
   try {
     const res = await fetch(
       'https://api-inference.huggingface.co/models/openai-community/roberta-base-openai-detector',
       {
         method: 'POST',
-        headers: { Authorization: `Bearer ${HF_TOKEN}`, 'Content-Type': 'application/json' },
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ inputs: text.slice(0, 512) }),
         signal: AbortSignal.timeout(12_000),
       }
@@ -215,27 +276,22 @@ async function analyzeTextHF(text: string): Promise<{ aiScore: number; verdict: 
   }
 }
 
-// ── Sub-URL Crawler ───────────────────────────────────────────────────────────
-async function crawlSubPages(
-  links: PageData['links'],
-  maxPages: number = 5,
-): Promise<SubPageResult[]> {
+// ── Sub-page Crawler ──────────────────────────────────────────────────────────
+async function crawlSubPages(links: PageData['links'], maxPages = 5): Promise<SubPageResult[]> {
   const results: SubPageResult[] = []
-  const toVisit = links
-    .filter(l => l.isInternal || l.url.includes('wikipedia.org') || l.url.includes('medium.com'))
-    .slice(0, maxPages)
+  const toVisit = links.filter(l => l.isInternal).slice(0, maxPages)
 
   await Promise.allSettled(toVisit.map(async (link) => {
     try {
+      // SSRF guard on each sub-page link
+      assertSafeUrl(link.url)
       const res = await fetchWithProxy(link.url, { maxRetries: 1, timeoutMs: 8000 })
       if (!res.ok) return
       const html = await res.text()
       const page = parseHTML(html, link.url)
       if (page.wordCount < 80) return
 
-      const snippetText = page.textContent.slice(0, 600)
-      const analysis = await analyzeTextHF(snippetText)
-
+      const analysis = await analyzeTextHF(page.textContent.slice(0, 600))
       results.push({
         url:         link.url,
         title:       page.title,
@@ -243,7 +299,7 @@ async function crawlSubPages(
         wordCount:   page.wordCount,
         aiScore:     analysis.aiScore,
         verdict:     analysis.verdict,
-        snippet:     snippetText.slice(0, 200) + (snippetText.length > 200 ? '…' : ''),
+        snippet:     page.textContent.slice(0, 220) + (page.textContent.length > 220 ? '…' : ''),
       })
     } catch {}
   }))
@@ -268,12 +324,20 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const body = await req.json()
+    const body                    = await req.json()
     const { url, depth = 1, maxSubPages = 5 } = body
 
     if (!url) {
       return NextResponse.json(
         { success: false, error: { code: 'NO_URL', message: 'URL is required' } },
+        { status: 400 }
+      )
+    }
+
+    // SSRF guard — block private IPs, metadata endpoints, dangerous ports
+    try { assertSafeUrl(url) } catch (e: any) {
+      return NextResponse.json(
+        { success: false, error: { code: 'BLOCKED_URL', message: e.message } },
         { status: 400 }
       )
     }
@@ -286,46 +350,49 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // ── Fetch main page ──────────────────────────────────────────────────────
-    const mainRes = await fetchWithProxy(url, { maxRetries: 2, timeoutMs: 15000 })
+    // Fetch main page + screenshot in parallel
+    const [mainRes] = await Promise.all([
+      fetchWithProxy(url, { maxRetries: 2, timeoutMs: 15000 }),
+    ])
+
     if (!mainRes.ok) throw new Error(`Failed to fetch page: ${mainRes.status}`)
     const mainHtml = await mainRes.text()
     const mainPage = parseHTML(mainHtml, url)
 
     if (mainPage.wordCount < 30) {
       return NextResponse.json(
-        { success: false, error: { code: 'NO_CONTENT', message: 'No analyzable text content found on this page.' } },
+        { success: false, error: { code: 'NO_CONTENT', message: 'Not enough readable text on this page to analyze. Try a blog post or article URL.' } },
         { status: 422 }
       )
     }
 
-    // ── Crawl sub-pages ──────────────────────────────────────────────────────
+    // Crawl sub-pages if depth > 0
     const subPageResults = depth > 0
       ? await crawlSubPages(mainPage.links, maxSubPages)
       : []
 
-    // ── Gemini RAG analysis ──────────────────────────────────────────────────
-    const geminiAvail = geminiAvailable()
-    let mainAnalysis: ContentAnalysis
+    // Analyze with Gemini RAG or HF fallback
+    const useGemini = geminiAvailable()
+    let analysis: ContentAnalysis
 
-    if (geminiAvail) {
-      mainAnalysis = await analyzeContentWithGemini(
-        mainPage.textContent,
-        mainPage.title,
-        mainPage.contentType,
-        subPageResults.map(s => s.snippet)
-      )
+    if (useGemini) {
+      analysis = await analyzeWithGemini(mainPage, subPageResults.map(s => s.snippet))
     } else {
-      const hfResult = await analyzeTextHF(mainPage.textContent.slice(0, 1200))
-      mainAnalysis = {
-        aiScore:        hfResult.aiScore,
-        verdict:        hfResult.verdict as 'AI' | 'HUMAN' | 'UNCERTAIN',
-        confidence:     Math.round(Math.abs(hfResult.aiScore - 0.5) * 200),
-        contentQuality: detectContentQuality(mainPage.textContent, mainPage.wordCount),
-        signals: [{ name: 'AI Text Classifier', flagged: hfResult.verdict === 'AI', description: 'HuggingFace RoBERTa classifier' }],
-        summary: `Analysis via HF model. AI score: ${Math.round(hfResult.aiScore * 100)}%`,
+      const hf = await analyzeTextHF(mainPage.textContent.slice(0, 1200))
+      analysis = {
+        aiScore:        hf.aiScore,
+        verdict:        hf.verdict as 'AI' | 'HUMAN' | 'UNCERTAIN',
+        confidence:     Math.round(Math.abs(hf.aiScore - 0.5) * 200),
+        contentQuality: scoreContentQuality(mainPage.textContent, mainPage.wordCount, mainPage.headings),
+        signals: [{ name: 'RoBERTa Classifier', flagged: hf.verdict === 'AI', description: 'HuggingFace openai-detector model result', weight: 1.0 }],
+        summary:       `HF analysis: ${Math.round(hf.aiScore * 100)}% AI probability.`,
+        reasoning:     '',
+        writingStyle:  '',
       }
     }
+
+    // Screenshot URL (thum.io — free, no key, generates on-demand)
+    const screenshotUrl = getScreenshotUrl(url)
 
     return NextResponse.json({
       success: true,
@@ -335,17 +402,22 @@ export async function POST(req: NextRequest) {
         title:            mainPage.title,
         description:      mainPage.description || `Content from ${urlObj.hostname}`,
         author:           mainPage.author,
+        language:         mainPage.language,
         publish_date:     mainPage.publishDate,
         content_type:     mainPage.contentType,
         word_count:       mainPage.wordCount,
-        content_quality:  mainAnalysis.contentQuality,
-        overall_ai_score: Math.round(mainAnalysis.aiScore * 100),
-        verdict:          mainAnalysis.verdict,
-        confidence:       mainAnalysis.confidence,
-        summary:          mainAnalysis.summary,
-        signals:          mainAnalysis.signals,
-        image_urls:       mainPage.imageUrls.slice(0, 10),
-        sub_pages: subPageResults.map(sp => ({
+        content_quality:  analysis.contentQuality,
+        overall_ai_score: Math.round(analysis.aiScore * 100),
+        verdict:          analysis.verdict,
+        confidence:       analysis.confidence,
+        summary:          analysis.summary,
+        reasoning:        analysis.reasoning,
+        writing_style:    analysis.writingStyle,
+        signals:          analysis.signals,
+        screenshot_url:   screenshotUrl,
+        image_urls:       mainPage.imageUrls.slice(0, 8),
+        headings:         mainPage.headings.slice(0, 6),
+        sub_pages:        subPageResults.map(sp => ({
           url:          sp.url,
           title:        sp.title,
           content_type: sp.contentType,
@@ -361,18 +433,18 @@ export async function POST(req: NextRequest) {
         })),
         total_links:  mainPage.links.length,
         status:       'complete',
-        engine_used:  geminiAvail ? 'Gemini 2.0 Flash RAG' : 'HuggingFace RoBERTa',
+        engine_used:  useGemini ? 'Gemini 2.0 Flash + Cheerio RAG' : 'HuggingFace RoBERTa',
       },
     })
   } catch (err: unknown) {
-    const msg = (err as Error)?.message || 'Scan failed'
-    const isBlocked = msg.includes('403') || msg.includes('blocked') || msg.includes('CORS') || msg.includes('ERR_')
+    const msg       = (err as Error)?.message || 'Scan failed'
+    const isBlocked = /403|blocked|CORS|ERR_|ECONNREFUSED/.test(msg)
     return NextResponse.json({
       success: false,
       error: {
         code:    isBlocked ? 'BLOCKED' : 'SCRAPE_FAILED',
         message: isBlocked
-          ? 'This website blocks automated scanning. Try a different URL or use a URL from an article/blog post.'
+          ? 'This website blocks automated scanning. Try a specific article or blog post URL instead.'
           : `Scan failed: ${msg}`,
       },
     }, { status: 500 })

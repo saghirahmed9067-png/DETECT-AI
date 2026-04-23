@@ -68,9 +68,11 @@ export default function TextDetectionPage() {
       const res  = await fetch('/api/detect/pdf', { method: 'POST', body: form })
       const data = await res.json()
       if (!data.success) throw new Error(toUserError(data.error?.code, data.error?.message))
-      setResult(data.result)
+      // PDF API returns { success, data: {...} }; text API returns { success, result: {...} }
+      const payload = data.data ?? data.result
+      setResult(payload)
       setScanId(data.scan_id ?? null)
-      if (data.result?.paragraph_scores) setParagraphScores(data.result?.paragraph_scores)
+      if (payload?.paragraph_scores) setParagraphScores(payload.paragraph_scores)
       incrementGlobalScanCount()
       window.dispatchEvent(new Event('aiscern:scan'))
       // FIX: removed duplicate dispatch + duplicate supabase insert — API route already saves
