@@ -92,32 +92,40 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: { code: 'INVALID_TYPE', message: 'Only PDF files supported' } }, { status: 400 })
       }
 
-      // Extract PDF text using pdf-parse
+      // Extract PDF text — pdf-parse v2 ESM API
       const bytes  = await file.arrayBuffer()
       const buffer = Buffer.from(bytes)
-      // pdf-parse v2: use PDFParse class (named export, ESM compatible)
-      const pdfParse = require('pdf-parse')
-      const parser   = new pdfParse.PDFParse()
-      const pdfData  = await parser.pdf(buffer, {
-        max: 0,  // parse all pages
-        pagerender: (pageData: any) => {
-          return pageData.getTextContent({ normalizeWhitespace: true })
-            .then((textContent: any) => {
-              return textContent.items
-                .map((item: any) => item.str)
-                .join(' ')
-                .replace(/\s+/g, ' ')
-            })
-        },
-      })
+
+      let rawPdfText = ''
+      try {
+        // pdf-parse v2: PDFParse is a class, constructor takes {data:Buffer}
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const pdfMod = require('pdf-parse/dist/pdf-parse/esm/PDFParse.js')
+        const PDFParseClass = pdfMod.PDFParse ?? pdfMod.default
+        const parser = new PDFParseClass({ data: buffer, verbosity: 0 })
+        const textResult = await parser.getText()
+        rawPdfText = textResult?.text ?? textResult?.value ?? ''
+        if (typeof parser.destroy === 'function') await parser.destroy()
+      } catch (pdfErr: any) {
+        console.warn('[pdf] pdf-parse failed:', pdfErr?.message)
+        // Hard fallback: strip binary, keep printable ASCII
+        rawPdfText = buffer.toString('latin1').replace(/[^\x20-\x7E\n]/g, ' ')
+      }
+
+      if (!rawPdfText.trim()) {
+        return NextResponse.json({
+          success: false,
+          error: { code: 'PDF_EMPTY', message: 'Could not extract text from this PDF. It may be scanned or image-based.' }
+        }, { status: 422 })
+      }
 
       // Clean extracted text
-      fullText = pdfData.text
-        .replace(/\f/g, '\n\n')              // form feeds → paragraph breaks
-        .replace(/[ \t]+/g, ' ')             // normalize whitespace
-        .replace(/\n{3,}/g, '\n\n')          // max 2 newlines
-        .replace(/^\s*\d+\s*$/gm, '')        // remove page numbers
-        .replace(/[^\x20-\x7E\n]/g, '')      // remove non-printable chars
+      fullText = rawPdfText
+        .replace(/\f/g, '\n\n')
+        .replace(/[ \t]+/g, ' ')
+        .replace(/\n{3,}/g, '\n\n')
+        .replace(/^\s*\d+\s*$/gm, '')
+        .replace(/[^\x20-\x7E\n]/g, '')
         .trim()
 
       sourceType = 'pdf'

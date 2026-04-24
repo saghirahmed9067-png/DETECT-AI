@@ -161,9 +161,10 @@ function scoreContentQuality(text: string, wordCount: number, headings: string[]
 async function analyzeWithGemini(
   page:         PageData,
   subPageTexts: string[],
+  model = 'gemini-2.0-flash',
 ): Promise<ContentAnalysis> {
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
+  const mdl   = genAI.getGenerativeModel({ model })
 
   const headingBlock = page.headings.length
     ? `HEADINGS: ${page.headings.slice(0, 8).join(' | ')}`
@@ -223,7 +224,7 @@ Evaluate ALL 12 signals:
 
 For each signal: flagged=true means it indicates AI generation. weight is 0.0-1.0 importance.`
 
-  const result = await model.generateContent(prompt)
+  const result = await mdl.generateContent(prompt)
   const raw    = result.response.text()
 
   try {
@@ -371,24 +372,49 @@ export async function POST(req: NextRequest) {
       ? await crawlSubPages(mainPage.links, maxSubPages)
       : []
 
-    // Analyze with Gemini RAG or HF fallback
+    // Analyze with Gemini RAG — with automatic HuggingFace fallback on quota/rate errors
     const useGemini = geminiAvailable()
     let analysis: ContentAnalysis
+    let engineUsed = useGemini ? 'Gemini 2.0 Flash + Cheerio RAG' : 'HuggingFace RoBERTa'
 
-    if (useGemini) {
-      analysis = await analyzeWithGemini(mainPage, subPageResults.map(s => s.snippet))
-    } else {
+    const buildHFAnalysis = async (): Promise<ContentAnalysis> => {
       const hf = await analyzeTextHF(mainPage.textContent.slice(0, 1200))
-      analysis = {
+      engineUsed = 'HuggingFace RoBERTa (Gemini quota exceeded)'
+      return {
         aiScore:        hf.aiScore,
         verdict:        hf.verdict as 'AI' | 'HUMAN' | 'UNCERTAIN',
         confidence:     Math.round(Math.abs(hf.aiScore - 0.5) * 200),
         contentQuality: scoreContentQuality(mainPage.textContent, mainPage.wordCount, mainPage.headings),
-        signals: [{ name: 'RoBERTa Classifier', flagged: hf.verdict === 'AI', description: 'HuggingFace openai-detector model result', weight: 1.0 }],
-        summary:       `HF analysis: ${Math.round(hf.aiScore * 100)}% AI probability.`,
-        reasoning:     '',
-        writingStyle:  '',
+        signals: [
+          { name: 'RoBERTa Detector', flagged: hf.verdict === 'AI', description: 'openai-community/roberta-base-openai-detector', weight: 1.0 },
+        ],
+        summary:      `AI probability: ${Math.round(hf.aiScore * 100)}%. ${hf.verdict === 'AI' ? 'Content shows strong AI-generation signals.' : hf.verdict === 'HUMAN' ? 'Content appears to be human-written.' : 'Content origin is uncertain.'}`,
+        reasoning:    '',
+        writingStyle: '',
       }
+    }
+
+    if (useGemini) {
+      try {
+        analysis = await analyzeWithGemini(mainPage, subPageResults.map(s => s.snippet), 'gemini-2.0-flash')
+      } catch (geminiErr: any) {
+        const isQuota = /429|quota|rate.?limit|too many/i.test(geminiErr?.message ?? '')
+        if (isQuota) {
+          // Try older model with separate quota
+          try {
+            console.warn('[scraper] gemini-2.0-flash quota — trying gemini-1.5-flash')
+            analysis = await analyzeWithGemini(mainPage, subPageResults.map(s => s.snippet), 'gemini-1.5-flash')
+            engineUsed = 'Gemini 1.5 Flash + Cheerio RAG'
+          } catch {
+            console.warn('[scraper] All Gemini models quota-hit — falling back to HuggingFace')
+            analysis = await buildHFAnalysis()
+          }
+        } else {
+          throw geminiErr
+        }
+      }
+    } else {
+      analysis = await buildHFAnalysis()
     }
 
     // Screenshot URL (thum.io — free, no key, generates on-demand)
@@ -433,7 +459,7 @@ export async function POST(req: NextRequest) {
         })),
         total_links:  mainPage.links.length,
         status:       'complete',
-        engine_used:  useGemini ? 'Gemini 2.0 Flash + Cheerio RAG' : 'HuggingFace RoBERTa',
+        engine_used:  engineUsed,
       },
     })
   } catch (err: unknown) {
