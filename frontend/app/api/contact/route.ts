@@ -1,18 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { checkRateLimit, rateLimitResponse } from '@/lib/ratelimit'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown'
+  const rl = await checkRateLimit('scraper', ip)   // 5/min
+  if (rl.limited) return NextResponse.json(rateLimitResponse(), { status: 429 })
+
   try {
     const { name, email, subject, message } = await req.json()
-    if (!name || !email || !message) {
+    if (!name || !email || !message)
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
-    }
 
-    // Log the contact request (Resend/email service can be wired here)
-    console.log('[Contact]', { name, email, subject, ts: new Date().toISOString() })
+    // Sanitize lengths
+    const safeName    = String(name).slice(0, 100)
+    const safeEmail   = String(email).slice(0, 254)
+    const safeSubject = String(subject || '').slice(0, 200)
+    const safeMessage = String(message).slice(0, 2000)
 
-    // If Resend API key is available, send email
+    // Basic email format check
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(safeEmail))
+      return NextResponse.json({ error: 'Invalid email address' }, { status: 400 })
+
+    console.log('[Contact]', { name: safeName, email: safeEmail, subject: safeSubject, ts: new Date().toISOString() })
+
     const resendKey = process.env.RESEND_API_KEY
     if (resendKey) {
       await fetch('https://api.resend.com/emails', {
@@ -21,20 +33,12 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify({
           from: 'Aiscern Contact <noreply@aiscern.com>',
           to:   ['contact@aiscern.com'],
-          subject: `[Aiscern Contact] ${subject} — ${name}`,
-          html: `
-            <h2>New Contact Form Submission</h2>
-            <p><strong>Name:</strong> ${name}</p>
-            <p><strong>Email:</strong> ${email}</p>
-            <p><strong>Subject:</strong> ${subject}</p>
-            <p><strong>Message:</strong></p>
-            <p>${message.replace(/\n/g, '<br>')}</p>
-          `,
-          reply_to: email,
+          subject: `[Aiscern Contact] ${safeSubject} — ${safeName}`,
+          html: `<h2>New Contact Form Submission</h2><p><strong>Name:</strong> ${safeName}</p><p><strong>Email:</strong> ${safeEmail}</p><p><strong>Subject:</strong> ${safeSubject}</p><p><strong>Message:</strong></p><p>${safeMessage.replace(/\n/g, '<br>')}</p>`,
+          reply_to: safeEmail,
         }),
       })
     }
-
     return NextResponse.json({ success: true })
   } catch (err) {
     return NextResponse.json({ error: 'Failed to process request' }, { status: 500 })

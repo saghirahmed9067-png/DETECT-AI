@@ -19,7 +19,7 @@ interface ScrapeResult {
   content_type: string; word_count: number; content_quality: 'high' | 'medium' | 'low'
   overall_ai_score: number; verdict: 'AI' | 'HUMAN' | 'UNCERTAIN'
   confidence: number; summary: string; reasoning?: string; writing_style?: string
-  signals: Signal[]; screenshot_url?: string; image_urls: string[]
+  signals: Signal[]; og_image?: string; screenshot_url?: string; image_urls: string[]; agents_used?: number
   headings?: string[]; sub_pages: SubPage[]; discovered_links: DiscoveredLink[]
   total_links: number; status: string; fetch_method?: string
 }
@@ -221,7 +221,26 @@ export default function ScraperPage() {
                 {/* Screenshot panel */}
                 <div className="lg:col-span-2 bg-[#0f0f17] border border-white/10 rounded-2xl overflow-hidden">
                   <div className="relative">
-                    {!screenshotError && result.screenshot_url ? (
+                    {/* og:image loads instantly from the site's own CDN */}
+                    {result.og_image && !screenshotError ? (
+                      <img
+                        src={result.og_image}
+                        alt={`Preview of ${result.domain}`}
+                        className="w-full object-cover"
+                        style={{ maxHeight: 220, opacity: 0, transition: 'opacity 0.35s' }}
+                        onLoad={(e) => { (e.target as HTMLImageElement).style.opacity = '1' }}
+                        onError={(e) => {
+                          // og:image failed — try mshots screenshot as fallback
+                          const img = e.target as HTMLImageElement
+                          if (result.screenshot_url && !img.dataset.fallback) {
+                            img.dataset.fallback = '1'
+                            img.src = result.screenshot_url
+                          } else {
+                            setScreenshotError(true)
+                          }
+                        }}
+                      />
+                    ) : result.screenshot_url && !screenshotError ? (
                       <img
                         src={result.screenshot_url}
                         alt={`Screenshot of ${result.domain}`}
@@ -232,16 +251,14 @@ export default function ScraperPage() {
                           const img = e.target as HTMLImageElement
                           if (!img.dataset.retried) {
                             img.dataset.retried = '1'
-                            setTimeout(() => { img.src = result.screenshot_url + '&t=' + Date.now() }, 4500)
-                          } else {
-                            setScreenshotError(true)
-                          }
+                            setTimeout(() => { img.src = result.screenshot_url! + '&t=' + Date.now() }, 4000)
+                          } else { setScreenshotError(true) }
                         }}
                       />
                     ) : (
                       <div className="w-full h-44 flex flex-col items-center justify-center bg-[#141420] text-slate-600">
                         <Monitor className="w-10 h-10 mb-2 opacity-30" />
-                        <p className="text-xs">Screenshot loading…</p>
+                        <p className="text-xs">No preview available</p>
                       </div>
                     )}
                     {/* Overlay badge */}

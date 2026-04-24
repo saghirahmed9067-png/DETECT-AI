@@ -1,3 +1,4 @@
+import { checkRateLimit } from '@/lib/ratelimit'
 export const maxDuration = 60
 
 import { NextRequest } from 'next/server'
@@ -143,7 +144,7 @@ async function analyzeText(text: string, baseUrl: string): Promise<Record<string
   try {
     const r = await fetch(`${baseUrl}/api/detect/text`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Internal-Secret': process.env.INTERNAL_API_SECRET || 'detectai-internal-2026' },
+      headers: { 'Content-Type': 'application/json', 'X-Internal-Secret': process.env.INTERNAL_API_SECRET || '' },
       body: JSON.stringify({ text }),
       signal: AbortSignal.timeout(35000),
     })
@@ -466,6 +467,10 @@ ${resultsBlock}`
 // MAIN HANDLER
 // ─────────────────────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown'
+  const chatRl = await checkRateLimit('batch', ip)
+  if (chatRl.limited) return new Response(JSON.stringify({ error: 'Rate limit exceeded' }), { status: 429 })
+
   try {
     const body = await req.json()
     const { messages, attachments } = body

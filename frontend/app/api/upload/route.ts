@@ -13,7 +13,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { createPresignedUpload, r2Available, type R2MediaType } from '@/lib/storage/r2'
-import { checkRateLimit } from '@/lib/inference/hf-analyze'
+import { checkRateLimit, rateLimitResponse } from '@/lib/ratelimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,12 +21,8 @@ const VALID_MEDIA_TYPES: R2MediaType[] = ['image', 'audio', 'video']
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown'
-  if (!checkRateLimit(ip, 30)) {
-    return NextResponse.json(
-      { success: false, error: 'Too many requests' },
-      { status: 429 }
-    )
-  }
+  const rl = await checkRateLimit('upload', ip)
+  if (rl.limited) return NextResponse.json(rateLimitResponse(), { status: 429 })
 
   // Auth — allow anonymous with rate limiting, require auth for large files
   let userId = `anon_${ip}`

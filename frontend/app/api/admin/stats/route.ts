@@ -32,7 +32,7 @@ export async function GET() {
       db.from('profiles').select('*', { count: 'exact', head: true }).eq('dashboard_access', false),
       db.from('user_sessions').select('user_id,email,event,created_at,ip,country,page').order('created_at', { ascending: false }).limit(50),
       db.from('profiles').select('email,created_at,plan').order('created_at', { ascending: false }).limit(20),
-      db.from('scans').select('scan_type').limit(1000),
+      db.from('scans').select('media_type').limit(1000),
     ])
 
     const { count: activeToday } = await db
@@ -42,7 +42,7 @@ export async function GET() {
 
     const modalityCount: Record<string, number> = {}
     ;(scansByModality || []).forEach((s: any) => {
-      modalityCount[s.scan_type] = (modalityCount[s.scan_type] || 0) + 1
+      modalityCount[s.media_type] = (modalityCount[s.media_type] || 0) + 1
     })
 
     return NextResponse.json({

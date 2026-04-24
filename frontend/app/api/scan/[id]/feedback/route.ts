@@ -1,61 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { inngest }                   from '@/lib/inngest/client'
-import { createClient } from '@supabase/supabase-js'
+import { auth }               from '@clerk/nextjs/server'
+import { inngest }            from '@/lib/inngest/client'
+import { getSupabaseAdmin }   from '@/lib/supabase/admin'
 
 export const dynamic = 'force-dynamic'
 
-// Use service role key only (this is a server-side route)
-// NEXT_PUBLIC_SUPABASE_ANON_KEY is NOT a fallback for service role
-function getDb() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!url || !key) throw new Error('Missing Supabase config')
-  return createClient(url, key, { auth: { persistSession: false } })
-}
-
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+
   const { id } = await params
   try {
     const { feedback } = await req.json()
-    if (!['correct', 'incorrect'].includes(feedback)) {
+    if (!['correct', 'incorrect'].includes(feedback))
       return NextResponse.json({ success: false, error: 'Invalid feedback value' }, { status: 400 })
-    }
 
-    const { error } = await getDb()
-      .from('scans')
-      .update({ user_feedback: feedback })
-      .eq('id', id)
+    const db = getSupabaseAdmin()
 
-    if (error) throw error
+    // Verify scan ownership before updating
+    const { data: scan } = await db.from('scans').select('user_id,verdict,media_type,confidence_score').eq('id', id).single()
+    if (!scan || scan.user_id !== userId)
+      return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 })
 
-    // If incorrect: enqueue augment job for self-improving loop
+    await db.from('scans').update({ user_feedback: feedback }).eq('id', id)
+
     if (feedback === 'incorrect') {
-      const { data: scan } = await getDb().from('scans').select('*').eq('id', id).single()
-      if (scan) {
-        await getDb().from('pipeline_jobs').insert({
-          job_type:    'augment',
-          priority:    5,
-          payload: {
-            scan_id:    scan.id,
-            media_type: scan.media_type,
-            verdict:    scan.verdict,
-            confidence: scan.confidence_score,
-            feedback:   'incorrect',
-          },
-        })
-      }
+      await db.from('pipeline_jobs').insert({
+        job_type: 'augment', priority: 5,
+        payload: { scan_id: id, media_type: scan.media_type, verdict: scan.verdict, confidence: scan.confidence_score, feedback: 'incorrect' },
+      })
     }
 
-    // Fire Inngest scan/feedback event (non-blocking)
     void (async () => {
       try {
-        const scan = await getDb().from('scans').select('user_id, verdict').eq('id', id).single()
-        if (scan.data?.user_id) {
-          await inngest.send({
-            name: 'scan/feedback',
-            data: { scan_id: id, user_id: scan.data.user_id, feedback, verdict: scan.data.verdict ?? '' },
-          })
-        }
+        await inngest.send({ name: 'scan/feedback', data: { scan_id: id, user_id: userId, feedback, verdict: scan.verdict ?? '' } })
       } catch { /* non-fatal */ }
     })()
 
