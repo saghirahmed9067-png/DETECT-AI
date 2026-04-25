@@ -683,10 +683,9 @@ export async function analyzeVideoWithFrames(
             },
           ],
           frame_scores: sampleFrames.map((f, i) => ({
-            frame_index: f.index,
-            time_sec:    f.timeSec,
-            ai_score:    Math.round((frameScores[i] ?? ensScore) * 1000) / 1000,
-            verdict:     (frameScores[i] ?? ensScore) >= 0.55 ? 'AI' : 'HUMAN',
+            frame:        f.index,
+            time_sec:     f.timeSec,
+            ai_score:     Math.round((frameScores[i] ?? ensScore) * 1000) / 1000,
             face_detected: true,
           })),
           summary: verdict === 'AI'
