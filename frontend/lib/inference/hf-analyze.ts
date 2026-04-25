@@ -73,10 +73,14 @@ const MODELS = {
   image_vit:       'haywoodsloan/ai-image-detector',
   image_deepfake:  'dima806/deepfake_vs_real_image_detection',
 
-  // AUDIO — 3-model ensemble (coming soon: aiscern fine-tuned)
+  // AUDIO — fine-tuned primary (saghi776/aiscern-audio-detector — run audio_finetune.ipynb)
+  audio_finetuned: 'saghi776/aiscern-audio-detector',
   audio_primary:   'mo-thecreator/Deepfake-audio-detection',
   audio_asvspoof:  'MelodyMachine/Deepfake-audio-detection-V2',
   audio_xlsr:      'facebook/wav2vec2-large-xlsr-53',
+
+  // VIDEO — fine-tuned primary (saghi776/aiscern-video-detector — run video_finetune.ipynb)
+  video_finetuned: 'saghi776/aiscern-video-detector',
 }
 
 function sleep(ms: number) { return new Promise(r => setTimeout(r, ms)) }
