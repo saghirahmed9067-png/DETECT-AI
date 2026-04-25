@@ -269,7 +269,7 @@ function hfEnergyRatioAudio(audioBytes: Buffer): number {
  * Returns extended audio signals including forensic signals from §3.1
  */
 export function extractAudioSignalsExtended(buf: Buffer, fileSize: number): AudioSignalResult[] {
-  const base = extractAudioSignals(buf, fileSize)
+  const base = extractAudioSignals(buf, fileSize, 'mp3', 'audio')
   return [
     ...base,
     {
