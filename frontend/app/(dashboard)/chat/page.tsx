@@ -355,7 +355,7 @@ function MessageBubble({ msg, onCopy }: { msg: Message; onCopy: (t:string)=>void
 const SUGGESTIONS = [
   { Ic: Ico.Image,    text: 'Upload an image to detect if it\'s AI-generated or a deepfake', cat: 'Image' },
   { Ic: Ico.FileText, text: 'Paste text to check if it was written by AI',                   cat: 'Text'  },
-  { Ic: Ico.Music,    text: 'How do forensic tools detect voice cloning?',                    cat: 'Audio' },
+  { Ic: Ico.Music,    text: 'How does ensemble detection work for voice cloning?',                    cat: 'Audio' },
   { Ic: Ico.Brain,    text: 'Explain GAN fingerprinting and diffusion model artifacts',        cat: 'Learn' },
   { Ic: Ico.Shield,   text: 'What makes Aiscern different from GPTZero and Turnitin?',        cat: 'Compare'},
   { Ic: Ico.DB,       text: 'Show me Aiscern\'s current detection statistics',                 cat: 'Data'  },

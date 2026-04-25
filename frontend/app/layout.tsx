@@ -18,10 +18,10 @@ const inter = localFont({
 export const metadata: Metadata = {
   metadataBase: new URL('https://aiscern.com'),
   title: {
-    default: 'Aiscern — #1 Free AI Detector for Text, Images, Audio & Deepfakes',
-    template: '%s | Aiscern — Free AI Detection',
+    default: 'Aiscern — Free Multi-Modal AI Detection | Text, Image, Audio, Video',
+    template: '%s | Aiscern',
   },
-  description: 'The most accurate free AI detector. Detect ChatGPT, Claude, Gemini text, Midjourney deepfakes, ElevenLabs voice clones & synthetic video. 85%+ accuracy. 413,000+ training samples. No credit card required.',
+  description: 'Free AI content detection for text, images, audio, and video. Ensemble-based analysis with published accuracy benchmarks. Built by Anas Ali in Islamabad.',
   keywords: [
     'ai detector','free ai detector','ai text detector','chatgpt detector','claude detector',
     'gemini detector','ai content detector','detect ai generated text','chatgpt checker',
@@ -56,14 +56,14 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website', locale: 'en_US',
     url: 'https://aiscern.com', siteName: 'Aiscern',
-    title: 'Aiscern — #1 Free AI Detector for Text, Images, Audio & Deepfakes',
-    description: 'Detect AI-generated content in seconds. 85%+ accuracy on ChatGPT, Claude, Midjourney, ElevenLabs & more. Free. Free.',
+    title: 'Aiscern — Free Multi-Modal AI Detection | Text, Image, Audio, Video',
+    description: 'Free AI content detection for text, images, audio, and video. Ensemble-based analysis with published accuracy benchmarks.',
     images: [{ url: 'https://aiscern.com/og-image.png', width: 1200, height: 630, alt: 'Aiscern — Free AI Content Detection Platform' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Aiscern — Free AI Detector for Text, Images, Audio & Video',
-    description: 'Detect ChatGPT text, Midjourney images, ElevenLabs voice & deepfake video. 85%+ accuracy. Free.',
+    description: 'Detect ChatGPT text, Midjourney images, ElevenLabs voice & deepfake video. Ensemble-based. Free tier available.',
     images: ['https://aiscern.com/og-image.png'],
     creator: '@aiscern', site: '@aiscern',
   },

@@ -126,7 +126,7 @@ export function SignupGate() {
 
             <p className="text-center text-xs text-text-disabled">
               <Shield className="w-3 h-3 inline mr-1" />
-              Free forever · No credit card · No spam
+              Free tier available · No credit card · No spam
             </p>
           </div>
         </motion.div>

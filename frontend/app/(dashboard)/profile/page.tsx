@@ -242,7 +242,7 @@ export default function ProfilePage() {
           </div>
           <div className="flex justify-between items-center py-2.5">
             <span className="text-text-muted">Plan</span>
-            <span className="font-semibold text-primary">Free Forever</span>
+            <span className="font-semibold text-primary">Free Tier</span>
           </div>
         </div>
       </motion.div>

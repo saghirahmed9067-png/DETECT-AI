@@ -16,7 +16,7 @@ const PERKS = [
   'Access all 6 detection tools free',
   'Batch scan up to 20 files at once',
   'AI Assistant for detection help',
-  'No credit card — free forever',
+  'No credit card required',
 ]
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -101,7 +101,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
             <p className="text-center text-xs text-text-disabled flex items-center justify-center gap-1.5">
               <Shield className="w-3.5 h-3.5 text-emerald" />
-              Free forever · No credit card · 285,000+ training samples
+              Free tier available · No credit card required
             </p>
           </div>
         </motion.div>

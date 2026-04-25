@@ -357,7 +357,7 @@ REST API — /docs/api
 
 PRICING — /pricing
    • Aiscern is completely free — no subscription, no credit card, no scan limits
-   • All 7 tools are free forever
+   • Core detection tools are free during early access
    • No paywalls on any feature
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

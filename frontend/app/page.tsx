@@ -534,8 +534,8 @@ const WHO_NEEDS = [
     tag: 'Law & Compliance',
     tagColor: '#059669',
     problem: 'Deepfake evidence, AI-drafted contracts and forged audio recordings entering proceedings.',
-    value: 'Forensic-grade detection reports for documents, images and audio — shareable with one link.',
-    stats: [{ label: 'Audio forensics', value: '~79%' }, { label: 'Image analysis', value: '~82%' }],
+    value: 'Detection reports for documents, images and audio — shareable with one link. Results are probabilistic; use alongside human judgment.',
+    stats: [{ label: 'Audio detection', value: '~79%' }, { label: 'Image analysis', value: '~82%' }],
     href: '/detect/audio',
     color: '#059669',
     glow: 'rgba(5,150,105,0.22)',
@@ -773,8 +773,8 @@ function WhoNeedsSection() {
 
           <p className="text-text-muted text-sm sm:text-base max-w-xl mx-auto leading-relaxed">
             <strong className="text-text-secondary">AI-generated content</strong> is a problem in every field.
-            Aiscern gives professionals the forensic tools to detect it —{' '}
-            <strong className="text-primary">100% free</strong>, across all four modalities.
+            Aiscern gives professionals detection tools to identify it —{' '}
+            <strong className="text-primary">free tier available</strong>, across all four modalities.
           </p>
 
           {/* Quick industry count row */}
@@ -832,17 +832,17 @@ const TOOLS = [
 ]
 
 const STATS = [
-  { value: 413000, suffix: '+', label: 'Samples Collected', icon: Database  },
-  { value: 87,     suffix: '',  label: 'Source Datasets',   icon: Globe     },
-  { value: 4,      suffix: '',  label: 'Modalities Covered',icon: Layers    },
-  { value: 15,     suffix: '',  label: 'Scraper Workers',   icon: Zap       },
+  { value: 4,      suffix: '',   label: 'Modalities Covered',  icon: Layers    },
+  { value: 8,      suffix: '+',  label: 'Detection Models',    icon: Brain     },
+  { value: 85,     suffix: '%',  label: 'Text Accuracy (~)',   icon: FileText  },
+  { value: 79,     suffix: '%',  label: 'Audio Accuracy (~)',  icon: Zap       },
 ]
 
 
 
 const HOW_IT_WORKS = [
   { n: '01', title: 'Upload or Paste',  desc: 'Drop any image, video, audio file or paste text / a URL' },
-  { n: '02', title: 'Deep AI Scan',     desc: 'Advanced multi-modal AI analyzes 20+ forensic signals across all content types' },
+  { n: '02', title: 'Deep AI Scan',     desc: 'Advanced multi-modal AI analyzes 20+ detection signals across all content types' },
   { n: '03', title: 'Get Full Report',  desc: 'Confidence score, signal breakdown & sentence-level heatmap' },
   { n: '04', title: 'Export & Share',   desc: 'Save history, share results, export PDF reports' },
 ]
@@ -1136,9 +1136,9 @@ export default function HomePage() {
 
       {/* ── Schema.org JSON-LD ── */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: `[
-        {"@context":"https://schema.org","@type":"WebApplication","@id":"https://aiscern.com/#app","name":"Aiscern - Free AI Detector","url":"https://aiscern.com","description":"The most accurate free AI detection platform. Detect ChatGPT text, Midjourney deepfakes, ElevenLabs voice clones. 413k+ verified samples.","applicationCategory":"SecurityApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"featureList":["AI Text Detection - ChatGPT Claude Gemini","Deepfake Image Detection","AI Audio Voice Clone Detection","Deepfake Video Detection","Batch Analysis","AI Detection API"],"creator":{"@type":"Person","name":"Anas Ali","url":"https://aiscern.com/about"}},
+        {"@context":"https://schema.org","@type":"WebApplication","@id":"https://aiscern.com/#app","name":"Aiscern - Free AI Detector","url":"https://aiscern.com","description":"Ensemble-based AI content detection platform for text, images, audio, and video. Free tier available. Published accuracy benchmarks.","applicationCategory":"SecurityApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"featureList":["AI Text Detection - ChatGPT Claude Gemini","Deepfake Image Detection","AI Audio Voice Clone Detection","Deepfake Video Detection","Batch Analysis","AI Detection API"],"creator":{"@type":"Person","name":"Anas Ali","url":"https://aiscern.com/about"}},
         {"@context":"https://schema.org","@type":"Organization","@id":"https://aiscern.com/#org","name":"Aiscern","url":"https://aiscern.com","logo":"https://aiscern.com/logo.png","foundingDate":"2025","contactPoint":{"@type":"ContactPoint","contactType":"customer support","email":"contact@aiscern.com"}},
-        {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How accurate is Aiscern?","acceptedAnswer":{"@type":"Answer","text":"Aiscern uses a multi-model ensemble approach combining RoBERTa, ViT, and wav2vec2 models. Results reflect model consensus across 413,000+ verified training samples."}},{"@type":"Question","name":"Is Aiscern free?","acceptedAnswer":{"@type":"Answer","text":"Yes. Aiscern is completely free with no subscription, no credit card and no scan limits. All tools are free forever."}},{"@type":"Question","name":"Can Aiscern detect ChatGPT writing?","acceptedAnswer":{"@type":"Answer","text":"Yes. Aiscern detects ChatGPT, Claude, Gemini, GPT-4 and other AI writing models using a 3-model RoBERTa ensemble with linguistic signal analysis."}},{"@type":"Question","name":"Can Aiscern detect Midjourney images?","acceptedAnswer":{"@type":"Answer","text":"Yes. Aiscern detects Midjourney, DALL-E 3, Stable Diffusion and deepfake faces using a multi-model image analysis ensemble."}},{"@type":"Question","name":"Does Aiscern have an API?","acceptedAnswer":{"@type":"Answer","text":"Yes. Aiscern has a free REST API for AI detection. See aiscern.com/docs/api."}}]}
+        {"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How accurate is Aiscern?","acceptedAnswer":{"@type":"Answer","text":"Aiscern uses an ensemble approach combining RoBERTa, ViT, and wav2vec2 models. Current benchmarked accuracy: text ~85%, image ~82%, audio ~79%, video ~76%. See /methodology for details."}},{"@type":"Question","name":"Is Aiscern free?","acceptedAnswer":{"@type":"Answer","text":"Yes. Aiscern has a free tier with 10 scans per day on text and image detection. No credit card required. Pro plans available for audio, video, and higher limits."}},{"@type":"Question","name":"Can Aiscern detect ChatGPT writing?","acceptedAnswer":{"@type":"Answer","text":"Yes. Aiscern detects ChatGPT, Claude, Gemini, GPT-4 and other AI writing models using a 3-model RoBERTa ensemble with linguistic signal analysis."}},{"@type":"Question","name":"Can Aiscern detect Midjourney images?","acceptedAnswer":{"@type":"Answer","text":"Yes. Aiscern detects Midjourney, DALL-E 3, Stable Diffusion and deepfake faces using a multi-model image analysis ensemble."}},{"@type":"Question","name":"Does Aiscern have an API?","acceptedAnswer":{"@type":"Answer","text":"Yes. Aiscern has a REST API available on Team and Enterprise plans. See aiscern.com/docs/api."}}]}
       ]` }} />
 
       {/* ── NAV ── */}
@@ -1240,8 +1240,8 @@ export default function HomePage() {
         <div className="relative z-20 text-center px-5 sm:px-8 md:px-10 lg:px-4 max-w-[92vw] sm:max-w-lg md:max-w-2xl lg:max-w-5xl mx-auto w-full">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full border border-primary/40 bg-primary/15 text-primary text-[11px] sm:text-xs font-semibold mb-4 sm:mb-6">
             <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
-            <span className="hidden sm:inline">413,000+ verified samples · Multi-model ensemble detection</span>
-            <span className="sm:hidden">413k+ samples · Free forever</span>
+            <span className="hidden sm:inline">Ensemble of 8+ detection models · Text, Image, Audio, Video</span>
+            <span className="sm:hidden">8+ models · Free tier available</span>
           </div>
 
           <motion.h1 initial={{ opacity: 1, y: 0 }} animate={{ opacity: 1, y: 0 }}
@@ -1251,8 +1251,8 @@ export default function HomePage() {
             <span className="block sm:hidden text-lg text-text-primary mt-2 font-semibold leading-snug">
               Text · Images · Audio · Video
             </span>
-            {/* Desktop: full headline with multi-color keywords */}
-            <span className="hidden sm:block text-4xl lg:text-7xl gradient-text">Unmask AI-Generated Content</span>
+            {/* Desktop: full headline */}
+            <span className="hidden sm:block text-4xl lg:text-7xl gradient-text">Detect AI-Generated Content</span>
             <span className="hidden sm:flex sm:flex-wrap sm:items-center sm:justify-center sm:gap-x-3 text-2xl lg:text-4xl font-black mt-3 leading-snug">
               <span className="text-amber font-black">Text</span>
               <span className="text-text-muted font-light">·</span>
@@ -1261,13 +1261,13 @@ export default function HomePage() {
               <span className="text-cyan font-black">Audio</span>
               <span className="text-text-muted font-light">·</span>
               <span className="text-secondary font-black">Video</span>
-              <span className="text-text-secondary font-semibold ml-1">Detection. Free.</span>
+              <span className="text-text-secondary font-semibold ml-1">Across Four Modalities</span>
             </span>
           </motion.h1>
 
           <p className="text-sm sm:text-lg text-text-secondary max-w-xl mx-auto mb-6 sm:mb-10 leading-relaxed hero-fade-up" style={{ animationDelay: '0.05s' }}>
-            <span className="sm:hidden">State-of-the-art AI detection. <strong className="text-text-primary">Free forever.</strong> No credit card required.</span>
-            <span className="hidden sm:inline">Detect AI-generated <strong className="text-amber">text</strong>, <strong className="text-primary">images</strong>, <strong className="text-cyan">audio</strong> &amp; <strong className="text-secondary">video</strong> with state-of-the-art models. <strong className="text-text-primary">100% free</strong> — no credit card required.</span>
+            <span className="sm:hidden">Ensemble-based AI detection. <strong className="text-text-primary">Free tier available.</strong> No account required for basic scans.</span>
+            <span className="hidden sm:inline">Detect AI-generated <strong className="text-amber">text</strong>, <strong className="text-primary">images</strong>, <strong className="text-cyan">audio</strong> &amp; <strong className="text-secondary">video</strong> using an ensemble of detection models. Core features free during early access. No account required for basic scans.</span>
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-4 mb-8 sm:mb-16 hero-fade-up" style={{ animationDelay: '0.1s' }}>
@@ -1342,7 +1342,7 @@ export default function HomePage() {
               Detection <span className="gradient-text">Arsenal</span>
             </h2>
             <p className="text-text-muted text-base sm:text-lg max-w-2xl mx-auto">
-              Six powerful tools powered by proprietary multi-model AI powered by 413k+ verified samples.
+              Six detection tools powered by an ensemble of open-source and fine-tuned models, benchmarked on public datasets.
             </p>
           </motion.div>
 
@@ -1409,12 +1409,12 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── REVIEWS ── */}
       <section className="py-16 sm:py-20 px-4 bg-surface/20">
         <div className="max-w-5xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
             className="text-center mb-10 sm:mb-12">
-            <h2 className="text-2xl sm:text-3xl font-black mb-3">What People <span className="gradient-text">Say</span></h2>
+            <h2 className="text-2xl sm:text-3xl font-black mb-3">Early <span className="gradient-text">Feedback</span></h2>
+            <p className="text-xs text-text-muted">Feedback from early users. First name or anonymous only, no photos.</p>
           </motion.div>
           <HomepageReviews />
           <div className="text-center mt-6">
@@ -1430,16 +1430,16 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <span className="text-xs font-bold uppercase tracking-widest text-text-muted mb-3 block">Why people trust Aiscern</span>
-            <h2 className="text-3xl sm:text-4xl font-black text-text-primary">Built for accuracy. <span className="gradient-text">Verified by data.</span></h2>
+            <h2 className="text-3xl sm:text-4xl font-black text-text-primary">Built for accuracy. <span className="gradient-text">Benchmarked on public datasets.</span></h2>
           </div>
 
           {/* 4 trust pillars */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
             {[
-              { icon: Database,    color: 'bg-primary/10 text-primary',   title: '413,000+ Samples', desc: 'Built on 413,000+ verified samples spanning diverse AI-generated and authentic content from 87 curated datasets.' },
+              { icon: Database,    color: 'bg-primary/10 text-primary',   title: 'Benchmarked Datasets', desc: 'Models evaluated against curated public datasets spanning diverse AI-generated and authentic content from multiple sources.' },
               { icon: Shield,      color: 'bg-emerald/10 text-emerald',   title: 'Research-Backed', desc: 'Built on peer-reviewed detection research. Every detection signal and methodology is validated against real-world AI outputs.' },
               { icon: TrendingUp,  color: 'bg-amber/10 text-amber',       title: 'Ensemble Models',  desc: 'Multi-model consensus using RoBERTa, ViT, and wav2vec2 ensembles — no single model makes the final call.' },
-              { icon: Zap,         color: 'bg-cyan/10 text-cyan',         title: 'Free Forever',     desc: 'No subscriptions, no scan limits, no paywalls. Core detection will always be free — always.' },
+              { icon: Zap,         color: 'bg-cyan/10 text-cyan',         title: 'Free Tier Available', desc: 'Core detection features are free during early access. No account needed for basic scans. Upgrade for audio, video, and API access.' },
             ].map(({ icon: Icon, color, title, desc }) => (
               <div key={title} className="card p-6 space-y-3 hover:border-primary/30 transition-all">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color}`}>
@@ -1466,7 +1466,7 @@ export default function HomePage() {
           {/* Methodology note */}
           <div className="max-w-2xl mx-auto text-center p-6 rounded-2xl border border-border/60 bg-surface/40">
             <p className="text-sm text-text-muted leading-relaxed">
-              <span className="font-semibold text-text-secondary">How our detection works:</span> Each scan runs through Aiscern's proprietary multi-model detection engine
+              <span className="font-semibold text-text-secondary">How our detection works:</span> Each scan runs through Aiscern's ensemble of open-source and fine-tuned detection models
               plus 7–10 deterministic signal extractors (perplexity, burstiness, spectral entropy, GAN artifacts).
               Weights adapt in real time — if a model is unavailable, its weight redistributes to the remaining models.
               Final verdict requires ≥62% confidence to label AI, ≤38% for Human.
@@ -1491,7 +1491,7 @@ export default function HomePage() {
               Start <span className="gradient-text">Detecting</span><br />AI Content Free
             </h2>
             <p className="text-text-muted text-lg sm:text-xl mb-10 max-w-xl mx-auto">
-              100% free, forever. No credit card, no limits, no paywalls — just detection.
+              Core features free during early access. No account required for basic scans.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
               <Link href={user ? '/dashboard' : '/detect/text'} className="btn-primary px-7 sm:px-8 py-4 text-base sm:text-lg font-bold flex items-center justify-center gap-2 shadow-2xl shadow-primary/30" title="Start Detecting AI Content Free">

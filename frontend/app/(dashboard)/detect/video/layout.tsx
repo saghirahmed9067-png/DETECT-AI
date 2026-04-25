@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     'detect deepfake','face swap detector','synthetic video detector',
     'deepfake checker','video authenticity checker','ai generated video detector',
     'deepfake face swap','sora detector','detect ai video','fake video detector',
-    'deepfake detection tool','video forensics free',
+    'deepfake detection tool','video deepfake detection',
   ],
   alternates: { canonical: 'https://aiscern.com/detect/video' },
   openGraph: {
@@ -48,7 +48,7 @@ const jsonLd = {
                   {
                     "@type": "Question",
                     "name": "How does deepfake video detection work?",
-                    "acceptedAnswer": { "@type": "Answer", "text": "Aiscern extracts frames from your video and analyzes each frame with our proprietary vision engine for facial inconsistencies, temporal artifacts and GAN signatures. Results show per-frame AI scores." }
+                    "acceptedAnswer": { "@type": "Answer", "text": "Aiscern extracts frames from your video and analyzes each frame with an ensemble vision model for facial inconsistencies, temporal artifacts and GAN signatures. Results show per-frame AI scores." }
                   },
                   {
                     "@type": "Question",
