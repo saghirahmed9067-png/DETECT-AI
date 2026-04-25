@@ -214,18 +214,42 @@ Analyzed: ${new Date().toLocaleString()}`
               <div>
                 <div
                   onClick={() => fileInputRef.current?.click()}
-                  className={`flex flex-col items-center justify-center py-10 border-2 border-dashed rounded-xl cursor-pointer transition-all mb-3
-                    ${pdfFile ? 'border-primary/40 bg-primary/5' : 'border-border hover:border-primary/40 hover:bg-primary/3'}`}>
+                  onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add('border-primary/60','bg-primary/8') }}
+                  onDragLeave={e => { e.currentTarget.classList.remove('border-primary/60','bg-primary/8') }}
+                  onDrop={e => {
+                    e.preventDefault()
+                    e.currentTarget.classList.remove('border-primary/60','bg-primary/8')
+                    const f = e.dataTransfer.files?.[0]
+                    if (f && (f.type === 'application/pdf' || f.name.endsWith('.pdf'))) handlePdfUpload(f)
+                    else if (f) setError('Please upload a PDF file.')
+                  }}
+                  className={`flex flex-col items-center justify-center py-12 border-2 border-dashed rounded-xl cursor-pointer transition-all mb-3
+                    ${pdfFile ? 'border-primary/40 bg-primary/5' : 'border-border hover:border-primary/40 hover:bg-primary/5'}`}>
                   {pdfLoading ? (
-                    <><Loader2 className="w-8 h-8 text-primary animate-spin mb-2" /><p className="text-sm text-text-muted">Extracting & analyzing PDF…</p></>
+                    <div className="flex flex-col items-center gap-2 w-full px-6">
+                      <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                      <p className="text-sm font-medium text-text-primary">Extracting text from PDF…</p>
+                      <p className="text-xs text-text-muted">Running {pdfFile && pdfFile.size > 1024*1024*5 ? 'multi-page' : ''} analysis — this takes 10–30 seconds</p>
+                      <div className="w-full max-w-xs bg-surface-active rounded-full h-1.5 mt-1 overflow-hidden">
+                        <div className="h-full bg-primary rounded-full animate-pulse" style={{width:'60%'}} />
+                      </div>
+                    </div>
                   ) : pdfFile ? (
-                    <><BookOpen className="w-8 h-8 text-primary mb-2" /><p className="text-sm font-semibold text-text-primary">{pdfFile.name}</p><p className="text-xs text-text-muted mt-1">{(pdfFile.size/1024/1024).toFixed(2)} MB · Click to change</p></>
+                    <div className="flex flex-col items-center gap-1">
+                      <BookOpen className="w-8 h-8 text-primary mb-1" />
+                      <p className="text-sm font-semibold text-text-primary">{pdfFile.name}</p>
+                      <p className="text-xs text-text-muted">{(pdfFile.size/1024/1024).toFixed(2)} MB · Click to change</p>
+                    </div>
                   ) : (
-                    <><Upload className="w-8 h-8 text-text-muted mb-2" /><p className="text-sm font-semibold text-text-primary">Drop PDF here or click to browse</p><p className="text-xs text-text-muted mt-1">Academic papers, student submissions, reports · Up to 20MB</p></>
+                    <div className="flex flex-col items-center gap-1">
+                      <Upload className="w-8 h-8 text-text-muted mb-1" />
+                      <p className="text-sm font-semibold text-text-primary">Drop PDF here or click to browse</p>
+                      <p className="text-xs text-text-muted mt-0.5">Academic papers, essays, reports · Up to 20MB · Multi-page supported</p>
+                    </div>
                   )}
                 </div>
                 <input ref={fileInputRef} type="file" accept=".pdf,application/pdf" className="hidden"
-                  onChange={e => { const f = e.target.files?.[0]; if (f) handlePdfUpload(f) }} />
+                  onChange={e => { const f = e.target.files?.[0]; if (f) handlePdfUpload(f); e.target.value = '' }} />
                 {pdfFile && !pdfLoading && !result && (
                   <button onClick={() => { setPdfFile(null); setResult(null) }}
                     className="flex items-center gap-1.5 text-xs text-text-muted hover:text-rose transition-colors mb-2">

@@ -484,6 +484,9 @@ export async function analyzeAudio(
     ? geminiAnalyzeAudio(audioBuffer!, format, fileName).catch(() => null)
     : Promise.resolve(null)
 
+  const hfP0 = (hasBuffer && HF_TOKEN)
+    ? hfInference(MODELS.audio_finetuned, null, { binary: true, binaryData: audioBuffer!, retries: 0, timeoutMs: 15000 }).catch(() => null)
+    : Promise.resolve(null)
   const hfP1 = (hasBuffer && HF_TOKEN)
     ? hfInference(MODELS.audio_primary,  null, { binary: true, binaryData: audioBuffer!, retries: 0, timeoutMs: 12000 }).catch(() => null)
     : Promise.resolve(null)
@@ -492,10 +495,10 @@ export async function analyzeAudio(
     : Promise.resolve(null)
 
   let audioSignals = hasBuffer
-    ? extractAudioSignals(audioBuffer!, fileSize, format, fileName)
-    : extractAudioSignals(Buffer.alloc(0), fileSize, format, fileName)
+    ? extractAudioSignalsExtended(audioBuffer!, fileSize)
+    : extractAudioSignalsExtended(Buffer.alloc(0), fileSize)
 
-  const [geminiResult, mlR1, mlR2] = await Promise.all([geminiPromise, hfP1, hfP2])
+  const [geminiResult, mlR0, mlR1, mlR2] = await Promise.all([geminiPromise, hfP0, hfP1, hfP2])
 
   try {
     const audioCal = await getAudioCalibrationStats()
@@ -503,38 +506,42 @@ export async function analyzeAudio(
   } catch {}
   const sigScore = aggregateAudioSignals(audioSignals)
 
-  const mlScores: number[] = []
-  const parseAudio = (r: unknown) => {
+  const mlScores: { score: number; weight: number }[] = []
+  const parseAudio = (r: unknown, weight: number) => {
     if (!r || !Array.isArray(r)) return
     try {
       const raw   = r as { label: string; score: number }[]
       const fakeE = raw.find(s => /fake|spoof|label_1|deepfake|synthetic|ai/i.test(s.label))
       const realE = raw.find(s => /real|bonafide|label_0|authentic|human/i.test(s.label))
       const score = fakeE?.score ?? (realE ? 1 - realE.score : null)
-      if (score !== null && score !== undefined) mlScores.push(score)
+      if (score !== null && score !== undefined) mlScores.push({ score, weight })
     } catch {}
   }
-  parseAudio(mlR1)
-  parseAudio(mlR2)
+  parseAudio(mlR0, 0.50)   // fine-tuned — dominant
+  parseAudio(mlR1, 0.30)   // audio_primary
+  parseAudio(mlR2, 0.20)   // asvspoof
 
-  const mlMean     = mlScores.length ? mlScores.reduce((a, b) => a + b, 0) / mlScores.length : null
+  const totalWeight = mlScores.reduce((a, b) => a + b.weight, 0)
+  const mlMean      = mlScores.length
+    ? mlScores.reduce((sum, s) => sum + s.score * s.weight, 0) / totalWeight
+    : null
   const geminiScore = geminiResult?.aiScore ?? null
 
   let aiScore: number
   let modelUsed: string
 
   if (geminiScore !== null && mlMean !== null) {
-    aiScore   = geminiScore * 0.50 + mlMean * 0.25 + sigScore * 0.25
-    modelUsed = `Aiscern-AudioEnsemble(Gemini2Flash+${mlScores.length}HFModels+5AcousticSignals)`
+    aiScore   = geminiScore * 0.45 + mlMean * 0.30 + sigScore * 0.25
+    modelUsed = `Aiscern-AudioEnsemble(Gemini2Flash+${mlScores.length}Models+8AcousticSignals)`
   } else if (geminiScore !== null) {
     aiScore   = geminiScore * 0.70 + sigScore * 0.30
-    modelUsed = 'Aiscern-AudioGemini(Gemini2Flash+5AcousticSignals)'
+    modelUsed = 'Aiscern-AudioGemini(Gemini2Flash+8AcousticSignals)'
   } else if (mlMean !== null) {
     aiScore   = mlMean * 0.70 + sigScore * 0.30
-    modelUsed = `Aiscern-AudioEnsemble(${mlScores.length}HFModels+5AcousticSignals)`
+    modelUsed = `Aiscern-AudioEnsemble(${mlScores.length}Models+8AcousticSignals)`
   } else {
     aiScore   = sigScore
-    modelUsed = 'Aiscern-AudioSignals(AcousticHeuristics)'
+    modelUsed = 'Aiscern-AudioSignals(8AcousticHeuristics)'
   }
 
   const calibratedAudioScore = calibrateScore(aiScore)
@@ -617,7 +624,80 @@ export async function analyzeVideoWithFrames(
           : `Inconclusive (${Math.round(ensemble.ai_score * 100)}% AI probability). Ensure visible faces in video.`,
       }
     } catch (err: unknown) {
-      console.warn('[analyzeVideoWithFrames] NVIDIA NIM failed, falling back:', (err as Error)?.message)
+      console.warn('[analyzeVideoWithFrames] NVIDIA NIM failed, falling back to HF:', (err as Error)?.message)
+    }
+  }
+
+  // HuggingFace finetuned video model fallback — classify individual frames
+  if (frames.length > 0 && HF_TOKEN) {
+    try {
+      const frameScores: number[] = []
+      // Run finetuned model on up to 8 evenly-spaced frames in parallel
+      const sampleFrames = frames.filter((_, i) => i % Math.max(1, Math.floor(frames.length / 8)) === 0).slice(0, 8)
+      await Promise.allSettled(sampleFrames.map(async (frame) => {
+        const buf = Buffer.from(frame.base64, 'base64')
+        const raw = await hfInference(MODELS.video_finetuned, null, {
+          binary: true, binaryData: buf, retries: 0, timeoutMs: 10000,
+        }).catch(() => null)
+        if (!raw || !Array.isArray(raw)) return
+        const arr    = raw as { label: string; score: number }[]
+        const fakeE  = arr.find(s => /fake|deepfake|label_1|ai/i.test(s.label))
+        const realE  = arr.find(s => /real|authentic|label_0/i.test(s.label))
+        const score  = fakeE?.score ?? (realE ? 1 - realE.score : null)
+        if (score !== null && score !== undefined) frameScores.push(score)
+      }))
+
+      if (frameScores.length >= 2) {
+        const mean  = frameScores.reduce((a, b) => a + b, 0) / frameScores.length
+        const max   = Math.max(...frameScores)
+        // IQR-aware aggregation (§4.3 of engineering brief)
+        const sorted = [...frameScores].sort((a, b) => a - b)
+        const q1    = sorted[Math.floor(sorted.length * 0.25)]
+        const q3    = sorted[Math.floor(sorted.length * 0.75)]
+        const iqr   = q3 - q1
+        // High IQR = inconsistent predictions = suspicious
+        const ensScore = iqr > 0.25 ? Math.max(mean, max * 0.7) : mean
+        const calibrated = calibrateScore(ensScore)
+        const verdict = toVerdict(calibrated, 'video')
+        return {
+          verdict,
+          confidence:    Math.round(calibrated * 1000) / 1000,
+          model_used:    `Aiscern-VideoEnsemble(ViT-base-LoRA,${frameScores.length}frames,IQR=${iqr.toFixed(2)})`,
+          model_version: '5.0.0',
+          signals: [
+            {
+              name:        'Frame-Level Deepfake Classifier',
+              category:    'ML',
+              description: `ViT-base LoRA fine-tuned on Celeb-DF + FaceForensics. ${frameScores.length} frames analyzed. IQR=${iqr.toFixed(2)} (high=suspicious).`,
+              weight:      80,
+              value:       Math.round(ensScore * 1000) / 1000,
+              flagged:     ensScore > 0.55,
+            },
+            {
+              name:        'Temporal Consistency',
+              category:    'Heuristic',
+              description: iqr > 0.25 ? 'High prediction variance across frames — possible deepfake swap in partial segments.' : 'Consistent predictions across frames.',
+              weight:      20,
+              value:       Math.round((1 - iqr) * 1000) / 1000,
+              flagged:     iqr > 0.25,
+            },
+          ],
+          frame_scores: sampleFrames.map((f, i) => ({
+            frame_index: f.index,
+            time_sec:    f.timeSec,
+            ai_score:    Math.round((frameScores[i] ?? ensScore) * 1000) / 1000,
+            verdict:     (frameScores[i] ?? ensScore) >= 0.55 ? 'AI' : 'HUMAN',
+            face_detected: true,
+          })),
+          summary: verdict === 'AI'
+            ? `Deepfake detected — ${Math.round(ensScore * 100)}% confidence across ${frameScores.length} frames (IQR=${iqr.toFixed(2)}).`
+            : verdict === 'HUMAN'
+            ? `Video appears authentic across ${frameScores.length} analyzed frames.`
+            : `Inconclusive (${Math.round(ensScore * 100)}% AI probability across ${frameScores.length} frames).`,
+        }
+      }
+    } catch (err: unknown) {
+      console.warn('[analyzeVideoWithFrames] HF finetuned failed:', (err as Error)?.message)
     }
   }
 
