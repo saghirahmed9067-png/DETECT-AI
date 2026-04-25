@@ -94,7 +94,7 @@ async function analyzeFrame(
     const confMatch = clean.match(/"confidence"\s*:\s*(\d+)/)
     const fakeMatch = clean.match(/"is_deepfake"\s*:\s*(true|false)/)
     parsed = {
-      is_deepfake:   fakeMatch?.[1] === 'true' ?? false,
+      is_deepfake:   fakeMatch?.[1] === 'true',
       confidence:    confMatch ? parseInt(confMatch[1]) : 50,
       face_detected: /face/i.test(clean),
       signals:       [],
