@@ -111,7 +111,7 @@ export default {
     if (!sources.length) return
 
     // Scrape: use scrapeParallel for 3 sources per tick (v7 speed upgrade)
-    const results = await scrapeParallel(env.DB, sources, env.HF_TOKEN, wid, 3)
+    const results = await scrapeParallel(env.DB, sources, env.HF_TOKEN, wid, wnum)
     const totalIns = results.reduce((s, r) => s + r.inserted, 0)
     console.log(`[W${wnum}] scraped=${results.length} inserted=${totalIns}`)
 
