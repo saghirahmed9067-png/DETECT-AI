@@ -2,60 +2,110 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDown, HelpCircle } from 'lucide-react'
+import { ChevronDown, HelpCircle, Mail } from 'lucide-react'
 import { SiteFooter } from '@/components/site-footer'
 import { SiteNav } from '@/components/SiteNav'
 
-const FAQS = [
+const FAQ_SECTIONS = [
   {
-    q: 'How accurate is Aiscern?',
-    a: 'Current benchmarked accuracy: text ~85%, image ~82%, audio ~79%, video ~76%. These are measured on public test datasets — not cherry-picked results. Accuracy varies depending on content type, length, and how heavily edited the content is. See our methodology page for full details.',
-    link: { label: 'View detection methodology', href: '/methodology' },
+    title: 'Pricing & Plans',
+    items: [
+      {
+        q: 'Is there really a free plan?',
+        a: 'Yes. The free tier includes 10 scans per day on text and image detection. No credit card required.',
+        link: { label: 'See all pricing plans', href: '/pricing' },
+      },
+      {
+        q: 'What happens if I hit my daily limit?',
+        a: 'You can wait for the next day or upgrade to Pro instantly. Your scan count resets every 24 hours.',
+        link: null,
+      },
+      {
+        q: 'Can I cancel anytime?',
+        a: 'Yes. Monthly plans cancel anytime with no hidden fees. You keep Pro access until the end of your billing period.',
+        link: null,
+      },
+      {
+        q: 'Will the free tier stay?',
+        a: 'Yes. We believe everyone deserves access to basic AI detection. The free tier is permanent.',
+        link: null,
+      },
+      {
+        q: 'Why do you charge for Pro and Team?',
+        a: 'Running ensemble AI models across text, image, audio, and video requires significant GPU compute. Paid plans help us improve accuracy, add new modalities, and keep the service running — without selling your data or showing ads.',
+        link: null,
+      },
+    ],
   },
   {
-    q: 'Is Aiscern really free?',
-    a: 'Yes. The free tier gives you 10 scans per day on text and image detection. No credit card required. Pro plans ($12/month) unlock audio, video, higher scan limits, and PDF exports. The free tier is permanent.',
-    link: { label: 'See all pricing plans', href: '/pricing' },
+    title: 'Detection & Accuracy',
+    items: [
+      {
+        q: 'How accurate is Aiscern?',
+        a: 'Our latest benchmarks show approximately 85% accuracy on text, 82% on images, 79% on audio, and 76% on video. Accuracy varies by content type, generator, and compression level. These are measured on public held-out test sets — not cherry-picked results.',
+        link: { label: 'View full methodology', href: '/methodology' },
+      },
+      {
+        q: 'Can I use Aiscern for legal or academic decisions?',
+        a: 'No. Detection results are probabilistic, not definitive. Always use human judgment for high-stakes decisions. Never use a single detection result as sole evidence in legal proceedings or academic integrity cases.',
+        link: null,
+      },
+      {
+        q: 'What AI generators can you detect?',
+        a: 'Our models are updated quarterly. We detect content from major generators including ChatGPT, GPT-4, Claude, Midjourney, DALL-E, Stable Diffusion, ElevenLabs, and common TTS tools. Novel generators released after our last update may evade detection until the next fine-tune.',
+        link: null,
+      },
+      {
+        q: 'How does the ensemble work?',
+        a: 'We run content through multiple independent models and combine their signals into a weighted confidence score. No single model makes the final call. For text, we use perplexity, burstiness, vocabulary diversity, and transformer classifiers. For images, we analyze frequency artifacts, facial geometry, and EXIF metadata.',
+        link: { label: 'Full detection methodology', href: '/methodology' },
+      },
+      {
+        q: 'What does an "Uncertain" verdict mean?',
+        a: 'An "Uncertain" result means the ensemble did not reach ≥62% confidence to label AI, nor ≤38% to label human. This is not a failure — it means the content is genuinely ambiguous. Try running a longer sample or checking a different modality.',
+        link: null,
+      },
+      {
+        q: 'Does Aiscern work on languages other than English?',
+        a: 'Text detection was primarily trained on English-language data. Non-English text may produce higher false-positive rates. Treat non-English results with extra caution. Multilingual support is on the roadmap.',
+        link: null,
+      },
+    ],
   },
   {
-    q: 'What happens to my uploads?',
-    a: 'Files you upload are processed for detection only. They are deleted from our servers within 24 hours. We do not train our models on your content without your explicit opt-in. Text inputs are not stored permanently. See our privacy policy for full details.',
-    link: { label: 'Read the privacy policy', href: '/privacy' },
+    title: 'Privacy & Data',
+    items: [
+      {
+        q: 'What happens to my uploads?',
+        a: 'Files are processed for detection and deleted within 24 hours. We do not train our models on your content without explicit opt-in. Scan results are stored in your history for 12 months.',
+        link: { label: 'Read privacy policy', href: '/privacy' },
+      },
+      {
+        q: 'Do you sell my data?',
+        a: 'No. We do not sell, share, or use your submitted content for any purpose other than providing the detection service to you.',
+        link: null,
+      },
+    ],
   },
   {
-    q: 'Who built Aiscern?',
-    a: 'Aiscern is built and maintained by Anas Ali, a solo founder based in Islamabad, Pakistan. It is an early-stage project — actively developed, transparent about limitations, and not backed by VC money.',
-    link: { label: 'About the founder', href: '/about' },
-  },
-  {
-    q: 'Can I use Aiscern results for legal or academic decisions?',
-    a: 'No. Results are probabilistic, not definitive. Aiscern is a detection aid, not a legal or forensic instrument. Do not use results as sole evidence in legal proceedings, academic integrity cases, or any high-stakes decision. Always apply human judgment alongside the results.',
-    link: null,
-  },
-  {
-    q: 'How does Aiscern detect AI content?',
-    a: 'Aiscern uses an ensemble of multiple detection models rather than relying on a single classifier. For text, this includes RoBERTa-based models plus linguistic signal analysis (perplexity, burstiness). For images, ViT models plus GAN artifact detection. For audio, wav2vec2-based models. Results are combined into a confidence score with a verdict threshold of ≥62% to label AI.',
-    link: { label: 'Full methodology', href: '/methodology' },
-  },
-  {
-    q: 'What AI generators can you detect?',
-    a: 'Detection models are updated periodically. We currently detect output from major generators including ChatGPT, Claude, Gemini (text); Midjourney, DALL-E 3, Stable Diffusion (images); ElevenLabs and common TTS tools (audio). Detection of newer or fine-tuned models may be less reliable.',
-    link: null,
-  },
-  {
-    q: 'Do you have an API?',
-    a: 'Yes. REST API access is available on Team ($49/month) and Enterprise (custom) plans. The API supports all four modalities. Documentation is available at /docs/api.',
-    link: { label: 'View API docs', href: '/docs/api' },
-  },
-  {
-    q: 'What if the result is "Uncertain"?',
-    a: 'An "Uncertain" verdict means the ensemble models did not reach the ≥62% confidence threshold required to label content as AI, nor the ≤38% threshold to label it as human. This is not a failure — it means the content is ambiguous. Consider running a longer sample or checking a different modality.',
-    link: null,
-  },
-  {
-    q: 'Does Aiscern work on languages other than English?',
-    a: 'Text detection was primarily trained on English-language data. Non-English text may produce higher false-positive rates. We are working on multilingual support. For now, treat non-English results with extra caution.',
-    link: null,
+    title: 'Product',
+    items: [
+      {
+        q: 'Who built Aiscern?',
+        a: 'Aiscern is built by Anas Ali, a solo founder based in Islamabad, Pakistan. It is an early-stage project — actively developed, transparent about limitations, and not VC-funded.',
+        link: { label: 'About the founder', href: '/about' },
+      },
+      {
+        q: 'Do you have an API?',
+        a: 'Yes. API access is available on Team and Enterprise plans. Documentation is available at /docs/api.',
+        link: { label: 'View API docs', href: '/docs/api' },
+      },
+      {
+        q: 'What file types do you support?',
+        a: 'Text (paste or URL), images (JPG, PNG, WEBP), audio (MP3, WAV, M4A), and video (MP4, MOV, WEBM).',
+        link: null,
+      },
+    ],
   },
 ]
 
@@ -107,27 +157,41 @@ export default function FAQPage() {
             Frequently Asked Questions
           </div>
           <h1 className="text-4xl sm:text-5xl font-black mb-4">
-            Common <span className="gradient-text">Questions</span>
+            Frequently Asked <span className="gradient-text">Questions</span>
           </h1>
           <p className="text-text-muted text-base">
-            Honest answers about how Aiscern works, what it can and cannot do, and how your data is handled.
+            Everything you need to know about Aiscern. Can&apos;t find what you are looking for?{' '}
+            <a href="mailto:contact@aiscern.com" className="text-primary hover:underline">
+              Contact us at contact@aiscern.com
+            </a>
           </p>
         </div>
 
-        <div className="rounded-2xl border border-border bg-surface px-6 mb-10">
-          {FAQS.map(item => (
-            <FAQItem key={item.q} {...item} />
+        <div className="space-y-8 mb-12">
+          {FAQ_SECTIONS.map(section => (
+            <div key={section.title}>
+              <h2 className="text-xs font-bold uppercase tracking-widest text-text-muted mb-1 px-1">
+                {section.title}
+              </h2>
+              <div className="rounded-2xl border border-border bg-surface px-6">
+                {section.items.map(item => (
+                  <FAQItem key={item.q} {...item} />
+                ))}
+              </div>
+            </div>
           ))}
         </div>
 
-        <div className="text-center">
-          <p className="text-sm text-text-muted mb-3">Still have a question?</p>
-          <Link
-            href="/contact"
+        <div className="text-center rounded-2xl border border-border/60 bg-surface/50 p-8">
+          <Mail className="w-8 h-8 text-primary mx-auto mb-3 opacity-80" />
+          <p className="text-sm font-semibold text-text-primary mb-1">Still have questions?</p>
+          <p className="text-xs text-text-muted mb-4">We respond within 24–48 hours.</p>
+          <a
+            href="mailto:contact@aiscern.com"
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border text-sm font-semibold text-text-secondary hover:border-primary/50 hover:text-text-primary transition-all"
           >
-            Contact us — we respond within 24–48 hours
-          </Link>
+            contact@aiscern.com
+          </a>
         </div>
 
       </main>

@@ -767,7 +767,7 @@ function WhoNeedsSection() {
           </div>
 
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black mb-4 leading-tight">
-            Built for <span className="gradient-text">Every Industry</span><br className="hidden sm:block" />
+            Used by Professionals <span className="gradient-text">Across Industries</span><br className="hidden sm:block" />
             <span className="text-text-secondary text-2xl sm:text-3xl lg:text-4xl font-bold"> That Demands Truth</span>
           </h2>
 
@@ -842,7 +842,7 @@ const STATS = [
 
 const HOW_IT_WORKS = [
   { n: '01', title: 'Upload or Paste',  desc: 'Drop any image, video, audio file or paste text / a URL' },
-  { n: '02', title: 'Deep AI Scan',     desc: 'Advanced multi-modal AI analyzes 20+ detection signals across all content types' },
+  { n: '02', title: 'Ensemble Analysis',     desc: 'Advanced multi-modal AI analyzes 20+ detection signals across all content types' },
   { n: '03', title: 'Get Full Report',  desc: 'Confidence score, signal breakdown & sentence-level heatmap' },
   { n: '04', title: 'Export & Share',   desc: 'Save history, share results, export PDF reports' },
 ]
@@ -1292,7 +1292,7 @@ export default function HomePage() {
             ) : (
               <>
                 <Link href="/detect/text" className="btn-primary w-full sm:w-auto px-5 sm:px-8 py-3 sm:py-3.5 text-sm sm:text-base font-bold flex items-center justify-center gap-2 shadow-xl shadow-primary/30" title="Start Detecting AI Content Free">
-                  Start Detecting Free <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                  Start Free Scan <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
                 </Link>
                 <Link href="/signup" className="btn-secondary w-full sm:w-auto px-5 sm:px-8 py-3 sm:py-3.5 text-sm sm:text-base flex items-center justify-center gap-2" title="Create free account">
                   <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-amber" />Create Free Account
@@ -1339,7 +1339,7 @@ export default function HomePage() {
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
             className="text-center mb-12 sm:mb-16">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black mb-4">
-              Detection <span className="gradient-text">Arsenal</span>
+              Detection <span className="gradient-text">Tools</span>
             </h2>
             <p className="text-text-muted text-base sm:text-lg max-w-2xl mx-auto">
               Six detection tools powered by an ensemble of open-source and fine-tuned models, benchmarked on public datasets.
@@ -1414,7 +1414,7 @@ export default function HomePage() {
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
             className="text-center mb-10 sm:mb-12">
             <h2 className="text-2xl sm:text-3xl font-black mb-3">Early <span className="gradient-text">Feedback</span></h2>
-            <p className="text-xs text-text-muted">Feedback from early users. First name or anonymous only, no photos.</p>
+            <p className="text-xs text-text-muted">Real feedback from beta testers. Anonymous or first name only.</p>
           </motion.div>
           <HomepageReviews />
           <div className="text-center mt-6">

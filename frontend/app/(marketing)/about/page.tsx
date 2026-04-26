@@ -13,7 +13,7 @@ export const metadata = {
 const STATS = [
   { label: 'Modalities',       value: '4',    sub: 'text, image, audio, video' },
   { label: 'Detection models', value: '8+',   sub: 'in the ensemble pipeline'  },
-  { label: 'Always free',      value: '100%', sub: 'no paywalls, no limits'    },
+  { label: '10 scans/day',      value: 'Free tier', sub: 'no account required'    },
   { label: 'Accuracy',         value: '~85%', sub: 'on text; ~82% images'      },
 ]
 
@@ -30,8 +30,8 @@ const VALUES = [
   },
   {
     icon: Zap,
-    title: 'Free forever',
-    desc:  'AI detection tools should not be locked behind subscriptions. Aiscern is free for individuals, educators, journalists, and researchers — no account required for basic detection.',
+    title: 'Accessible to everyone',
+    desc:  'AI detection tools should not be locked behind subscriptions. Aiscern offers a free tier for individuals, educators, journalists, and researchers — no account required for basic detection.',
   },
   {
     icon: Globe,
@@ -197,7 +197,7 @@ export default function AboutPage() {
         {/* CTA */}
         <div className="text-center space-y-4">
           <h2 className="text-2xl font-black">Try it free</h2>
-          <p className="text-text-muted">No account needed. All four modalities, free forever.</p>
+          <p className="text-text-muted">No account needed. Core features free during early access.</p>
           <div className="flex flex-wrap gap-3 justify-center">
             <Link href="/detect/text" className="px-5 py-2.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-colors">
               Detect Text →
