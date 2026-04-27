@@ -29,12 +29,12 @@ export function SiteNav({ backHref, backLabel }: SiteNavProps) {
   }, [open])
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-border/50 bg-background/80 backdrop-blur-xl">
+    <nav className="fixed top-0 left-0 right-0 z-50 h-14 sm:h-16 border-b border-border/50 bg-background/80 backdrop-blur-xl">
       <div className="max-w-6xl mx-auto h-full px-4 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 shrink-0">
-          <Image src="/logo.png" alt="Aiscern" width={32} height={24} className="object-contain" />
-          <span className="font-black text-lg gradient-text">Aiscern</span>
+          <Image src="/logo.png" alt="Aiscern" width={28} height={21} className="object-contain sm:w-8 sm:h-6" />
+          <span className="font-black text-base sm:text-lg gradient-text">Aiscern</span>
         </Link>
 
         {backHref ? (
@@ -47,7 +47,7 @@ export function SiteNav({ backHref, backLabel }: SiteNavProps) {
             <div className="hidden sm:flex items-center gap-6">
               {NAV_LINKS.map(l => (
                 <Link key={l.href} href={l.href}
-                  className="text-sm text-text-muted hover:text-text-primary transition-colors font-medium">
+                  className="link-inline text-sm text-text-muted hover:text-text-primary transition-colors font-medium">
                   {l.label}
                 </Link>
               ))}
@@ -91,10 +91,10 @@ export function SiteNav({ backHref, backLabel }: SiteNavProps) {
             style={{ touchAction: 'none' }}
           />
           {/* Dropdown panel */}
-          <div className="sm:hidden fixed top-16 left-0 right-0 bg-background/98 backdrop-blur-xl border-b border-border px-4 py-4 space-y-3 z-50 shadow-2xl">
+          <div className="sm:hidden fixed top-14 left-0 right-0 bg-background/98 backdrop-blur-xl border-b border-border px-4 py-4 space-y-3 z-50 shadow-2xl">
             {NAV_LINKS.map(l => (
               <Link key={l.href} href={l.href} onClick={() => setOpen(false)}
-                className="block text-sm text-text-muted hover:text-text-primary transition-colors font-medium py-2 px-2 rounded-lg hover:bg-surface active:scale-95">
+                className="block text-sm text-text-muted hover:text-text-primary transition-colors font-medium py-2.5 px-3 rounded-lg hover:bg-surface active:scale-95 min-h-[44px] flex items-center link-inline">
                 {l.label}
               </Link>
             ))}
