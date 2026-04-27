@@ -321,7 +321,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </button>
               <Link href="/" className="flex items-center gap-2 lg:hidden hover:opacity-80 transition-opacity">
                 <Image src="/logo.png" alt="Aiscern" width={28} height={19} className="object-contain drop-shadow-[0_0_6px_rgba(245,100,0,0.5)]" />
-                <span className="font-bold gradient-text text-sm">Aiscern</span>
+                <span className="font-bold gradient-text text-sm hidden xs:inline">Aiscern</span>
               </Link>
               <div className="hidden lg:flex items-center gap-2 text-sm text-text-muted">
                 <span className="w-2 h-2 rounded-full bg-emerald animate-pulse" />
