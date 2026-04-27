@@ -1,21 +1,20 @@
-import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { NextRequest, NextResponse } from 'next/server'
+import { requireAdmin, getAdminDb } from '@/lib/admin-middleware'
+export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const [runsRes, beatsRes, alertsRes, overviewRes] = await Promise.all([
-      db.from('pipeline_runs').select('*').order('started_at', { ascending: false }).limit(30),
-      db.from('pipeline_heartbeat').select('*').order('beat_at', { ascending: false }).limit(50),
-      db.from('pipeline_alerts').select('*').eq('resolved', false).order('created_at', { ascending: false }),
-      db.from('pipeline_overview').select('*').single(),
-    ])
+    const auth = await requireAdmin(req)
+    if (auth instanceof NextResponse) return auth
+    const db = getAdminDb()
+    const start = Date.now()
+    const { error } = await db.from('profiles').select('id').limit(1)
+    const dbLatency = Date.now() - start
     return NextResponse.json({
-      runs:     runsRes.data     || [],
-      beats:    beatsRes.data    || [],
-      alerts:   alertsRes.data   || [],
-      overview: overviewRes.data || {},
+      ok: !error, db: !error ? 'connected' : 'error',
+      db_latency_ms: dbLatency, ts: new Date().toISOString(),
     })
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 })
+    return NextResponse.json({ ok: false, error: err?.message })
   }
 }

@@ -1,179 +1,261 @@
 'use client'
 export const dynamic = 'force-dynamic'
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
-  LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer
+  XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line
 } from 'recharts'
 import {
-  Shield, Activity, LogOut, RefreshCw, Loader2, Users, CreditCard,
-  BarChart3, Database, Flag, CheckCircle, TrendingUp,
-  AlertTriangle, Play, Zap, Ban, Radio,
-  Settings, Clock, Globe, AlertCircle, Download, Search,
-  ChevronDown, ChevronUp, Trash2, Plus, Save, X
+  Shield, Activity, LogOut, RefreshCw, Users, Database,
+  TrendingUp, AlertTriangle, Zap, Radio, Settings, Clock,
+  AlertCircle, Search, ChevronDown, Crown, Ban, CheckCircle,
+  ShieldOff, RotateCcw, UserX, Star, Play, Flag, FileText,
+  Globe, Eye, EyeOff, Loader2, BarChart3, Server, Package,
+  ArrowUpRight, ArrowDownRight, Hash, Terminal, Layers
 } from 'lucide-react'
 
-const PLAN_COLORS: Record<string,string> = { free:'#6b7280', starter:'#3b82f6', pro:'#8b5cf6', enterprise:'#f59e0b' }
-const VERDICT_COLORS: Record<string,string> = { AI:'#f87171', HUMAN:'#34d399', UNCERTAIN:'#fbbf24' }
-const TOOL_COLORS: Record<string,string> = { text:'#a78bfa', image:'#60a5fa', audio:'#34d399', video:'#fb923c' }
+// ── Aiscern Logo ──────────────────────────────────────────────────────────────
+function AiscernLogo({ size = 28 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="40" height="40" rx="9" fill="url(#alg)" />
+      <path d="M20 8L30 28H10L20 8Z" fill="white" fillOpacity="0.92" />
+      <circle cx="20" cy="25" r="3.5" fill="white" fillOpacity="0.6" />
+      <defs>
+        <linearGradient id="alg" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#7c3aed" /><stop offset="1" stopColor="#2563eb" />
+        </linearGradient>
+      </defs>
+    </svg>
+  )
+}
 
-interface User { id: string; email: string; display_name: string; plan_id: string; credits_remaining: number; scan_count: number; created_at: string; is_banned: boolean }
-interface FeatureFlag { id?: string; key: string; enabled: boolean; rollout_percentage: number; description?: string }
-interface ErrorLog { id: number; service: string; message: string; stack_trace?: string; resolved: boolean; created_at: string; error_code?: string }
-interface AuditLog { id: number; action_type: string; admin_id?: string; target_resource?: string; ip_address?: string; metadata?: Record<string,unknown>; created_at: string; admin_users?: { email: string } }
-interface Setting { key: string; value: string; description?: string }
-
+// ── API helper ────────────────────────────────────────────────────────────────
 async function api(path: string, method = 'GET', body?: unknown) {
   try {
-    const r = await fetch(`/api${path}`, { method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined })
-    if (!r.ok && r.status === 401) return { error: 'Unauthorized' }
+    const r = await fetch(`/api${path}`, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: body ? JSON.stringify(body) : undefined,
+    })
+    if (r.status === 401) return { error: 'Unauthorized' }
     return r.json()
-  } catch (e) {
-    console.error('[Admin API]', path, e)
-    return { error: 'Network error' }
-  }
+  } catch { return { error: 'Network error' } }
 }
 
+// ── Small components ──────────────────────────────────────────────────────────
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <div className={`bg-gray-800/60 rounded-xl border border-gray-700/60 p-5 ${className}`}>{children}</div>
+  return <div className={`card ${className}`}>{children}</div>
 }
 
-function Badge({ children, color }: { children: React.ReactNode; color: string }) {
-  const cls: Record<string,string> = {
-    green:'bg-emerald-900/40 text-emerald-300 border-emerald-700/40',
-    red:'bg-red-900/40 text-red-300 border-red-700/40',
-    yellow:'bg-yellow-900/40 text-yellow-300 border-yellow-700/40',
-    blue:'bg-blue-900/40 text-blue-300 border-blue-700/40',
-    purple:'bg-purple-900/40 text-purple-300 border-purple-700/40',
-    gray:'bg-gray-700/60 text-gray-400 border-gray-600/40',
-  }
-  return <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${cls[color]||cls.gray}`}>{children}</span>
+function Badge({ v, label }: { v: string; label?: string }) {
+  return <span className={`badge badge-${v.toLowerCase()}`}>{label || v}</span>
 }
 
-function Stat({ label, value, icon: Icon, color='text-white' }: { label:string; value:string|number; icon?:any; color?:string }) {
+function Spinner() {
+  return <div className="w-5 h-5 rounded-full border-2 border-[#1e1e35] border-t-[#7c3aed] spinner" />
+}
+
+function KPI({
+  label, value, sub, icon: Icon, color = '#a78bfa', delta
+}: {
+  label: string; value: string | number; sub?: string
+  icon?: any; color?: string; delta?: number
+}) {
   return (
-    <div className="bg-gray-800/60 rounded-xl p-4 border border-gray-700/60">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">{label}</p>
-          <p className={`text-2xl font-black ${color}`}>{value}</p>
-        </div>
-        {Icon && <Icon className="w-5 h-5 text-gray-600 mt-1" />}
+    <div className="card flex items-start justify-between">
+      <div className="flex-1 min-w-0">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-[#4a5568] mb-1">{label}</p>
+        <p className="text-2xl font-black text-white tabular-nums">{value}</p>
+        {sub && <p className="text-[11px] text-[#4a5568] mt-0.5">{sub}</p>}
+        {delta !== undefined && (
+          <div className={`flex items-center gap-0.5 text-[11px] mt-1 ${delta >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+            {delta >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+            {Math.abs(delta)}% vs last period
+          </div>
+        )}
       </div>
+      {Icon && (
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center ml-3 flex-shrink-0"
+          style={{ background: color + '18' }}>
+          <Icon className="w-4.5 h-4.5" style={{ color }} />
+        </div>
+      )}
     </div>
   )
 }
 
-// ── Analytics ─────────────────────────────────────────────────────────────────
-function AnalyticsTab() {
-  const [data, setData]       = useState<Record<string,unknown>|null>(null)
-  const [loading, setLoading] = useState(true)
-  const [period, setPeriod]   = useState('7d')
-  const load = useCallback(() => { setLoading(true); api(`/analytics?period=${period}`).then(d => { setData(d); setLoading(false) }) }, [period])
+function SectionHeader({ title, sub, action }: { title: string; sub?: string; action?: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between mb-5">
+      <div>
+        <h2 className="text-sm font-bold text-white">{title}</h2>
+        {sub && <p className="text-[11px] text-[#4a5568] mt-0.5">{sub}</p>}
+      </div>
+      {action}
+    </div>
+  )
+}
+
+// ── Nav tabs ──────────────────────────────────────────────────────────────────
+const TABS = [
+  { id: 'overview',   label: 'Overview',    icon: BarChart3 },
+  { id: 'users',      label: 'Users',       icon: Users },
+  { id: 'pipeline',   label: 'Pipeline',    icon: Database },
+  { id: 'flags',      label: 'Feature Flags',icon: Flag },
+  { id: 'errors',     label: 'Error Logs',  icon: AlertTriangle },
+  { id: 'audit',      label: 'Audit Log',   icon: FileText },
+  { id: 'settings',   label: 'Settings',    icon: Settings },
+]
+
+// ── OVERVIEW TAB ──────────────────────────────────────────────────────────────
+function OverviewTab() {
+  const [data, setData]     = useState<any>(null)
+  const [loading, setLoad]  = useState(true)
+  const [period, setPeriod] = useState('7d')
+
+  const load = useCallback(() => {
+    setLoad(true)
+    api(`/analytics?period=${period}`).then(d => { setData(d); setLoad(false) })
+  }, [period])
+
   useEffect(load, [load])
 
-  if (loading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-purple-400" /></div>
-  if (!data) return <div className="text-gray-500 text-center py-16">Failed to load</div>
+  if (loading) return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {Array(8).fill(0).map((_,i) => <div key={i} className="card h-24 shimmer" />)}
+      </div>
+    </div>
+  )
 
-  const kpis = data.kpis as any || {}
-  const dailyScans = data.dailyScans as any[] || []
-  const dailyUsers = data.dailyUsers as any[] || []
-  const planDist   = data.planDistribution as any[] || []
-  const verdictDist= data.verdictDistribution as any[] || []
-  const toolUsage  = data.toolUsage as any[] || []
+  const k = data?.kpis || {}
+  const PLAN_COLORS: Record<string,string> = { free:'#64748b', pro:'#7c3aed', team:'#2563eb', enterprise:'#f59e0b' }
+  const VERDICT_COLORS: Record<string,string> = { AI:'#f87171', HUMAN:'#34d399', UNCERTAIN:'#fbbf24' }
 
   return (
     <div className="space-y-6">
+      {/* Period picker */}
       <div className="flex items-center gap-2">
         {(['7d','30d','90d'] as const).map(p => (
           <button key={p} onClick={() => setPeriod(p)}
-            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${period===p?'bg-purple-600 text-white':'bg-gray-700/60 text-gray-400 hover:text-white'}`}>
-            {p==='7d'?'7 days':p==='30d'?'30 days':'90 days'}
+            className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${period===p ? 'bg-[#7c3aed] text-white' : 'bg-[#111120] text-[#4a5568] hover:text-white border border-[#1e1e35]'}`}>
+            {p === '7d' ? 'Last 7 days' : p === '30d' ? 'Last 30 days' : 'Last 90 days'}
           </button>
         ))}
-        <button onClick={load} className="ml-auto p-2 rounded-lg bg-gray-700/60 text-gray-400 hover:text-white transition-colors"><RefreshCw className="w-4 h-4" /></button>
+        <button onClick={load} className="ml-auto p-2 rounded-lg bg-[#111120] border border-[#1e1e35] text-[#4a5568] hover:text-white transition-colors">
+          <RefreshCw className="w-3.5 h-3.5" />
+        </button>
       </div>
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <Stat label="Total Scans"  value={(kpis.totalScans||0).toLocaleString()} icon={Activity}   color="text-purple-300" />
-        <Stat label="Total Users"  value={(kpis.totalUsers||0).toLocaleString()} icon={Users}      color="text-blue-300" />
-        <Stat label="Paid Users"   value={(kpis.paidUsers||0).toLocaleString()}  icon={CreditCard} color="text-emerald-300" />
-        <Stat label="Conversion"   value={`${kpis.convRate||0}%`}                icon={TrendingUp} color="text-amber-300" />
-        <Stat label="Scans/User"   value={kpis.avgScansUser||0}                  icon={BarChart3}  color="text-pink-300" />
+
+      {/* KPI grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPI label="Total Scans"    value={(k.totalScans||0).toLocaleString()}   icon={Activity}  color="#a78bfa" />
+        <KPI label="Total Users"    value={(k.totalUsers||0).toLocaleString()}   icon={Users}     color="#60a5fa" />
+        <KPI label="Active (7d)"    value={(k.activeUsers||0).toLocaleString()}  icon={Radio}     color="#34d399" sub={`${Math.round((k.activeUsers||0)*100/(k.totalUsers||1))}% of total`} />
+        <KPI label="Inactive"       value={(k.inactiveUsers||0).toLocaleString()}icon={Clock}     color="#f59e0b" />
+        <KPI label="Paid Users"     value={(k.paidUsers||0).toLocaleString()}    icon={Crown}     color="#fbbf24" />
+        <KPI label="Banned"         value={(k.bannedUsers||0).toLocaleString()}  icon={Ban}       color="#f87171" />
+        <KPI label="Admin-Granted"  value={(k.adminGranted||0).toLocaleString()} icon={Star}      color="#a78bfa" />
+        <KPI label="New Today"      value={(k.newToday||0).toLocaleString()}     icon={Zap}       color="#34d399" />
       </div>
-      <Card>
-        <p className="text-white font-semibold mb-4">Daily Scan Volume</p>
-        <ResponsiveContainer width="100%" height={220}>
-          <AreaChart data={dailyScans}>
-            <defs>
-              <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f87171" stopOpacity={0.4}/><stop offset="95%" stopColor="#f87171" stopOpacity={0}/></linearGradient>
-              <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#34d399" stopOpacity={0.4}/><stop offset="95%" stopColor="#34d399" stopOpacity={0}/></linearGradient>
-            </defs>
-            <XAxis dataKey="date" tick={{fontSize:11,fill:'#6b7280'}} tickFormatter={(d:string)=>d.slice(5)} />
-            <YAxis tick={{fontSize:11,fill:'#6b7280'}} />
-            <Tooltip contentStyle={{background:'#1f2937',border:'1px solid #374151',borderRadius:8,fontSize:12}} />
-            <Area type="monotone" dataKey="ai"    stroke="#f87171" fill="url(#g1)" name="AI"    strokeWidth={2} />
-            <Area type="monotone" dataKey="human" stroke="#34d399" fill="url(#g2)" name="Human" strokeWidth={2} />
-          </AreaChart>
-        </ResponsiveContainer>
-      </Card>
-      <div className="grid md:grid-cols-2 gap-6">
+
+      {/* Charts row 1 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <Card>
-          <p className="text-white font-semibold mb-4">Tool Usage</p>
-          <ResponsiveContainer width="100%" height={160}>
-            <BarChart data={toolUsage} layout="vertical">
-              <XAxis type="number" tick={{fontSize:11,fill:'#6b7280'}} />
-              <YAxis type="category" dataKey="tool" tick={{fontSize:11,fill:'#6b7280'}} width={50} />
-              <Tooltip contentStyle={{background:'#1f2937',border:'1px solid #374151',borderRadius:8,fontSize:12}} />
-              <Bar dataKey="count" radius={[0,6,6,0]}>
-                {toolUsage.map((e:any,i:number)=><Cell key={i} fill={TOOL_COLORS[e.tool]||'#8b5cf6'} />)}
-              </Bar>
+          <SectionHeader title="Daily Scans" sub="AI vs Human vs Uncertain" />
+          <ResponsiveContainer width="100%" height={200}>
+            <AreaChart data={data?.dailyScans || []}>
+              <defs>
+                <linearGradient id="gAI" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#f87171" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#f87171" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="gH" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#34d399" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#34d399" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="date" tickFormatter={v => v.slice(5)} tick={{ fill:'#4a5568', fontSize:10 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill:'#4a5568', fontSize:10 }} axisLine={false} tickLine={false} width={30} />
+              <Tooltip contentStyle={{ background:'#0d0d18', border:'1px solid #1e1e35', borderRadius:10, fontSize:11 }} labelStyle={{ color:'#94a3b8' }} />
+              <Area type="monotone" dataKey="ai"    stroke="#f87171" fill="url(#gAI)" strokeWidth={2} name="AI" />
+              <Area type="monotone" dataKey="human" stroke="#34d399" fill="url(#gH)"  strokeWidth={2} name="Human" />
+              <Area type="monotone" dataKey="uncertain" stroke="#fbbf24" fill="none" strokeWidth={1.5} strokeDasharray="3 3" name="Uncertain" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </Card>
+
+        <Card>
+          <SectionHeader title="User Growth" sub="New signups per day" />
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={data?.dailyUsers || []}>
+              <XAxis dataKey="date" tickFormatter={v => v.slice(5)} tick={{ fill:'#4a5568', fontSize:10 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill:'#4a5568', fontSize:10 }} axisLine={false} tickLine={false} width={30} />
+              <Tooltip contentStyle={{ background:'#0d0d18', border:'1px solid #1e1e35', borderRadius:10, fontSize:11 }} labelStyle={{ color:'#94a3b8' }} />
+              <Bar dataKey="new_users" fill="#7c3aed" radius={[4,4,0,0]} name="New Users" />
             </BarChart>
           </ResponsiveContainer>
         </Card>
+      </div>
+
+      {/* Charts row 2 */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <Card>
-          <p className="text-white font-semibold mb-4">Plan Distribution</p>
-          <div className="flex items-center gap-6">
-            <ResponsiveContainer width={140} height={140}>
-              <PieChart>
-                <Pie data={planDist} dataKey="count" nameKey="plan" cx="50%" cy="50%" innerRadius={40} outerRadius={65}>
-                  {planDist.map((e:any,i:number)=><Cell key={i} fill={PLAN_COLORS[e.plan]||'#8b5cf6'} />)}
-                </Pie>
-                <Tooltip contentStyle={{background:'#1f2937',border:'1px solid #374151',borderRadius:8,fontSize:12}} />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="space-y-2">
-              {planDist.map((p:any,i:number)=>(
-                <div key={i} className="flex items-center gap-2 text-sm">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{background:PLAN_COLORS[p.plan]||'#8b5cf6'}} />
-                  <span className="text-gray-400 capitalize w-20">{p.plan}</span>
-                  <span className="text-white font-bold">{p.count}</span>
-                </div>
-              ))}
-            </div>
+          <SectionHeader title="Plan Distribution" />
+          <ResponsiveContainer width="100%" height={180}>
+            <PieChart>
+              <Pie data={data?.planDistribution || []} dataKey="count" nameKey="plan" cx="50%" cy="50%" innerRadius={50} outerRadius={75} paddingAngle={3}>
+                {(data?.planDistribution||[]).map((d:any) => (
+                  <Cell key={d.plan} fill={PLAN_COLORS[d.plan] || '#4a5568'} />
+                ))}
+              </Pie>
+              <Tooltip contentStyle={{ background:'#0d0d18', border:'1px solid #1e1e35', borderRadius:10, fontSize:11 }} />
+            </PieChart>
+          </ResponsiveContainer>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {(data?.planDistribution||[]).map((d:any) => (
+              <div key={d.plan} className="flex items-center gap-1.5 text-[11px]">
+                <div className="w-2 h-2 rounded-full" style={{ background: PLAN_COLORS[d.plan]||'#4a5568' }} />
+                <span className="text-[#64748b]">{d.plan}</span>
+                <span className="text-white font-semibold">{d.count}</span>
+              </div>
+            ))}
           </div>
         </Card>
+
         <Card>
-          <p className="text-white font-semibold mb-4">New Users per Day</p>
-          <ResponsiveContainer width="100%" height={160}>
-            <LineChart data={dailyUsers}>
-              <XAxis dataKey="date" tick={{fontSize:11,fill:'#6b7280'}} tickFormatter={(d:string)=>d.slice(5)} />
-              <YAxis tick={{fontSize:11,fill:'#6b7280'}} />
-              <Tooltip contentStyle={{background:'#1f2937',border:'1px solid #374151',borderRadius:8,fontSize:12}} />
-              <Line type="monotone" dataKey="new_users" stroke="#8b5cf6" strokeWidth={2} dot={false} />
-            </LineChart>
+          <SectionHeader title="Verdict Distribution" />
+          <ResponsiveContainer width="100%" height={180}>
+            <PieChart>
+              <Pie data={data?.verdictDistribution||[]} dataKey="count" nameKey="verdict" cx="50%" cy="50%" innerRadius={50} outerRadius={75} paddingAngle={3}>
+                {(data?.verdictDistribution||[]).map((d:any) => (
+                  <Cell key={d.verdict} fill={VERDICT_COLORS[d.verdict]||'#4a5568'} />
+                ))}
+              </Pie>
+              <Tooltip contentStyle={{ background:'#0d0d18', border:'1px solid #1e1e35', borderRadius:10, fontSize:11 }} />
+            </PieChart>
           </ResponsiveContainer>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {(data?.verdictDistribution||[]).map((d:any) => (
+              <div key={d.verdict} className="flex items-center gap-1.5 text-[11px]">
+                <div className="w-2 h-2 rounded-full" style={{ background: VERDICT_COLORS[d.verdict]||'#4a5568' }} />
+                <span className="text-[#64748b]">{d.verdict}</span>
+                <span className="text-white font-semibold">{d.count}</span>
+              </div>
+            ))}
+          </div>
         </Card>
+
         <Card>
-          <p className="text-white font-semibold mb-4">Verdict Breakdown</p>
-          <ResponsiveContainer width="100%" height={160}>
-            <BarChart data={verdictDist}>
-              <XAxis dataKey="verdict" tick={{fontSize:11,fill:'#6b7280'}} />
-              <YAxis tick={{fontSize:11,fill:'#6b7280'}} />
-              <Tooltip contentStyle={{background:'#1f2937',border:'1px solid #374151',borderRadius:8,fontSize:12}} />
-              <Bar dataKey="count" radius={[6,6,0,0]}>
-                {verdictDist.map((e:any,i:number)=><Cell key={i} fill={VERDICT_COLORS[e.verdict]||'#8b5cf6'} />)}
-              </Bar>
+          <SectionHeader title="Tool Usage" />
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={data?.toolUsage||[]} layout="vertical">
+              <XAxis type="number" tick={{ fill:'#4a5568', fontSize:10 }} axisLine={false} tickLine={false} />
+              <YAxis type="category" dataKey="tool" tick={{ fill:'#94a3b8', fontSize:11 }} axisLine={false} tickLine={false} width={50} />
+              <Tooltip contentStyle={{ background:'#0d0d18', border:'1px solid #1e1e35', borderRadius:10, fontSize:11 }} />
+              <Bar dataKey="count" fill="#2563eb" radius={[0,4,4,0]} name="Scans" />
             </BarChart>
           </ResponsiveContainer>
         </Card>
@@ -182,399 +264,619 @@ function AnalyticsTab() {
   )
 }
 
-// ── Users ─────────────────────────────────────────────────────────────────────
+// ── USERS TAB ─────────────────────────────────────────────────────────────────
 function UsersTab() {
-  const [users,setUsers]=useState<User[]>([])
-  const [total,setTotal]=useState(0)
-  const [page,setPage]=useState(1)
-  const [q,setQ]=useState('')
-  const [plan,setPlan]=useState('')
-  const [loading,setLoading]=useState(true)
-  const [acting,setActing]=useState<string|null>(null)
+  const [users, setUsers]       = useState<any[]>([])
+  const [total, setTotal]       = useState(0)
+  const [page, setPage]         = useState(1)
+  const [search, setSearch]     = useState('')
+  const [filter, setFilter]     = useState('all')
+  const [loading, setLoad]      = useState(true)
+  const [modal, setModal]       = useState<any>(null)
+  const [actioning, setAct]     = useState<string|null>(null)
+  const [expiryDays, setExpiry] = useState('')
+  const [planChoice, setPlan]   = useState('pro')
 
-  const load=useCallback(()=>{setLoading(true);api(`/users?q=${encodeURIComponent(q)}&plan=${plan}&page=${page}`).then(d=>{setUsers(d.users||[]);setTotal(d.total||0);setLoading(false)})},[q,plan,page])
-  useEffect(load,[load])
+  const load = useCallback(async () => {
+    setLoad(true)
+    const params = new URLSearchParams({ page: String(page) })
+    if (search) params.set('q', search)
+    const res = await api(`/users?${params}`)
+    // Client-side filter since API doesn't have all filters yet
+    let allUsers = res.users || []
+    if (filter === 'active')   allUsers = allUsers.filter((u:any) => !u.is_banned && u.dashboard_access !== false)
+    if (filter === 'banned')   allUsers = allUsers.filter((u:any) => u.is_banned)
+    if (filter === 'pro')      allUsers = allUsers.filter((u:any) => ['pro','team','enterprise'].includes(u.plan))
+    if (filter === 'free')     allUsers = allUsers.filter((u:any) => !u.plan || u.plan === 'free')
+    if (filter === 'granted')  allUsers = allUsers.filter((u:any) => u.plan_granted_by)
+    setUsers(allUsers)
+    setTotal(res.total || 0)
+    setLoad(false)
+  }, [page, search, filter])
 
-  const ban=async(id:string,banned:boolean)=>{setActing(id);await api(`/users/${id}/ban`,'POST',{ban:!banned});load();setActing(null)}
-  const setPlanFn=async(id:string,p:string)=>{setActing(id);await api(`/users/${id}/plan`,'POST',{planId:p});load();setActing(null)}
+  useEffect(load, [load])
+
+  const doAction = async () => {
+    if (!modal) return
+    setAct(modal.userId + modal.action)
+    const body: any = { userId: modal.userId, action: modal.action }
+    if (modal.action === 'grant_pro' || modal.action === 'set_plan') {
+      body.plan = modal.action === 'grant_pro' ? 'pro' : planChoice
+      if (expiryDays && parseInt(expiryDays) > 0) body.expiresInDays = parseInt(expiryDays)
+    }
+    // Route to main frontend admin API
+    await fetch('/api/admin/users', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).catch(() => {})
+    // Also try local admin API for ban/unban
+    if (['ban','unban'].includes(modal.action)) {
+      await api(`/users/${modal.userId}/ban`, 'POST', { banned: modal.action === 'ban' })
+    }
+    if (['grant_pro','set_plan','revoke_pro'].includes(modal.action)) {
+      const plan = modal.action === 'revoke_pro' ? 'free' : (modal.action === 'grant_pro' ? 'pro' : planChoice)
+      await api(`/users/${modal.userId}/plan`, 'POST', { planId: plan })
+    }
+    setModal(null); setExpiry(''); setAct(null); load()
+  }
+
+  const isPro = (u: any) => ['pro','team','enterprise'].includes(u.plan)
+  const isActive = (u: any) => !u.is_banned && u.dashboard_access !== false
 
   return (
-    <div className="space-y-4">
-      <div className="flex gap-3 flex-wrap">
+    <div className="space-y-5">
+      {/* Filters */}
+      <div className="flex flex-wrap gap-2">
         <div className="relative flex-1 min-w-48">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-          <input value={q} onChange={e=>{setQ(e.target.value);setPage(1)}} placeholder="Search email or name…" className="w-full pl-9 pr-3 py-2 bg-gray-700/60 border border-gray-600/60 rounded-lg text-sm text-white placeholder:text-gray-600 focus:outline-none" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#2a2a45]" />
+          <input value={search} onChange={e => { setSearch(e.target.value); setPage(1) }}
+            placeholder="Search by email…"
+            className="w-full bg-[#0d0d18] border border-[#1e1e35] rounded-lg pl-9 pr-3 py-2 text-xs text-white placeholder:text-[#2a2a45] focus:outline-none focus:border-[#7c3aed]" />
         </div>
-        <select value={plan} onChange={e=>{setPlan(e.target.value);setPage(1)}} className="px-3 py-2 bg-gray-700/60 border border-gray-600/60 rounded-lg text-sm text-white focus:outline-none">
-          <option value="">All plans</option>
-          {['free','starter','pro','enterprise'].map(p=><option key={p} value={p}>{p}</option>)}
-        </select>
-        <button onClick={load} className="p-2.5 bg-gray-700/60 rounded-lg text-gray-400 hover:text-white transition-colors"><RefreshCw className="w-4 h-4" /></button>
+        {['all','active','free','pro','banned','granted'].map(f => (
+          <button key={f} onClick={() => { setFilter(f); setPage(1) }}
+            className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-colors ${filter===f ? 'bg-[#7c3aed20] border-[#7c3aed50] text-[#a78bfa]' : 'border-[#1e1e35] text-[#4a5568] hover:text-white'}`}>
+            {f.charAt(0).toUpperCase()+f.slice(1)}
+          </button>
+        ))}
+        <button onClick={load} className="p-2 rounded-lg bg-[#0d0d18] border border-[#1e1e35] text-[#4a5568] hover:text-white">
+          <RefreshCw className="w-3.5 h-3.5" />
+        </button>
       </div>
-      <div className="text-xs text-gray-500">{total.toLocaleString()} users</div>
-      {loading?<div className="flex justify-center py-16"><Loader2 className="w-7 h-7 animate-spin text-purple-400" /></div>:(
-        <div className="bg-gray-800/60 rounded-xl border border-gray-700/60 overflow-hidden">
+
+      <Card className="!p-0 overflow-hidden">
+        <table className="w-full">
+          <thead className="border-b border-[#1e1e35]">
+            <tr>
+              {['User','Plan','Status','Daily Scans','Joined','Actions'].map(h => (
+                <th key={h} className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-[#4a5568]">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr><td colSpan={6} className="text-center py-16 text-[#4a5568] text-sm">
+                <Spinner />
+              </td></tr>
+            ) : users.length === 0 ? (
+              <tr><td colSpan={6} className="text-center py-12 text-[#4a5568] text-sm">No users found</td></tr>
+            ) : users.map((u, i) => (
+              <tr key={u.id} className={`hoverable border-b border-[#1e1e35]/50 transition-colors ${i%2===1?'bg-[#0d0d18]/30':''}`}>
+                <td className="px-4 py-3">
+                  <div className="text-xs font-semibold text-white truncate max-w-[180px]">{u.email}</div>
+                  {u.display_name && <div className="text-[10px] text-[#4a5568]">{u.display_name}</div>}
+                  {u.plan_granted_by && <div className="text-[9px] text-[#7c3aed] mt-0.5">★ admin-granted</div>}
+                </td>
+                <td className="px-4 py-3">
+                  <Badge v={u.plan||'free'} />
+                </td>
+                <td className="px-4 py-3">
+                  {u.is_banned
+                    ? <Badge v="banned" />
+                    : isActive(u)
+                      ? <Badge v="active" />
+                      : <Badge v="inactive" />
+                  }
+                </td>
+                <td className="px-4 py-3 text-xs font-mono text-[#94a3b8]">
+                  {u.daily_scans??0} / {u.plan==='enterprise'?'∞':u.plan==='team'?'500':u.plan==='pro'?'100':'10'}
+                </td>
+                <td className="px-4 py-3 text-[11px] text-[#4a5568] whitespace-nowrap">
+                  {new Date(u.created_at).toLocaleDateString()}
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex flex-wrap gap-1">
+                    {!isPro(u) ? (
+                      <button onClick={() => setModal({ userId:u.id, email:u.email, action:'grant_pro' })}
+                        className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-semibold bg-[#7c3aed18] text-[#a78bfa] border border-[#7c3aed30] hover:bg-[#7c3aed30]">
+                        <Crown className="w-2.5 h-2.5" /> Grant Pro
+                      </button>
+                    ) : u.plan_granted_by ? (
+                      <button onClick={() => setModal({ userId:u.id, email:u.email, action:'revoke_pro' })}
+                        className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-semibold bg-[#f43f5e10] text-[#f87171] border border-[#f43f5e20] hover:bg-[#f43f5e20]">
+                        <UserX className="w-2.5 h-2.5" /> Revoke
+                      </button>
+                    ) : null}
+                    <button onClick={() => setModal({ userId:u.id, email:u.email, action:'set_plan' })}
+                      className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-semibold bg-[#ffffff08] text-[#64748b] border border-[#ffffff10] hover:text-white">
+                      <ChevronDown className="w-2.5 h-2.5" /> Plan
+                    </button>
+                    {!u.is_banned ? (
+                      <button onClick={() => setModal({ userId:u.id, email:u.email, action:'ban' })}
+                        className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-semibold bg-[#f43f5e10] text-[#f87171] border border-[#f43f5e20] hover:bg-[#f43f5e20]">
+                        <Ban className="w-2.5 h-2.5" /> Ban
+                      </button>
+                    ) : (
+                      <button onClick={() => setModal({ userId:u.id, email:u.email, action:'unban' })}
+                        className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-semibold bg-[#10b98118] text-[#34d399] border border-[#10b98130] hover:bg-[#10b98130]">
+                        <CheckCircle className="w-2.5 h-2.5" /> Unban
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {total > 20 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-[#1e1e35]">
+            <span className="text-[11px] text-[#4a5568]">{total} total users</span>
+            <div className="flex gap-2">
+              <button onClick={() => setPage(p => Math.max(1,p-1))} disabled={page===1}
+                className="px-3 py-1 rounded-lg text-xs border border-[#1e1e35] text-[#4a5568] hover:text-white disabled:opacity-30">Prev</button>
+              <span className="px-2 py-1 text-xs text-[#4a5568]">{page}</span>
+              <button onClick={() => setPage(p => p+1)}
+                className="px-3 py-1 rounded-lg text-xs border border-[#1e1e35] text-[#4a5568] hover:text-white">Next</button>
+            </div>
+          </div>
+        )}
+      </Card>
+
+      {/* Action Modal */}
+      {modal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-[#0d0d18] border border-[#1e1e35] rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <h3 className="text-sm font-bold text-white mb-1 capitalize">{modal.action.replace('_',' ')}</h3>
+            <p className="text-[11px] text-[#4a5568] mb-4 truncate">{modal.email}</p>
+
+            {(modal.action==='grant_pro'||modal.action==='set_plan') && (
+              <div className="space-y-3 mb-4">
+                {modal.action==='set_plan' && (
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {['free','pro','team','enterprise'].map(p => (
+                      <button key={p} onClick={() => setPlan(p)}
+                        className={`py-2 rounded-lg text-[10px] font-bold border transition-colors ${planChoice===p?'bg-[#7c3aed20] border-[#7c3aed50] text-[#a78bfa]':'border-[#1e1e35] text-[#4a5568]'}`}>
+                        {p.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <input type="number" min="1" max="3650" value={expiryDays} onChange={e => setExpiry(e.target.value)}
+                  placeholder="Expires in days (optional)"
+                  className="w-full bg-[#07070d] border border-[#1e1e35] rounded-xl px-3 py-2 text-xs text-white placeholder:text-[#2a2a45] focus:outline-none focus:border-[#7c3aed]" />
+              </div>
+            )}
+
+            <p className="text-[11px] text-[#4a5568] bg-[#07070d] rounded-lg px-3 py-2 border border-[#1e1e35] mb-4">
+              {modal.action==='grant_pro' && 'User gets 100 scans/day + all modalities. No charge.'}
+              {modal.action==='revoke_pro' && 'User reverts to free plan (10 scans/day).'}
+              {modal.action==='set_plan'   && `Plan → ${planChoice}`}
+              {modal.action==='ban'        && 'User blocked immediately.'}
+              {modal.action==='unban'      && 'User account restored.'}
+            </p>
+
+            <div className="flex gap-2">
+              <button onClick={() => { setModal(null); setExpiry('') }}
+                className="flex-1 py-2.5 rounded-xl border border-[#1e1e35] text-xs font-semibold text-[#64748b] hover:text-white">Cancel</button>
+              <button onClick={doAction} disabled={!!actioning}
+                className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white disabled:opacity-50 transition-colors"
+                style={{ background: ['ban','revoke_pro'].includes(modal.action)?'#f43f5e':'linear-gradient(135deg,#7c3aed,#2563eb)' }}>
+                {actioning ? '…' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── PIPELINE TAB ──────────────────────────────────────────────────────────────
+function PipelineTab() {
+  const [data, setData]     = useState<any>(null)
+  const [loading, setLoad]  = useState(true)
+  const [triggering, setTrig] = useState(false)
+  const [trigResult, setTR] = useState<any>(null)
+
+  const load = useCallback(() => {
+    setLoad(true)
+    api('/pipeline').then(d => { setData(d); setLoad(false) })
+  }, [])
+
+  useEffect(load, [load])
+
+  const trigger = async () => {
+    setTrig(true); setTR(null)
+    const r = await api('/pipeline', 'POST')
+    setTR(r); setTrig(false)
+  }
+
+  if (loading) return <div className="flex justify-center py-20"><Spinner /></div>
+
+  const p = data?.pipeline || {}
+  const b = data?.d1_buffer || {}
+
+  const formatNum = (n: number) => n >= 1_000_000
+    ? (n/1_000_000).toFixed(2)+'M'
+    : n >= 1000 ? (n/1000).toFixed(1)+'K' : String(n)
+
+  return (
+    <div className="space-y-6">
+      {/* Pipeline KPIs */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPI label="Total Scraped"  value={formatNum(p.total_scraped||0)} icon={Database}  color="#a78bfa" />
+        <KPI label="Total Pushed"   value={formatNum(p.total_pushed||0)}  icon={TrendingUp} color="#60a5fa" />
+        <KPI label="D1 Buffer"      value={formatNum(b.total||0)}          icon={Server}    color="#34d399" sub={`${b.pending||0} pending push`} />
+        <KPI label="Avg Quality"    value={`${((b.avg_quality||0)*100).toFixed(0)}%`} icon={Layers} color="#fbbf24" />
+      </div>
+
+      {/* Pipeline health + trigger */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <Card>
+          <SectionHeader title="Pipeline State" sub={`Last scraped: ${p.last_scrape ? new Date(p.last_scrape).toLocaleTimeString() : 'unknown'}`}
+            action={
+              <button onClick={trigger} disabled={triggering}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#7c3aed20] text-[#a78bfa] border border-[#7c3aed30] hover:bg-[#7c3aed30] disabled:opacity-50">
+                <Play className="w-3 h-3" />
+                {triggering ? 'Triggering…' : 'Trigger All Workers'}
+              </button>
+            }
+          />
+          <div className="space-y-3">
+            {[
+              { label: 'Text items',  val: b.text||0,  color:'#a78bfa' },
+              { label: 'Image items', val: b.image||0, color:'#60a5fa' },
+              { label: 'Audio items', val: b.audio||0, color:'#34d399' },
+              { label: 'Video items', val: b.video||0, color:'#f59e0b' },
+            ].map(row => (
+              <div key={row.label} className="flex items-center gap-3">
+                <span className="text-xs text-[#64748b] w-20 flex-shrink-0">{row.label}</span>
+                <div className="flex-1 bg-[#07070d] rounded-full h-1.5">
+                  <div className="h-1.5 rounded-full" style={{ width:`${Math.min(100,(row.val/(b.total||1))*100)}%`, background: row.color }} />
+                </div>
+                <span className="text-xs font-semibold text-white w-12 text-right">{formatNum(row.val)}</span>
+              </div>
+            ))}
+          </div>
+          {trigResult && (
+            <div className={`mt-4 text-xs px-3 py-2 rounded-lg border ${trigResult.triggered?'bg-[#10b98110] border-[#10b98130] text-[#34d399]':'bg-[#f43f5e10] border-[#f43f5e30] text-[#f87171]'}`}>
+              {trigResult.triggered
+                ? `✓ Triggered ${trigResult.success} workers (${trigResult.failed} failed)`
+                : trigResult.error || 'Trigger failed'}
+            </div>
+          )}
+        </Card>
+
+        <Card>
+          <SectionHeader title="AI vs Human Split" />
+          <div className="flex items-center gap-6">
+            <ResponsiveContainer width="50%" height={140}>
+              <PieChart>
+                <Pie data={[
+                  { name:'AI',    value: b.ai_items||0 },
+                  { name:'Human', value: b.human_items||0 },
+                ]} dataKey="value" cx="50%" cy="50%" innerRadius={35} outerRadius={60}>
+                  <Cell fill="#f87171" /><Cell fill="#34d399" />
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="space-y-3">
+              <div>
+                <div className="text-[10px] text-[#4a5568] uppercase tracking-wide">AI samples</div>
+                <div className="text-xl font-black text-[#f87171]">{formatNum(b.ai_items||0)}</div>
+              </div>
+              <div>
+                <div className="text-[10px] text-[#4a5568] uppercase tracking-wide">Human samples</div>
+                <div className="text-xl font-black text-[#34d399]">{formatNum(b.human_items||0)}</div>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Recent pushes */}
+      {(data?.recent_pushes||[]).length > 0 && (
+        <Card>
+          <SectionHeader title="Recent HF Pushes" />
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead><tr className="border-b border-gray-700 bg-gray-800/80">
-                {['User','Plan','Credits','Scans','Joined','Status','Actions'].map(h=>(
-                  <th key={h} className="text-left py-3 px-4 text-xs text-gray-500 uppercase tracking-wider">{h}</th>
+            <table className="w-full text-xs">
+              <thead><tr className="border-b border-[#1e1e35]">
+                {['Items','Status','Commit','Date'].map(h => (
+                  <th key={h} className="text-left pb-2 text-[10px] font-bold uppercase tracking-widest text-[#4a5568]">{h}</th>
                 ))}
               </tr></thead>
-              <tbody className="divide-y divide-gray-700/50">
-                {users.map(u=>(
-                  <tr key={u.id} className={`hover:bg-gray-700/30 transition-colors ${u.is_banned?'opacity-60':''}`}>
-                    <td className="py-3 px-4">
-                      <div className="font-medium text-white truncate max-w-[140px]">{u.display_name||u.email?.split('@')[0]||'—'}</div>
-                      <div className="text-xs text-gray-500 truncate max-w-[160px]">{u.email}</div>
+              <tbody>
+                {(data.recent_pushes||[]).map((r:any, i:number) => (
+                  <tr key={i} className="hoverable border-b border-[#1e1e35]/40">
+                    <td className="py-2 font-mono text-[#94a3b8]">{(r.item_count||0).toLocaleString()}</td>
+                    <td className="py-2">
+                      <span className={`badge ${r.status==='success'?'badge-human':'badge-ai'}`}>
+                        {r.status||'unknown'}
+                      </span>
                     </td>
-                    <td className="py-3 px-4">
-                      <select value={u.plan_id||'free'} onChange={e=>setPlanFn(u.id,e.target.value)} disabled={acting===u.id}
-                        className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs text-white">
-                        {['free','starter','pro','enterprise'].map(p=><option key={p} value={p}>{p}</option>)}
-                      </select>
-                    </td>
-                    <td className="py-3 px-4 text-gray-300 tabular-nums">{u.credits_remaining??'—'}</td>
-                    <td className="py-3 px-4 text-gray-300 tabular-nums">{u.scan_count??0}</td>
-                    <td className="py-3 px-4 text-gray-500 text-xs">{u.created_at?.slice(0,10)}</td>
-                    <td className="py-3 px-4"><Badge color={u.is_banned?'red':'green'}>{u.is_banned?'Banned':'Active'}</Badge></td>
-                    <td className="py-3 px-4">
-                      <button onClick={()=>ban(u.id,u.is_banned)} disabled={acting===u.id}
-                        className={`p-1.5 rounded-lg transition-colors ${u.is_banned?'text-emerald-400 hover:bg-emerald-900/20':'text-red-400 hover:bg-red-900/20'}`}>
-                        {acting===u.id?<Loader2 className="w-4 h-4 animate-spin"/>:u.is_banned?<CheckCircle className="w-4 h-4"/>:<Ban className="w-4 h-4"/>}
-                      </button>
-                    </td>
+                    <td className="py-2 font-mono text-[#4a5568] text-[10px]">{(r.commit_id||'').slice(0,8)}</td>
+                    <td className="py-2 text-[#4a5568]">{r.created_at ? new Date(r.created_at).toLocaleString() : '—'}</td>
                   </tr>
                 ))}
-                {!users.length&&<tr><td colSpan={7} className="py-12 text-center text-gray-600">No users found</td></tr>}
               </tbody>
             </table>
           </div>
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-700/50">
-            <span className="text-xs text-gray-500">Page {page} of {Math.ceil(total/20)||1}</span>
-            <div className="flex gap-2">
-              <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page===1} className="px-3 py-1.5 text-xs rounded-lg bg-gray-700/60 text-gray-400 disabled:opacity-40">Prev</button>
-              <button onClick={()=>setPage(p=>p+1)} disabled={users.length<20} className="px-3 py-1.5 text-xs rounded-lg bg-gray-700/60 text-gray-400 disabled:opacity-40">Next</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ── Feature Flags ─────────────────────────────────────────────────────────────
-function FlagsTab() {
-  const [flags,setFlags]=useState<FeatureFlag[]>([])
-  const [loading,setLoading]=useState(true)
-  const [saving,setSaving]=useState<string|null>(null)
-  const [nf,setNf]=useState({key:'',description:'',rollout_percentage:100})
-  const [creating,setCreating]=useState(false)
-  const [showNew,setShowNew]=useState(false)
-
-  const load=()=>{setLoading(true);api('/feature-flags').then(d=>{setFlags(d.flags||[]);setLoading(false)})}
-  useEffect(load,[])
-
-  const toggle=async(key:string,enabled:boolean)=>{setSaving(key);await api(`/feature-flags/${key}`,'POST',{enabled:!enabled});setFlags(p=>p.map(f=>f.key===key?{...f,enabled:!enabled}:f));setSaving(null)}
-  const updateRollout=async(key:string,pct:number)=>{setSaving(key);await api(`/feature-flags/${key}`,'POST',{rollout_percentage:pct});setFlags(p=>p.map(f=>f.key===key?{...f,rollout_percentage:pct}:f));setSaving(null)}
-  const deleteFlag=async(key:string)=>{if(!confirm(`Delete "${key}"?`))return;setSaving(key);await api(`/feature-flags/${key}`,'DELETE');setFlags(p=>p.filter(f=>f.key!==key));setSaving(null)}
-  const createFlag=async()=>{if(!nf.key.trim())return;setCreating(true);await api('/feature-flags','POST',{...nf,enabled:false});setNf({key:'',description:'',rollout_percentage:100});setShowNew(false);load();setCreating(false)}
-
-  if(loading)return<div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-purple-400" /></div>
-  return(
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div><h3 className="text-white font-bold text-lg">Feature Flags</h3><p className="text-gray-500 text-sm">{flags.length} flags</p></div>
-        <button onClick={()=>setShowNew(s=>!s)} className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-sm font-medium transition-colors"><Plus className="w-4 h-4"/>New Flag</button>
-      </div>
-      {showNew&&(
-        <Card className="border-purple-700/40">
-          <h4 className="text-white font-semibold mb-3">Create New Flag</h4>
-          <div className="grid md:grid-cols-3 gap-3 mb-3">
-            <input value={nf.key} onChange={e=>setNf(p=>({...p,key:e.target.value.toLowerCase().replace(/\s+/g,'-')}))} placeholder="flag-key" className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-sm text-white placeholder:text-gray-600 focus:outline-none"/>
-            <input value={nf.description} onChange={e=>setNf(p=>({...p,description:e.target.value}))} placeholder="Description…" className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-sm text-white placeholder:text-gray-600 focus:outline-none"/>
-            <input type="number" min={0} max={100} value={nf.rollout_percentage} onChange={e=>setNf(p=>({...p,rollout_percentage:+e.target.value}))} className="px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-sm text-white focus:outline-none"/>
-          </div>
-          <div className="flex gap-2">
-            <button onClick={createFlag} disabled={creating||!nf.key} className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 transition-colors flex items-center gap-2">{creating?<Loader2 className="w-4 h-4 animate-spin"/>:<Save className="w-4 h-4"/>}Create</button>
-            <button onClick={()=>setShowNew(false)} className="px-4 py-2 bg-gray-700 text-gray-400 rounded-lg text-sm">Cancel</button>
-          </div>
         </Card>
       )}
-      <div className="space-y-2">
-        {!flags.length&&<div className="text-center py-12 text-gray-600"><Flag className="w-8 h-8 mx-auto mb-2 opacity-40"/><p>No feature flags yet</p></div>}
-        {flags.map(f=>(
-          <div key={f.key} className="bg-gray-800/60 rounded-xl border border-gray-700/60 p-4 flex items-center gap-4 flex-wrap">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2"><code className="text-purple-300 text-sm font-mono">{f.key}</code><Badge color={f.enabled?'green':'gray'}>{f.enabled?'On':'Off'}</Badge></div>
-              {f.description&&<p className="text-xs text-gray-500 mt-0.5">{f.description}</p>}
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-gray-500">Rollout</span>
-              <input type="range" min={0} max={100} value={f.rollout_percentage} onChange={e=>updateRollout(f.key,+e.target.value)} className="w-24 accent-purple-500"/>
-              <span className="text-xs text-gray-300 w-8 tabular-nums">{f.rollout_percentage}%</span>
-              <button onClick={()=>toggle(f.key,f.enabled)} disabled={saving===f.key} className={`relative w-11 h-6 rounded-full transition-colors ${f.enabled?'bg-purple-600':'bg-gray-600'} disabled:opacity-50`}>
-                {saving===f.key?<Loader2 className="absolute inset-0 m-auto w-4 h-4 animate-spin text-white"/>:<span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${f.enabled?'translate-x-5':'translate-x-0'}`}/>}
-              </button>
-              <button onClick={()=>deleteFlag(f.key)} className="p-1.5 text-red-500/60 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors"><Trash2 className="w-4 h-4"/></button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
 
-// ── Errors ────────────────────────────────────────────────────────────────────
-function ErrorsTab() {
-  const [errors,setErrors]=useState<ErrorLog[]>([])
-  const [loading,setLoading]=useState(true)
-  const [service,setService]=useState('all')
-  const [expanded,setExpanded]=useState<number|null>(null)
-  const load=useCallback(()=>{setLoading(true);const q=service!=='all'?`?service=${service}&resolved=false`:'?resolved=false';api(`/errors${q}`).then(d=>{setErrors(d.errors||[]);setLoading(false)})},[service])
-  useEffect(load,[load])
-  const resolve=async(id:number)=>{await api('/errors','PATCH',{id});setErrors(p=>p.filter(e=>e.id!==id))}
-
-  if(loading)return<div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-purple-400"/></div>
-  return(
-    <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div><h3 className="text-white font-bold text-lg">Error Monitor</h3><p className="text-gray-500 text-sm">{errors.length} unresolved</p></div>
-        <div className="flex gap-2">
-          <select value={service} onChange={e=>setService(e.target.value)} className="px-3 py-1.5 bg-gray-700/60 border border-gray-600 rounded-lg text-sm text-white focus:outline-none">
-            <option value="all">All services</option>
-            {['api','scraper','worker','inference','auth'].map(s=><option key={s} value={s}>{s}</option>)}
-          </select>
-          <button onClick={load} className="p-2 bg-gray-700/60 rounded-lg text-gray-400 hover:text-white transition-colors"><RefreshCw className="w-4 h-4"/></button>
-        </div>
-      </div>
-      {!errors.length?(
-        <Card className="text-center py-12">
-          <CheckCircle className="w-10 h-10 text-emerald-400 mx-auto mb-3"/>
-          <p className="text-emerald-300 font-semibold">No unresolved errors</p>
-        </Card>
-      ):(
-        <div className="space-y-2">
-          {errors.map(err=>(
-            <div key={err.id} className="bg-gray-800/60 rounded-xl border border-red-800/30">
-              <div className="flex items-start gap-3 p-4">
-                <Badge color={err.service==='inference'||err.service==='auth'?'red':'yellow'}>{err.service}</Badge>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    {err.error_code&&<code className="text-xs text-gray-500 font-mono">{err.error_code}</code>}
-                    <span className="text-xs text-gray-600">{err.created_at?.slice(0,16)}</span>
-                  </div>
-                  <p className="text-sm text-white">{err.message}</p>
-                  {expanded===err.id&&err.stack_trace&&<pre className="mt-3 text-xs text-gray-400 bg-black/30 rounded-lg p-3 overflow-x-auto max-h-40 font-mono">{err.stack_trace.slice(0,1500)}</pre>}
-                  {err.stack_trace&&<button onClick={()=>setExpanded(expanded===err.id?null:err.id)} className="mt-2 text-xs text-gray-600 hover:text-gray-400 flex items-center gap-1 transition-colors">{expanded===err.id?<ChevronUp className="w-3 h-3"/>:<ChevronDown className="w-3 h-3"/>}{expanded===err.id?'Hide':'Show'} stack trace</button>}
-                </div>
-                <button onClick={()=>resolve(err.id)} className="shrink-0 px-3 py-1.5 text-xs bg-emerald-700/20 text-emerald-400 rounded-lg hover:bg-emerald-700/40 transition-colors flex items-center gap-1.5"><CheckCircle className="w-3.5 h-3.5"/>Resolve</button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ── Settings ──────────────────────────────────────────────────────────────────
-function SettingsTab() {
-  const [settings,setSettings]=useState<Setting[]>([])
-  const [loading,setLoading]=useState(true)
-  const [saving,setSaving]=useState<string|null>(null)
-  const [saved,setSaved]=useState<string|null>(null)
-  useEffect(()=>{api('/settings').then(d=>{setSettings(d.settings||[]);setLoading(false)})},[])
-  const save=async(key:string,value:string)=>{setSaving(key);await api('/settings','PATCH',{key,value});setSaved(key);setTimeout(()=>setSaved(null),2000);setSaving(null)}
-
-  if(loading)return<div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-purple-400"/></div>
-  const boolKeys=settings.filter(s=>s.value==='true'||s.value==='false')
-  const numKeys=settings.filter(s=>!isNaN(Number(s.value))&&s.value!=='true'&&s.value!=='false')
-  return(
-    <div className="space-y-6">
-      <Card>
-        <p className="text-white font-bold mb-4">Platform Toggles</p>
-        <div className="divide-y divide-gray-700/50">
-          {boolKeys.map(s=>{const on=s.value==='true';return(
-            <div key={s.key} className="flex items-center justify-between py-4 first:pt-0 last:pb-0">
-              <div><p className="text-sm font-medium text-white capitalize">{s.key.replace(/_/g,' ')}</p>{s.description&&<p className="text-xs text-gray-500 mt-0.5">{s.description}</p>}</div>
-              <div className="flex items-center gap-3">
-                {saved===s.key&&<span className="text-xs text-emerald-400">Saved</span>}
-                {saving===s.key?<Loader2 className="w-5 h-5 animate-spin text-gray-400"/>:(
-                  <button onClick={()=>save(s.key,on?'false':'true')} className={`relative w-12 h-6 rounded-full transition-colors ${on?'bg-purple-600':'bg-gray-600'}`}>
-                    <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${on?'translate-x-6':'translate-x-0'}`}/>
-                  </button>
-                )}
-              </div>
-            </div>
-          )})}
-        </div>
-      </Card>
-      <Card>
-        <p className="text-white font-bold mb-4">Limits & Thresholds</p>
-        <div className="grid md:grid-cols-2 gap-4">
-          {numKeys.map(s=>(
-            <div key={s.key}>
-              <label className="block text-sm font-medium text-white capitalize mb-1.5">{s.key.replace(/_/g,' ')}</label>
-              {s.description&&<p className="text-xs text-gray-500 mb-2">{s.description}</p>}
-              <div className="flex gap-2">
-                <input type="number" defaultValue={s.value} className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-sm text-white focus:outline-none" onBlur={async(e)=>{if(e.target.value!==s.value)await save(s.key,e.target.value)}}/>
-                {saved===s.key&&<span className="self-center text-xs text-emerald-400">✓</span>}
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
-    </div>
-  )
-}
-
-// ── Audit Log ─────────────────────────────────────────────────────────────────
-function AuditTab() {
-  const [logs,setLogs]=useState<AuditLog[]>([])
-  const [loading,setLoading]=useState(true)
-  const [filter,setFilter]=useState('')
-  const [expanded,setExpanded]=useState<number|null>(null)
-  useEffect(()=>{api('/activity-logs').then(d=>{setLogs(d.logs||[]);setLoading(false)})},[])
-  const exportCSV=()=>{
-    const rows=[['Time','Admin','Action','Resource','IP'],...logs.map(l=>[l.created_at?.slice(0,16),l.admin_users?.email||l.admin_id||'—',l.action_type,l.target_resource||'—',l.ip_address||'—'])]
-    const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n')
-    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`audit-${Date.now()}.csv`;a.click()
-  }
-  const filtered=filter?logs.filter(l=>l.action_type.includes(filter)||l.admin_users?.email?.includes(filter)||l.target_resource?.includes(filter)):logs
-  if(loading)return<div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-purple-400"/></div>
-  return(
-    <div className="space-y-4">
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-48"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"/><input value={filter} onChange={e=>setFilter(e.target.value)} placeholder="Filter logs…" className="w-full pl-9 pr-3 py-2 bg-gray-700/60 border border-gray-600/60 rounded-lg text-sm text-white placeholder:text-gray-600 focus:outline-none"/></div>
-        <button onClick={exportCSV} className="flex items-center gap-2 px-4 py-2 bg-gray-700/60 border border-gray-600/60 rounded-lg text-sm text-gray-400 hover:text-white transition-colors"><Download className="w-4 h-4"/>Export CSV</button>
-      </div>
-      <div className="text-xs text-gray-500">{filtered.length} entries</div>
-      <Card className="p-0 overflow-hidden">
-        <div className="overflow-x-auto max-h-[560px] overflow-y-auto">
-          <table className="w-full text-sm">
-            <thead className="sticky top-0 bg-gray-800 z-10"><tr className="border-b border-gray-700">
-              {['Time','Admin','Action','Resource','IP',''].map((h,i)=><th key={i} className="text-left py-3 px-4 text-xs text-gray-500 uppercase tracking-wider">{h}</th>)}
-            </tr></thead>
-            <tbody className="divide-y divide-gray-700/50">
-              {filtered.map(log=>(
-                <React.Fragment key={log.id}>
-                  <tr className="hover:bg-gray-700/20 cursor-pointer" onClick={()=>setExpanded(expanded===log.id?null:log.id)}>
-                    <td className="py-2.5 px-4 text-gray-400 text-xs font-mono whitespace-nowrap">{log.created_at?.slice(0,16)}</td>
-                    <td className="py-2.5 px-4 text-gray-300 text-xs">{log.admin_users?.email||log.admin_id?.slice(0,8)||'system'}</td>
-                    <td className="py-2.5 px-4"><Badge color="purple">{log.action_type}</Badge></td>
-                    <td className="py-2.5 px-4 text-gray-400 text-xs">{log.target_resource||'—'}</td>
-                    <td className="py-2.5 px-4 text-gray-600 text-xs font-mono">{log.ip_address||'—'}</td>
-                    <td className="py-2.5 px-4">{log.metadata&&Object.keys(log.metadata).length>0&&(expanded===log.id?<ChevronUp className="w-4 h-4 text-gray-600"/>:<ChevronDown className="w-4 h-4 text-gray-600"/>)}</td>
+      {/* Top sources */}
+      {(data?.top_sources||[]).length > 0 && (
+        <Card>
+          <SectionHeader title="Top Data Sources" />
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead><tr className="border-b border-[#1e1e35]">
+                {['Source','Type','Label','Count'].map(h => (
+                  <th key={h} className="text-left pb-2 text-[10px] font-bold uppercase tracking-widest text-[#4a5568]">{h}</th>
+                ))}
+              </tr></thead>
+              <tbody>
+                {(data.top_sources||[]).slice(0,15).map((s:any, i:number) => (
+                  <tr key={i} className="hoverable border-b border-[#1e1e35]/40">
+                    <td className="py-2 text-[#94a3b8] font-mono text-[11px]">{s.source_name}</td>
+                    <td className="py-2"><Badge v={s.media_type||'text'} /></td>
+                    <td className="py-2"><Badge v={s.label||'human'} /></td>
+                    <td className="py-2 font-semibold text-white">{(s.count||0).toLocaleString()}</td>
                   </tr>
-                  {expanded===log.id&&log.metadata&&(
-                    <tr><td colSpan={6} className="px-4 pb-3 bg-gray-800/40">
-                      <pre className="text-xs text-gray-400 font-mono bg-black/20 rounded p-3 overflow-x-auto">{JSON.stringify(log.metadata,null,2)}</pre>
-                    </td></tr>
-                  )}
-                </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+    </div>
+  )
+}
+
+// ── FEATURE FLAGS TAB ─────────────────────────────────────────────────────────
+function FlagsTab() {
+  const [flags, setFlags]   = useState<any[]>([])
+  const [loading, setLoad]  = useState(true)
+  const [newKey, setNewKey] = useState('')
+  const [saving, setSaving] = useState<string|null>(null)
+
+  const load = () => {
+    setLoad(true)
+    api('/feature-flags').then(d => { setFlags(d.flags||[]); setLoad(false) })
+  }
+  useEffect(load, [])
+
+  const toggle = async (flag: any) => {
+    setSaving(flag.key)
+    await api(`/feature-flags/${flag.key}`, 'PATCH', { enabled: !flag.enabled, rollout_percentage: flag.rollout_percentage })
+    setSaving(null); load()
+  }
+
+  const create = async () => {
+    if (!newKey.trim()) return
+    await api('/feature-flags', 'POST', { key: newKey.trim(), enabled: false, rollout_percentage: 100 })
+    setNewKey(''); load()
+  }
+
+  if (loading) return <div className="flex justify-center py-20"><Spinner /></div>
+
+  return (
+    <div className="space-y-5">
+      <Card>
+        <SectionHeader title="Create Flag" />
+        <div className="flex gap-2">
+          <input value={newKey} onChange={e => setNewKey(e.target.value)}
+            onKeyDown={e => e.key==='Enter' && create()}
+            placeholder="flag_key_name"
+            className="flex-1 bg-[#07070d] border border-[#1e1e35] rounded-xl px-3 py-2 text-xs text-white placeholder:text-[#2a2a45] focus:outline-none focus:border-[#7c3aed]" />
+          <button onClick={create}
+            className="px-4 py-2 rounded-xl text-xs font-semibold text-white"
+            style={{ background:'linear-gradient(135deg,#7c3aed,#2563eb)' }}>
+            Create
+          </button>
+        </div>
+      </Card>
+
+      <Card className="!p-0 overflow-hidden">
+        <table className="w-full text-xs">
+          <thead className="border-b border-[#1e1e35]">
+            <tr>
+              {['Flag Key','Status','Rollout','Description','Toggle'].map(h => (
+                <th key={h} className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-[#4a5568]">{h}</th>
               ))}
-              {!filtered.length&&<tr><td colSpan={6} className="py-10 text-center text-gray-600">No audit logs</td></tr>}
+            </tr>
+          </thead>
+          <tbody>
+            {flags.length === 0 ? (
+              <tr><td colSpan={5} className="text-center py-10 text-[#4a5568]">No flags found</td></tr>
+            ) : flags.map((f, i) => (
+              <tr key={f.key} className={`hoverable border-b border-[#1e1e35]/50 ${i%2===1?'bg-[#0d0d18]/30':''}`}>
+                <td className="px-4 py-3 font-mono text-[#94a3b8] text-[11px]">{f.key}</td>
+                <td className="px-4 py-3">
+                  <span className={`badge ${f.enabled?'badge-active':'badge-inactive'}`}>
+                    {f.enabled ? 'ON' : 'OFF'}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-[#64748b]">{f.rollout_percentage??100}%</td>
+                <td className="px-4 py-3 text-[#4a5568] max-w-xs truncate">{f.description||'—'}</td>
+                <td className="px-4 py-3">
+                  <button onClick={() => toggle(f)} disabled={saving===f.key}
+                    className={`relative w-11 h-6 rounded-full transition-colors disabled:opacity-50 ${f.enabled?'bg-[#7c3aed]':'bg-[#1e1e35]'}`}>
+                    <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${f.enabled?'translate-x-6':'translate-x-1'}`} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+    </div>
+  )
+}
+
+// ── ERRORS TAB ────────────────────────────────────────────────────────────────
+function ErrorsTab() {
+  const [errors, setErrors] = useState<any[]>([])
+  const [loading, setLoad]  = useState(true)
+  const [filter, setFil]    = useState('all')
+
+  const load = () => {
+    setLoad(true)
+    api('/errors').then(d => { setErrors(d.errors||[]); setLoad(false) })
+  }
+  useEffect(load, [])
+
+  const filtered = filter === 'unresolved' ? errors.filter(e => !e.resolved)
+    : filter === 'resolved' ? errors.filter(e => e.resolved) : errors
+
+  return (
+    <div className="space-y-5">
+      <div className="flex gap-2">
+        {['all','unresolved','resolved'].map(f => (
+          <button key={f} onClick={() => setFil(f)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${filter===f?'bg-[#7c3aed20] border-[#7c3aed50] text-[#a78bfa]':'border-[#1e1e35] text-[#4a5568] hover:text-white'}`}>
+            {f.charAt(0).toUpperCase()+f.slice(1)}
+          </button>
+        ))}
+        <button onClick={load} className="ml-auto p-2 rounded-lg bg-[#0d0d18] border border-[#1e1e35] text-[#4a5568] hover:text-white">
+          <RefreshCw className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {loading ? <div className="flex justify-center py-20"><Spinner /></div> : (
+        <div className="space-y-2">
+          {filtered.length === 0
+            ? <div className="text-center py-16 text-[#4a5568]">No errors found</div>
+            : filtered.map((e, i) => (
+              <Card key={e.id||i} className={`border ${e.resolved?'border-[#1e1e35]':'border-[#f43f5e30]'}`}>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`badge ${e.resolved?'badge-human':'badge-ai'}`}>{e.resolved?'Resolved':'Open'}</span>
+                      <span className="text-[11px] text-[#64748b]">{e.service}</span>
+                      <span className="text-[11px] text-[#2a2a45]">{e.created_at ? new Date(e.created_at).toLocaleString() : ''}</span>
+                    </div>
+                    <p className="text-xs text-[#f87171] truncate">{e.message}</p>
+                    {e.stack_trace && (
+                      <pre className="text-[10px] text-[#2a2a45] mt-2 overflow-hidden max-h-16 whitespace-pre-wrap">{e.stack_trace.slice(0,200)}</pre>
+                    )}
+                  </div>
+                  {!e.resolved && (
+                    <button onClick={() => api(`/errors/${e.id}`, 'PATCH', { resolved: true }).then(load)}
+                      className="text-[10px] font-semibold px-2 py-1 rounded-md bg-[#10b98110] text-[#34d399] border border-[#10b98130] hover:bg-[#10b98130] flex-shrink-0">
+                      Resolve
+                    </button>
+                  )}
+                </div>
+              </Card>
+            ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── AUDIT LOG TAB ─────────────────────────────────────────────────────────────
+function AuditTab() {
+  const [logs, setLogs] = useState<any[]>([])
+  const [loading, setL] = useState(true)
+
+  useEffect(() => {
+    api('/audit-log').then(d => { setLogs(d.logs||[]); setL(false) })
+  }, [])
+
+  return (
+    <div className="space-y-4">
+      {loading ? <div className="flex justify-center py-20"><Spinner /></div> : (
+        <Card className="!p-0 overflow-hidden">
+          <table className="w-full text-xs">
+            <thead className="border-b border-[#1e1e35]">
+              <tr>
+                {['Action','Admin','Target','IP','Time'].map(h => (
+                  <th key={h} className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-[#4a5568]">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {logs.length === 0
+                ? <tr><td colSpan={5} className="text-center py-12 text-[#4a5568]">No audit logs</td></tr>
+                : logs.map((l, i) => (
+                  <tr key={l.id||i} className={`hoverable border-b border-[#1e1e35]/50 ${i%2===1?'bg-[#0d0d18]/30':''}`}>
+                    <td className="px-4 py-3 font-mono text-[11px] text-[#a78bfa]">{l.action_type||l.action||'—'}</td>
+                    <td className="px-4 py-3 text-[#64748b] text-[11px]">{l.admin_users?.email || l.admin_id?.slice(0,8) || '—'}</td>
+                    <td className="px-4 py-3 text-[#4a5568] font-mono text-[10px] truncate max-w-32">{l.target_resource || l.target_id || '—'}</td>
+                    <td className="px-4 py-3 text-[#4a5568] font-mono text-[10px]">{l.ip_address || l.admin_ip || '—'}</td>
+                    <td className="px-4 py-3 text-[#4a5568] whitespace-nowrap text-[11px]">{l.created_at ? new Date(l.created_at).toLocaleString() : '—'}</td>
+                  </tr>
+                ))}
             </tbody>
           </table>
-        </div>
-      </Card>
+        </Card>
+      )}
     </div>
   )
 }
 
-// ── Pipeline ──────────────────────────────────────────────────────────────────
-function PipelineTab() {
-  const [stats,setStats]=useState<Record<string,unknown>|null>(null)
-  const [loading,setLoading]=useState(true)
-  const [triggering,setTriggering]=useState(false)
-  const [calRunning,setCalRunning]=useState(false)
-  const [calMsg,setCalMsg]=useState<string|null>(null)
-  const load=()=>{setLoading(true);api('/pipeline').then(d=>{setStats(d);setLoading(false)})}
-  useEffect(load,[])
-  const trigger=async()=>{setTriggering(true);await api('/pipeline','POST');setTimeout(()=>{setTriggering(false);load()},3000)}
-  const runCal=async()=>{
-    setCalRunning(true);setCalMsg(null)
-    try{
-      const [a,r]=await Promise.all([
-        fetch('https://detectai-cal-ai.saghirahmed9067.workers.dev/run',{method:'POST',signal:AbortSignal.timeout(90000)}),
-        fetch('https://detectai-cal-real.saghirahmed9067.workers.dev/run',{method:'POST',signal:AbortSignal.timeout(90000)}),
-      ])
-      const ad=await a.json().catch(()=>({})) as {inserted?:number}
-      const rd=await r.json().catch(()=>({})) as {inserted?:number}
-      await fetch('https://detectai-cal-agg.saghirahmed9067.workers.dev/run',{method:'POST',signal:AbortSignal.timeout(30000)})
-      setCalMsg(`✓ Calibration complete — AI: ${ad.inserted??0} samples, Real: ${rd.inserted??0} samples aggregated`)
-    }catch(e:unknown){setCalMsg(`✗ Error: ${(e as Error)?.message}`)}
-    setCalRunning(false)
+// ── SETTINGS TAB ──────────────────────────────────────────────────────────────
+function SettingsTab() {
+  const [settings, setSettings] = useState<any[]>([])
+  const [loading, setL]         = useState(true)
+  const [editing, setEdit]      = useState<Record<string,string>>({})
+  const [saving, setSave]       = useState<string|null>(null)
+
+  useEffect(() => {
+    api('/settings').then(d => { setSettings(d.settings||[]); setL(false) })
+  }, [])
+
+  const save = async (key: string) => {
+    setSave(key)
+    await api('/settings', 'PATCH', { key, value: editing[key] })
+    setSave(null)
+    setEdit(e => { const c = {...e}; delete c[key]; return c })
+    api('/settings').then(d => setSettings(d.settings||[]))
   }
-  if(loading)return<div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-purple-400"/></div>
-  const s=(stats as any)?.stats||{}
-  return(
-    <div className="space-y-5">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Stat label="Total Scraped"  value={(s.total_items||0).toLocaleString()} icon={Database}/>
-        <Stat label="HF Pushed"      value={(s.hf_pushed||0).toLocaleString()}   icon={Zap}/>
-        <Stat label="Active Workers" value={s.worker_count||0}                    icon={Radio}/>
-        <Stat label="Last Push"      value={s.last_hf_push?.slice(0,10)||'—'}    icon={Clock}/>
-      </div>
-      <div className="flex gap-3 flex-wrap">
-        <button onClick={trigger} disabled={triggering} className="flex items-center gap-2 px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-sm font-medium disabled:opacity-60 transition-colors">{triggering?<Loader2 className="w-4 h-4 animate-spin"/>:<Play className="w-4 h-4"/>}{triggering?'Triggering…':'Trigger Scrape'}</button>
-        <button onClick={runCal} disabled={calRunning} className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium disabled:opacity-60 transition-colors">{calRunning?<Loader2 className="w-4 h-4 animate-spin"/>:<Activity className="w-4 h-4"/>}{calRunning?'Calibrating…':'Run Calibration'}</button>
-        <button onClick={load} className="p-2.5 bg-gray-700/60 rounded-xl text-gray-400 hover:text-white transition-colors"><RefreshCw className="w-4 h-4"/></button>
-      </div>
-      {calMsg&&<div className={`p-4 rounded-xl text-sm font-medium border ${calMsg.startsWith('✓')?'bg-emerald-900/20 text-emerald-300 border-emerald-700/30':'bg-red-900/20 text-red-300 border-red-700/30'}`}>{calMsg}</div>}
-    </div>
-  )
-}
 
-// ── Security ──────────────────────────────────────────────────────────────────
-function SecurityTab() {
-  const [data,setData]=useState<Record<string,unknown>|null>(null)
-  const [loading,setLoading]=useState(true)
-  const [nd,setNd]=useState('')
-  const [blocking,setBlocking]=useState(false)
-  const load=()=>{setLoading(true);api('/security').then(d=>{setData(d);setLoading(false)})}
-  useEffect(load,[])
-  const blockDomain=async()=>{if(!nd.trim())return;setBlocking(true);await api('/blocked-domains','POST',{domain:nd.trim()});setNd('');load();setBlocking(false)}
-  const unblock=async(domain:string)=>{await api('/blocked-domains','DELETE',{domain});load()}
-  if(loading)return<div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-purple-400"/></div>
-  const summary=(data?.summary as Record<string,number>)||{}
-  const blocked=(data?.blocked_domains as {domain:string;reason?:string}[])||[]
-  const events=(data?.events as {id:number;event_type:string;severity:string;ip_address?:string;created_at:string}[])||[]
-  return(
-    <div className="space-y-5">
-      <div className="grid grid-cols-3 gap-4">
-        <Stat label="Events (24h)"    value={summary.total_events||0}   color="text-amber-300" icon={AlertCircle}/>
-        <Stat label="Critical Events" value={summary.critical_events||0} color="text-red-300"   icon={AlertTriangle}/>
-        <Stat label="Blocked Domains" value={summary.blocked_domains||0} color="text-blue-300"  icon={Globe}/>
-      </div>
-      <Card>
-        <p className="text-white font-semibold mb-3">Domain Blocklist</p>
-        <div className="flex gap-2 mb-4">
-          <input value={nd} onChange={e=>setNd(e.target.value)} onKeyDown={e=>e.key==='Enter'&&blockDomain()} placeholder="example.com" className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-sm text-white placeholder:text-gray-600 focus:outline-none"/>
-          <button onClick={blockDomain} disabled={blocking||!nd} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 transition-colors">Block</button>
-        </div>
-        <div className="space-y-2">
-          {blocked.map(d=>(
-            <div key={d.domain} className="flex items-center justify-between px-3 py-2 bg-gray-700/40 rounded-lg">
-              <code className="text-sm text-red-300">{d.domain}</code>
-              <button onClick={()=>unblock(d.domain)} className="text-xs text-gray-500 hover:text-emerald-400 transition-colors flex items-center gap-1"><X className="w-3.5 h-3.5"/>Unblock</button>
-            </div>
-          ))}
-          {!blocked.length&&<p className="text-xs text-gray-600 text-center py-2">No blocked domains</p>}
-        </div>
-      </Card>
-      {events.length>0&&(
+  return (
+    <div className="space-y-4">
+      {loading ? <div className="flex justify-center py-20"><Spinner /></div> : (
         <Card>
-          <p className="text-white font-semibold mb-3">Recent Security Events</p>
-          <div className="space-y-2">
-            {events.slice(0,10).map(ev=>(
-              <div key={ev.id} className="flex items-start gap-3 p-3 bg-gray-700/30 rounded-lg">
-                <Badge color={ev.severity==='critical'?'red':ev.severity==='high'?'yellow':'gray'}>{ev.severity}</Badge>
-                <div className="flex-1"><p className="text-sm text-white">{ev.event_type?.replace(/_/g,' ')}</p>{ev.ip_address&&<p className="text-xs text-gray-500 font-mono">{ev.ip_address}</p>}</div>
-                <span className="text-xs text-gray-600">{ev.created_at?.slice(11,16)}</span>
-              </div>
-            ))}
+          <SectionHeader title="Platform Settings" sub="Changes take effect immediately" />
+          <div className="space-y-3">
+            {settings.length === 0
+              ? <p className="text-xs text-[#4a5568] text-center py-8">No configurable settings found</p>
+              : settings.map(s => (
+                <div key={s.key} className="flex items-center gap-3 p-3 bg-[#07070d] rounded-xl border border-[#1e1e35]">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-white font-mono">{s.key}</p>
+                    {s.description && <p className="text-[11px] text-[#4a5568]">{s.description}</p>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={editing[s.key] ?? s.value ?? ''}
+                      onChange={e => setEdit(prev => ({ ...prev, [s.key]: e.target.value }))}
+                      className="w-40 bg-[#0d0d18] border border-[#1e1e35] rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-[#7c3aed]"
+                    />
+                    {editing[s.key] !== undefined && (
+                      <button onClick={() => save(s.key)} disabled={saving===s.key}
+                        className="px-2.5 py-1.5 rounded-lg text-[10px] font-semibold bg-[#7c3aed20] text-[#a78bfa] border border-[#7c3aed30] hover:bg-[#7c3aed30] disabled:opacity-50">
+                        {saving===s.key?'…':'Save'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))
+            }
           </div>
         </Card>
       )}
@@ -582,80 +884,108 @@ function SecurityTab() {
   )
 }
 
-// ── MAIN ──────────────────────────────────────────────────────────────────────
-const TABS = [
-  {id:'analytics',label:'Analytics', icon:BarChart3  },
-  {id:'users',    label:'Users',     icon:Users      },
-  {id:'pipeline', label:'Pipeline',  icon:Database   },
-  {id:'flags',    label:'Flags',     icon:Flag       },
-  {id:'errors',   label:'Errors',    icon:AlertCircle},
-  {id:'security', label:'Security',  icon:Globe      },
-  {id:'settings', label:'Settings',  icon:Settings   },
-  {id:'audit',    label:'Audit Log', icon:Clock      },
-]
+// ── MAIN DASHBOARD ────────────────────────────────────────────────────────────
+export default function Dashboard() {
+  const [tab, setTab]         = useState('overview')
+  const [loggingOut, setLO]   = useState(false)
+  const [sidebarOpen, setSO]  = useState(true)
+  const [health, setHealth]   = useState<any>(null)
+  const router                = useRouter()
 
-export default function AdminDashboard() {
-  const [tab,setTab]=useState('analytics')
-  const [checking,setChecking]=useState(true)
-  const [overview,setOverview]=useState<Record<string,unknown>|null>(null)
-  const router=useRouter()
+  useEffect(() => {
+    api('/health').then(d => setHealth(d)).catch(() => {})
+  }, [])
 
-  useEffect(()=>{
-    api('/stats/overview').then(r=>{
-      if(r.error==='Unauthorized'||r.error==='Internal server error'){router.push('/');return}
-      setChecking(false);setOverview(r)
-    }).catch(()=>router.push('/'))
-  },[router])
-
-  const logout=async()=>{await fetch('/api/auth',{method:'DELETE'});router.push('/')}
-
-  if(checking)return<div className="min-h-screen bg-[#0a0a14] flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-purple-500"/></div>
-
-  const content: Record<string,React.ReactNode>={
-    analytics:<AnalyticsTab/>,users:<UsersTab/>,pipeline:<PipelineTab/>,
-    flags:<FlagsTab/>,errors:<ErrorsTab/>,security:<SecurityTab/>,
-    settings:<SettingsTab/>,audit:<AuditTab/>,
+  const logout = async () => {
+    setLO(true)
+    await fetch('/api/auth', { method: 'DELETE' }).catch(() => {})
+    router.push('/')
   }
 
-  const ov=overview as any||{}
-  return(
-    <div className="min-h-screen bg-[#0a0a14] flex">
-      <aside className="w-56 shrink-0 bg-[#0d0d1a] border-r border-white/[0.06] flex flex-col">
-        <div className="px-5 py-5 border-b border-white/[0.06]">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center"><Shield className="w-4 h-4 text-white"/></div>
-            <div><div className="text-white font-bold text-sm">Aiscern</div><div className="text-gray-600 text-xs">admin.aiscern.com</div></div>
-          </div>
+  const activeTab = TABS.find(t => t.id === tab)
+
+  return (
+    <div className="flex h-screen overflow-hidden">
+      {/* Sidebar */}
+      <aside className={`flex-shrink-0 ${sidebarOpen?'w-56':'w-16'} bg-[#0d0d18] border-r border-[#1e1e35] flex flex-col transition-all duration-200`}>
+        {/* Logo */}
+        <div className="flex items-center gap-3 px-4 py-5 border-b border-[#1e1e35]">
+          <AiscernLogo size={30} />
+          {sidebarOpen && (
+            <div>
+              <div className="text-sm font-black text-white leading-none">Aiscern</div>
+              <div className="text-[10px] text-[#4a5568] tracking-widest uppercase mt-0.5">Admin</div>
+            </div>
+          )}
         </div>
-        {overview&&(
-          <div className="px-4 py-3 border-b border-white/[0.04] space-y-1.5">
-            {[{l:'Users',v:ov.totalUsers||0},{l:'Scans Today',v:ov.scansToday||0},{l:'Active Subs',v:ov.activeSubs||0}].map(({l,v})=>(
-              <div key={l} className="flex justify-between text-xs"><span className="text-gray-600">{l}</span><span className="text-gray-300 font-medium">{Number(v).toLocaleString()}</span></div>
-            ))}
-          </div>
-        )}
-        <nav className="flex-1 px-2 py-3 space-y-0.5">
-          {TABS.map(({id,label,icon:Icon})=>(
-            <button key={id} onClick={()=>setTab(id)} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${tab===id?'bg-purple-600/20 text-purple-300 border border-purple-500/20':'text-gray-500 hover:text-gray-300 hover:bg-white/[0.04]'}`}>
-              <Icon className="w-4 h-4 shrink-0"/>{label}
-            </button>
-          ))}
+
+        {/* Nav */}
+        <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
+          {TABS.map(t => {
+            const Icon = t.icon
+            const active = tab === t.id
+            return (
+              <button key={t.id} onClick={() => setTab(t.id)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all ${active ? 'nav-active text-[#a78bfa]' : 'text-[#4a5568] hover:text-[#94a3b8] hover:bg-[#ffffff05]'}`}>
+                <Icon className="w-4 h-4 flex-shrink-0" />
+                {sidebarOpen && <span className="text-xs font-semibold">{t.label}</span>}
+              </button>
+            )
+          })}
         </nav>
-        <div className="px-2 py-3 border-t border-white/[0.06]">
-          <button onClick={logout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-600 hover:text-red-400 hover:bg-red-900/10 transition-all">
-            <LogOut className="w-4 h-4"/>Sign out
+
+        {/* Health + logout */}
+        <div className="p-2 border-t border-[#1e1e35] space-y-1">
+          {health && sidebarOpen && (
+            <div className="px-3 py-2 text-[10px] text-[#4a5568]">
+              <div className="flex items-center gap-1.5">
+                <span className={`w-1.5 h-1.5 rounded-full live-dot ${health.ok ? 'bg-[#10b981]' : 'bg-[#f43f5e]'}`} />
+                {health.ok ? 'System healthy' : 'Degraded'}
+              </div>
+            </div>
+          )}
+          <button onClick={() => setSO(o => !o)}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[#4a5568] hover:text-[#94a3b8] hover:bg-[#ffffff05] transition-colors">
+            <Eye className="w-4 h-4 flex-shrink-0" />
+            {sidebarOpen && <span className="text-xs font-semibold">Collapse</span>}
+          </button>
+          <button onClick={logout} disabled={loggingOut}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[#f87171] hover:bg-[#f43f5e10] transition-colors disabled:opacity-50">
+            <LogOut className="w-4 h-4 flex-shrink-0" />
+            {sidebarOpen && <span className="text-xs font-semibold">{loggingOut ? 'Signing out…' : 'Sign out'}</span>}
           </button>
         </div>
       </aside>
-      <main className="flex-1 min-w-0 overflow-auto">
-        <div className="p-6 lg:p-8">
-          <div className="mb-6 flex items-center justify-between">
-            <div><h1 className="text-xl font-black text-white">{TABS.find(t=>t.id===tab)?.label}</h1><p className="text-gray-600 text-sm mt-0.5">admin.aiscern.com</p></div>
-            <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"/><span className="text-xs text-gray-600">Live</span></div>
+
+      {/* Main */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Topbar */}
+        <header className="flex items-center justify-between px-6 py-4 border-b border-[#1e1e35] bg-[#07070d]/80 backdrop-blur-sm flex-shrink-0">
+          <div>
+            <h1 className="text-sm font-bold text-white">{activeTab?.label}</h1>
+            <p className="text-[11px] text-[#4a5568]">
+              {new Date().toLocaleString('en-US', { weekday:'short', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' })}
+            </p>
           </div>
-          {content[tab]}
-        </div>
-      </main>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#1e1e35] bg-[#0d0d18] text-[11px] text-[#64748b]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] live-dot" />
+              Live
+            </div>
+          </div>
+        </header>
+
+        {/* Content */}
+        <main className="flex-1 overflow-y-auto p-6">
+          {tab === 'overview'  && <OverviewTab />}
+          {tab === 'users'     && <UsersTab />}
+          {tab === 'pipeline'  && <PipelineTab />}
+          {tab === 'flags'     && <FlagsTab />}
+          {tab === 'errors'    && <ErrorsTab />}
+          {tab === 'audit'     && <AuditTab />}
+          {tab === 'settings'  && <SettingsTab />}
+        </main>
+      </div>
     </div>
   )
 }
