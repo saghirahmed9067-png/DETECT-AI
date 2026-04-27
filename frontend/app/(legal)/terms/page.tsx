@@ -26,7 +26,7 @@ export default function TermsPage() {
         </div>
       </header>
 
-      <main className="flex-1 max-w-4xl mx-auto w-full px-4 py-12">
+      <main className="flex-1 max-w-4xl mx-auto w-full px-4 py-12 overflow-x-hidden">
         <div className="mb-10">
           <h1 className="text-4xl font-black text-text-primary mb-3">Terms of Service</h1>
           <p className="text-text-muted">Last updated: {LAST_UPDATED}</p>
