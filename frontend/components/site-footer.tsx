@@ -6,14 +6,14 @@ import { Mail } from 'lucide-react'
 export function SiteFooter() {
   return (
     <footer className="border-t border-border bg-surface/30 backdrop-blur-sm">
-      <div className="max-w-6xl mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10 mb-10">
+      <div className="max-w-6xl mx-auto px-4 py-8 sm:py-12">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-10 mb-6 sm:mb-10">
 
           {/* Brand */}
-          <div className="sm:col-span-2 lg:col-span-1 pb-2 sm:pb-0">
+          <div className="col-span-2 sm:col-span-2 lg:col-span-1 pb-2 sm:pb-0">
             <div className="flex items-center gap-2 mb-3">
-              <Image src="/logo.png" alt="Aiscern AI Detection Platform Logo" width={31} height={36} className="object-contain h-8 w-auto drop-shadow-[0_0_8px_rgba(245,100,0,0.4)]" />
-              <span className="font-black text-lg gradient-text">Aiscern</span>
+              <Image src="/logo.png" alt="Aiscern AI Detection Platform Logo" width={28} height={28} className="object-contain h-6 sm:h-8 w-auto drop-shadow-[0_0_8px_rgba(245,100,0,0.4)]" />
+              <span className="font-black text-base sm:text-lg gradient-text">Aiscern</span>
             </div>
             <p className="text-text-muted text-sm leading-relaxed mb-3">
               Multi-modal AI content detection. Ensemble-based analysis across text, image, audio, and video. Free tier available.
@@ -28,8 +28,8 @@ export function SiteFooter() {
 
           {/* Platform */}
           <div>
-            <h3 className="text-sm font-bold text-text-primary mb-4 uppercase tracking-wider">Platform</h3>
-            <ul className="space-y-2.5">
+            <h3 className="text-xs sm:text-sm font-bold text-text-primary mb-3 sm:mb-4 uppercase tracking-wider">Platform</h3>
+            <ul className="space-y-2 sm:space-y-2.5">
               {[
                 { label: 'Text Detector',      href: '/detect/text',  title: 'Free AI Text Detector' },
                 { label: 'Image Detector',     href: '/detect/image', title: 'Deepfake Image Detector' },
@@ -49,8 +49,8 @@ export function SiteFooter() {
 
           {/* Company */}
           <div>
-            <h3 className="text-sm font-bold text-text-primary mb-4 uppercase tracking-wider">Company</h3>
-            <ul className="space-y-2.5">
+            <h3 className="text-xs sm:text-sm font-bold text-text-primary mb-3 sm:mb-4 uppercase tracking-wider">Company</h3>
+            <ul className="space-y-2 sm:space-y-2.5">
               {[
                 { label: 'About',        href: '/about',     title: 'About Aiscern' },
                 { label: 'Methodology',  href: '/methodology', title: 'Detection Methodology' },
@@ -73,8 +73,8 @@ export function SiteFooter() {
 
           {/* Legal + Contact */}
           <div>
-            <h3 className="text-sm font-bold text-text-primary mb-4 uppercase tracking-wider">Legal</h3>
-            <ul className="space-y-2.5">
+            <h3 className="text-xs sm:text-sm font-bold text-text-primary mb-3 sm:mb-4 uppercase tracking-wider">Legal</h3>
+            <ul className="space-y-2 sm:space-y-2.5">
               {[
                 { label: 'Privacy Policy',   href: '/privacy',   title: 'Privacy Policy — Aiscern' },
                 { label: 'Terms of Service', href: '/terms',     title: 'Terms of Service — Aiscern' },
@@ -120,7 +120,7 @@ export function SiteFooter() {
         </div>
 
         {/* Disclaimer */}
-        <div className="border-t border-border pt-6 mb-4">
+        <div className="border-t border-border pt-4 sm:pt-6 mb-3 sm:mb-4">
           <p className="text-xs text-text-disabled text-center leading-relaxed max-w-2xl mx-auto">
             Detection results are probabilistic, not definitive. Use human judgment for high-stakes decisions.
             Aiscern is an early-access product — accuracy benchmarks reflect current model performance and will improve over time.
