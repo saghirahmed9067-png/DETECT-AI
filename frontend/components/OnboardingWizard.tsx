@@ -34,7 +34,7 @@ export function OnboardingWizard() {
     if (!user) return
     const db = createClient()
     db.from('profiles').select('onboarding_completed').eq('id', user.uid).single()
-      .then(({ data }) => { if (data && !data.onboarding_completed) setShow(true) })
+      .then(({ data }) => { if (data && !(data as any).onboarding_completed) setShow(true) })
   }, [user])
 
   const checkUsername = (val: string) => {
