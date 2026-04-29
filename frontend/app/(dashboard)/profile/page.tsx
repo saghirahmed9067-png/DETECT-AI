@@ -150,7 +150,7 @@ export default function ProfilePage() {
   }
 
   const plan      = profile?.plan || 'free'
-  const planLabel = { free:'Free', pro:'Pro', team:'Team', enterprise:'Enterprise' }[plan] || 'Free'
+  const planLabel = ({ free:'Free', pro:'Pro', team:'Team', enterprise:'Enterprise' } as Record<string, string>)[plan] || 'Free'
   const isPro     = ['pro','team','enterprise'].includes(plan)
   const joinedAt  = clerkUser?.createdAt ? new Date(clerkUser.createdAt).toLocaleDateString('en-US',{month:'long',year:'numeric'}) : '—'
 
