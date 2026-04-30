@@ -40,11 +40,21 @@ function SignUpContent() {
       <div className="absolute bottom-[-10%] left-1/2 -translate-x-1/2 w-[500px] h-[300px] rounded-full bg-indigo-600/[0.05] blur-[120px] pointer-events-none" />
 
       {/* Logo */}
-      <Link href="/" className="flex items-center gap-2.5 mb-8 relative z-10 group">
+      <Link href="/" className="flex items-center gap-2.5 mb-6 relative z-10 group">
         <Image src="/logo.png" alt="Aiscern logo" width={38} height={26}
           className="object-contain drop-shadow-[0_0_12px_rgba(245,100,0,0.55)] group-hover:drop-shadow-[0_0_16px_rgba(245,100,0,0.7)] transition-all" priority />
         <span className="text-xl font-black gradient-text">Aiscern</span>
       </Link>
+
+      {/* Custom header — replaces Clerk's "Create your DETECT-AI account" */}
+      <div className="relative z-10 w-full max-w-[420px]">
+        <div className="bg-[#0d0d1f] border border-[#1e1e3a] border-b-0 rounded-t-2xl px-7 pt-7 pb-4">
+          <h1 className="text-white font-bold text-[22px] tracking-tight leading-tight">Create your account</h1>
+          <p className="text-[#8892a4] text-[13px] mt-1">
+            Join Aiscern — free AI content detection for everyone
+          </p>
+        </div>
+      </div>
 
       <div className="relative z-10 w-full max-w-[420px]">
         <SignUp
@@ -65,58 +75,49 @@ function SignUpContent() {
               colorInputBackground:         '#12122a',
               colorInputText:               '#f0f4ff',
               colorText:                    '#eef2ff',
-              colorTextSecondary:           '#8892a4',
+              colorTextSecondary:           '#a0aec0',
               colorTextOnPrimaryBackground: '#ffffff',
               colorNeutral:                 '#2a2a4a',
               colorDanger:                  '#f87171',
               colorSuccess:                 '#34d399',
               colorWarning:                 '#fbbf24',
-              borderRadius:                 '10px',
+              borderRadius:                 '0px',
               fontFamily:                   'inherit',
               fontSize:                     '14px',
               spacingUnit:                  '16px',
-              fontWeight: {
-                normal: 400,
-                medium: 500,
-                bold:   700,
-              },
+              fontWeight: { normal: 400, medium: 500, bold: 700 },
             },
             elements: {
-              // ── Card shell ──────────────────────────────────────
+              // ── Card shell — no top radius (we have custom header above) ────
               rootBox: 'w-full',
-              card:    'bg-[#0d0d1f] border border-[#1e1e3a] shadow-[0_24px_64px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,255,255,0.03)] rounded-2xl overflow-hidden p-0',
-              cardBox: 'rounded-2xl',
+              card:    'bg-[#0d0d1f] border border-[#1e1e3a] border-t-0 shadow-[0_24px_64px_rgba(0,0,0,0.6)] rounded-b-2xl overflow-hidden p-0',
+              cardBox: 'rounded-b-2xl',
 
-              // ── Header ──────────────────────────────────────────
-              header:         'px-7 pt-7 pb-3',
-              headerTitle:    'text-white font-bold text-[22px] tracking-tight leading-tight',
-              headerSubtitle: 'text-[#6b7a99] text-[13px] mt-1',
-              headerBackRow:  'mb-4',
-              headerBackLink: 'text-violet-400 hover:text-violet-300 text-[13px] font-medium transition-colors flex items-center gap-1',
-              headerBackIcon: 'text-violet-400',
+              // ── HIDE the Clerk branded header ("Create your DETECT-AI account") ─
+              header: '!hidden',
 
-              // ── Main form area ───────────────────────────────────
-              main: 'px-7 pb-2',
+              // ── Main form area ────────────────────────────────────────────────
+              main: 'px-7 pb-2 pt-5',
 
-              // ── Form fields ──────────────────────────────────────
+              // ── Form fields ───────────────────────────────────────────────────
               formFieldRow:      'mb-4',
               formFieldLabelRow: 'flex items-center justify-between mb-1.5',
-              formFieldLabel:    'text-[11px] font-semibold tracking-[0.08em] uppercase text-[#5a6480]',
-              formFieldHintText: 'text-[#5a6480] text-[11px]',
+              formFieldLabel:    'text-[12px] font-semibold tracking-[0.06em] uppercase text-[#8a94b0]',
+              formFieldHintText: 'text-[#8a94b0] text-[12px] mt-1',
               formFieldInput: [
                 'w-full bg-[#12122a] border border-[#1e1e3a] text-[#eef2ff]',
-                'placeholder:text-[#35385a] rounded-[10px] text-[14px] px-3.5 py-2.5',
+                'placeholder:text-[#4a4e70] rounded-[10px] text-[14px] px-3.5 py-2.5',
                 'transition-all duration-150',
                 'focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/60 focus:bg-[#14143a]',
                 'hover:border-[#2a2a55]',
               ].join(' '),
-              formFieldInputShowPasswordButton: 'text-[#3a4060] hover:text-[#7c8caa] transition-colors pr-1',
-              formFieldAction: 'text-violet-400 hover:text-violet-300 text-[12px] font-medium transition-colors',
-              formFieldErrorText:   'text-rose-400 text-[12px] mt-1.5 flex items-center gap-1',
-              formFieldSuccessText: 'text-emerald-400 text-[12px] mt-1.5',
-              formFieldWarningText: 'text-amber-400 text-[12px] mt-1.5',
+              formFieldInputShowPasswordButton: 'text-[#5a6480] hover:text-[#9aa3ba] transition-colors pr-1',
+              formFieldAction:      'text-violet-400 hover:text-violet-300 text-[12px] font-medium transition-colors',
+              formFieldErrorText:   'text-rose-400 text-[13px] mt-1.5 font-medium',
+              formFieldSuccessText: 'text-emerald-400 text-[13px] mt-1.5 font-medium',
+              formFieldWarningText: 'text-amber-400 text-[13px] mt-1.5 font-medium',
 
-              // ── OTP / email verification code inputs ─────────────
+              // ── OTP inputs ───────────────────────────────────────────────────
               otpCodeFieldInput: [
                 'bg-[#12122a] border border-[#1e1e3a] text-white font-mono text-[18px] font-semibold',
                 'rounded-[10px] text-center w-11 h-12',
@@ -124,7 +125,7 @@ function SignUpContent() {
                 'transition-all duration-150',
               ].join(' '),
 
-              // ── Primary button ───────────────────────────────────
+              // ── Primary button ────────────────────────────────────────────────
               formButtonPrimary: [
                 'w-full bg-violet-600 hover:bg-violet-500 active:bg-violet-700',
                 'text-white font-semibold text-[14px] rounded-[10px] py-2.5',
@@ -133,15 +134,12 @@ function SignUpContent() {
                 'disabled:opacity-60 disabled:cursor-not-allowed',
               ].join(' '),
 
-              // ── Secondary / ghost button ─────────────────────────
               formButtonReset: 'text-violet-400 hover:text-violet-300 text-[13px] font-medium transition-colors',
 
-              // ── Divider ──────────────────────────────────────────
               dividerRow:  'my-5',
               dividerLine: 'bg-[#1e1e3a]',
-              dividerText: 'text-[#35385a] text-[11px] px-3 uppercase tracking-widest',
+              dividerText: 'text-[#6b7a99] text-[11px] px-3 uppercase tracking-widest',
 
-              // ── Social buttons ───────────────────────────────────
               socialButtonsBlockButton: [
                 'w-full bg-[#10102a] border border-[#1e1e3a] text-[#94a3b8] rounded-[10px]',
                 'hover:bg-[#15153a] hover:border-[#2e2e5a] hover:text-[#c4cce0]',
@@ -151,7 +149,6 @@ function SignUpContent() {
               socialButtonsBlockButtonArrow: 'hidden',
               socialButtonsProviderIcon:     'w-4 h-4',
 
-              // ── Alert / error banner ─────────────────────────────
               alert: [
                 'bg-rose-500/10 border border-rose-500/25 rounded-[10px]',
                 'text-rose-300 text-[13px] px-4 py-3 my-4',
@@ -160,35 +157,31 @@ function SignUpContent() {
               alertTextDanger:  'text-rose-300',
               alertTextWarning: 'text-amber-300',
 
-              // ── Footer ───────────────────────────────────────────
               footer:           'px-7 pt-3 pb-6',
               footerAction:     'text-center',
-              footerActionText: 'text-[#4a5270] text-[13px]',
+              footerActionText: 'text-[#6b7a99] text-[13px]',
               footerActionLink: 'text-violet-400 hover:text-violet-300 font-semibold text-[13px] transition-colors ml-1',
-              footerPages:      'hidden',
+              footerPages:      '!hidden',
 
-              // ── Identity preview (after email entered) ───────────
               identityPreviewText:       'text-[#c4cce0] text-[14px]',
               identityPreviewEditButton: 'text-violet-400 hover:text-violet-300 text-[13px] transition-colors',
 
-              // ── Loading spinner ──────────────────────────────────
               spinner: 'text-violet-400',
 
-              // ── Alternative methods ──────────────────────────────
               alternativeMethodsBlockButton: [
-                'w-full bg-[#10102a] border border-[#1e1e3a] text-[#8892a4] rounded-[10px]',
+                'w-full bg-[#10102a] border border-[#1e1e3a] text-[#94a3b8] rounded-[10px]',
                 'hover:bg-[#15153a] hover:text-[#c4cce0] transition-all duration-200 py-2.5 text-[13px]',
               ].join(' '),
 
-              // ── T&C and privacy links ────────────────────────────
+              // ── T&C checkbox ──────────────────────────────────────────────────
               formFieldCheckboxInput: 'accent-violet-600 w-4 h-4 rounded',
-              formFieldCheckboxLabel: 'text-[#6b7a99] text-[12px]',
+              formFieldCheckboxLabel: 'text-[#8892a4] text-[12px]',
             },
           }}
         />
       </div>
 
-      <p className="mt-4 text-[11px] text-[#1e2035] relative z-10">© 2026 Aiscern · Secured by Clerk</p>
+      <p className="mt-5 text-[11px] text-[#2a2e45] relative z-10">© 2026 Aiscern · Secured by Clerk</p>
     </div>
   )
 }

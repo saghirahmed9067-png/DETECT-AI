@@ -1,72 +1,98 @@
 'use client'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
+import { useUser } from '@clerk/nextjs'
 import { ReviewSuggestion } from '@/components/ReviewSuggestion'
-
 
 const STORAGE_KEY = 'aiscern_chats_v2'
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 const Ico = {
-  Send: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>,
-  Plus: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M12 5v14M5 12h14"/></svg>,
-  Trash: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>,
-  TrashAll: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg>,
-  Copy: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>,
-  Check: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><path d="M20 6 9 17l-5-5"/></svg>,
-  Menu: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M4 6h16M4 12h16M4 18h16"/></svg>,
-  Close: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M18 6 6 18M6 6l12 12"/></svg>,
-  Chat: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
-  Brain: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.46 2.5 2.5 0 0 1-1.98-3 2.5 2.5 0 0 1-1.32-4.24 3 3 0 0 1 .34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.1-2.88"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.46 2.5 2.5 0 0 0 1.98-3 2.5 2.5 0 0 0 1.32-4.24 3 3 0 0 0-.34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.1-2.88"/></svg>,
-  Shield: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
-  Image: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>,
-  FileText: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4M10 9H8M16 13H8M16 17H8"/></svg>,
-  Music: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>,
-  Video: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/></svg>,
-  Clip: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>,
-  Stop: () => <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>,
-  Spin: () => <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4 animate-spin"><circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"/><path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>,
-  Globe: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>,
+  Send:      () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>,
+  Plus:      () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M12 5v14M5 12h14"/></svg>,
+  Trash:     () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>,
+  TrashAll:  () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg>,
+  Copy:      () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>,
+  Check:     () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><path d="M20 6 9 17l-5-5"/></svg>,
+  Menu:      () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M4 6h16M4 12h16M4 18h16"/></svg>,
+  Close:     () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M18 6 6 18M6 6l12 12"/></svg>,
+  Chat:      () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
+  Shield:    () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+  Image:     () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>,
+  FileText:  () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4M10 9H8M16 13H8M16 17H8"/></svg>,
+  Music:     () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>,
+  Video:     () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/></svg>,
+  Clip:      () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>,
+  Stop:      () => <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>,
+  Spin:      () => <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4 animate-spin"><circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"/><path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>,
+  Globe:     () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>,
   ChevRight: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><path d="m9 18 6-6-6-6"/></svg>,
-  DB: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>,
-  Scan: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><rect width="7" height="5" x="7" y="7" rx="1"/><rect width="7" height="5" x="10" y="12" rx="1"/></svg>,
-  Home: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
-  Download: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>,
-  Search: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>,
+  DB:        () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>,
+  Scan:      () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><rect width="7" height="5" x="7" y="7" rx="1"/><rect width="7" height="5" x="10" y="12" rx="1"/></svg>,
+  Home:      () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+  Download:  () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>,
+  Search:    () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>,
 }
 
 // ── Types ──────────────────────────────────────────────────────────────────
-interface Attachment { name: string; type: string; data: string; preview?: string; size: number }
-interface AttachmentMeta { name: string; type: string; size: number } // stored without base64
-interface ToolEvent  { tool: string; status: 'running' | 'done'; result?: any }
-interface Message    { id: string; role: 'user'|'assistant'; content: string; timestamp: string; attachments?: Attachment[]; toolEvents?: ToolEvent[]; isStreaming?: boolean }
-interface Chat       { id: string; title: string; messages: Message[]; createdAt: string; updatedAt: string }
+interface Attachment  { name: string; type: string; data: string; preview?: string; size: number }
+interface ToolEvent   { tool: string; status: 'running'|'done'; result?: any }
+interface Message     { id: string; role: 'user'|'assistant'; content: string; timestamp: string; attachments?: Attachment[]; toolEvents?: ToolEvent[]; isStreaming?: boolean }
+interface Chat        { id: string; title: string; messages: Message[]; createdAt: string; updatedAt: string }
 
 const TOOL_META: Record<string,{label:string;color:string;Ic:()=>React.ReactElement}> = {
-  detect_image_with_vila: { label:'Vision Analysis',  color:'#7c3aed', Ic: Ico.Image },
+  detect_image_with_vila: { label:'Vision Analysis',  color:'#7c3aed', Ic: Ico.Image    },
   detect_text:            { label:'Text Analysis',    color:'#7c3aed', Ic: Ico.FileText },
-  detect_image:           { label:'Image Analysis',   color:'#2563eb', Ic: Ico.Image },
-  detect_audio:           { label:'Audio Analysis',   color:'#0891b2', Ic: Ico.Music },
-  detect_video:           { label:'Video Analysis',   color:'#059669', Ic: Ico.Video },
-  get_pipeline_stats:     { label:'Detection Stats',  color:'#d97706', Ic: Ico.DB },
-  analyze_url:            { label:'URL Analysis',     color:'#d97706', Ic: Ico.Globe },
+  detect_image:           { label:'Image Analysis',   color:'#2563eb', Ic: Ico.Image    },
+  detect_audio:           { label:'Audio Analysis',   color:'#0891b2', Ic: Ico.Music    },
+  detect_video:           { label:'Video Analysis',   color:'#059669', Ic: Ico.Video    },
+  get_pipeline_stats:     { label:'Detection Stats',  color:'#d97706', Ic: Ico.DB       },
+  analyze_url:            { label:'URL Analysis',     color:'#d97706', Ic: Ico.Globe    },
+}
+
+// ── Aiscern logo avatar for ARIA ────────────────────────────────────────────
+function AriaAvatar({ size = 'md' }: { size?: 'sm'|'md' }) {
+  const cls = size === 'sm' ? 'w-7 h-7 rounded-lg' : 'w-8 h-8 rounded-xl'
+  return (
+    <div className={`${cls} bg-gradient-to-br from-violet-600 to-blue-600 flex items-center justify-center shrink-0 shadow-lg shadow-violet-500/25 overflow-hidden`}>
+      <Image src="/logo.png" alt="ARIA" width={20} height={20} className="object-contain drop-shadow-[0_0_6px_rgba(245,100,0,0.7)]" />
+    </div>
+  )
+}
+
+// ── User avatar from Clerk ──────────────────────────────────────────────────
+function UserAvatar({ imageUrl, name, size = 'md' }: { imageUrl?: string|null; name?: string|null; size?: 'sm'|'md' }) {
+  const cls = size === 'sm' ? 'w-7 h-7 rounded-lg text-[10px]' : 'w-8 h-8 rounded-xl text-xs'
+  const initials = name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2) : 'U'
+
+  if (imageUrl) {
+    return (
+      <div className={`${cls} shrink-0 overflow-hidden border border-white/10 mt-0.5`}>
+        <img src={imageUrl} alt={name || 'User'} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+      </div>
+    )
+  }
+  return (
+    <div className={`${cls} bg-gradient-to-br from-violet-700 to-indigo-700 flex items-center justify-center shrink-0 mt-0.5 font-bold text-white`}>
+      {initials}
+    </div>
+  )
 }
 
 // ── localStorage helpers ────────────────────────────────────────────────────
 function saveChats(chats: Chat[]) {
   try {
-    // Strip large base64 data from attachments before saving
     const slim = chats.map(c => ({
       ...c,
       messages: c.messages.map(m => ({
         ...m,
-        isStreaming: false, // never persist streaming state
+        isStreaming: false,
         attachments: m.attachments?.map(a => ({ name: a.name, type: a.type, size: a.size })),
       }))
     }))
     localStorage.setItem(STORAGE_KEY, JSON.stringify(slim))
-  } catch (e) {
-    // Quota exceeded — trim oldest chats and retry
+  } catch {
     try {
       const trimmed = chats.slice(0, 20).map(c => ({
         ...c,
@@ -88,7 +114,6 @@ function loadChats(): Chat[] {
 }
 
 // ── Markdown renderer ───────────────────────────────────────────────────────
-// Sanitize HTML to prevent XSS — only allow safe tags and attributes
 function sanitizeHtml(html: string): string {
   return html
     .replace(/<script[\s\S]*?<\/script>/gi, '')
@@ -102,21 +127,16 @@ function Markdown({ content }: { content: string }) {
   const lines = content.split('\n')
   let html = ''
   let inCode = false
-  let codeLang = ''
   let codeLines: string[] = []
 
   for (const line of lines) {
     const codeMatch = line.match(/^```(\w+)?$/)
     if (codeMatch) {
-      if (!inCode) {
-        inCode = true
-        codeLang = codeMatch[1] || ''
-        codeLines = []
-      } else {
+      if (!inCode) { inCode = true; codeLines = [] }
+      else {
         const escaped = codeLines.join('\n').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-        html += `<pre class="bg-black/40 border border-white/8 rounded-xl p-4 my-3 overflow-x-auto text-xs font-mono text-emerald-300 leading-relaxed whitespace-pre"><code>${escaped}</code></pre>`
-        inCode = false
-        codeLines = []
+        html += `<pre class="bg-black/50 border border-white/8 rounded-xl p-4 my-3 overflow-x-auto text-xs font-mono text-emerald-300 leading-relaxed whitespace-pre"><code>${escaped}</code></pre>`
+        inCode = false; codeLines = []
       }
       continue
     }
@@ -140,31 +160,28 @@ function Markdown({ content }: { content: string }) {
     html += `<span>${l}</span><br/>`
   }
 
-  const safeHtml = sanitizeHtml(html)
   return (
     <div className="text-sm leading-relaxed text-gray-300"
-      dangerouslySetInnerHTML={{ __html: safeHtml }}
+      dangerouslySetInnerHTML={{ __html: sanitizeHtml(html) }}
     />
   )
 }
 
-
-// ── Tool result card ─────────────────────────────────────────────────────
+// ── Tool result card ─────────────────────────────────────────────────────────
 function ToolCard({ tool, result }: { tool: string; result: any }) {
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const meta = TOOL_META[tool] || { label: tool, color: '#6b7280', Ic: Ico.Scan }
   const { Ic: TIc } = meta
   const verdict = result?.verdict || result?.result || 'Analysis complete'
-  const conf = result?.confidence_pct ?? result?.confidence
-  const bad = verdict?.toLowerCase().match(/ai-|deepfake|synthetic|clone/)
+  const conf    = result?.confidence_pct ?? result?.confidence
+  const bad     = verdict?.toLowerCase().match(/ai-|deepfake|synthetic|clone/)
 
   const copyResult = (e: React.MouseEvent) => {
     e.stopPropagation()
     const text = `${meta.label}\nVerdict: ${verdict}${conf != null ? `\nConfidence: ${conf}%` : ''}\n${JSON.stringify(result, null, 2)}`
     navigator.clipboard?.writeText(text)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1800)
+    setCopied(true); setTimeout(() => setCopied(false), 1800)
   }
 
   return (
@@ -189,18 +206,15 @@ function ToolCard({ tool, result }: { tool: string; result: any }) {
           <div className={`text-gray-600 transition-transform duration-200 ${open ? 'rotate-90' : ''}`}><Ico.ChevRight /></div>
         </div>
       </button>
-
       {open && (
         <div className="px-3 sm:px-4 pb-4 border-t" style={{ borderColor:`${meta.color}18` }}>
-          {/* Key findings as tags */}
           {result?.key_findings?.length > 0 && (
             <div className="mt-3 mb-3">
               <div className="text-xs font-semibold uppercase tracking-wider mb-2" style={{color:`${meta.color}cc`}}>Key Findings</div>
               <div className="space-y-1.5">
                 {result.key_findings.map((f: string, i: number) => (
                   <div key={i} className="flex items-start gap-2 text-xs text-gray-300">
-                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{background:meta.color}} />
-                    {f}
+                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{background:meta.color}} />{f}
                   </div>
                 ))}
               </div>
@@ -266,24 +280,41 @@ function ToolCard({ tool, result }: { tool: string; result: any }) {
   )
 }
 
-// ── Timestamp ───────────────────────────────────────────────────────────────
-function MsgTime({ ts }: { ts: string }) {
-  const d = new Date(ts)
-  const fmt = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  return <span className="text-[10px] text-gray-700 mt-1 px-1 select-none">{fmt}</span>
+// ── Animated typing dots (shown while streaming but no text yet) ────────────
+function TypingDots() {
+  return (
+    <div className="flex items-center gap-1 px-4 py-3">
+      {[0,1,2].map(i => (
+        <span key={i} className="w-1.5 h-1.5 rounded-full bg-violet-400/70"
+          style={{ animation: `aria-dot-bounce 1.2s ease-in-out ${i * 0.2}s infinite` }} />
+      ))}
+    </div>
+  )
 }
 
 // ── Message bubble ─────────────────────────────────────────────────────────
-function MessageBubble({ msg, onCopy }: { msg: Message; onCopy: (t:string)=>void }) {
+function MessageBubble({
+  msg, onCopy,
+  userImageUrl, userName,
+}: {
+  msg: Message
+  onCopy: (t: string) => void
+  userImageUrl?: string | null
+  userName?: string | null
+}) {
   const [copied, setCopied] = useState(false)
   const isUser = msg.role === 'user'
   const copy = () => { onCopy(msg.content); setCopied(true); setTimeout(()=>setCopied(false),1800) }
+  const showTypingDots = !isUser && msg.isStreaming && !msg.content && !msg.toolEvents?.some(t => t.status === 'running')
 
   return (
-    <div className={`flex gap-2 sm:gap-3 group ${isUser ? 'justify-end' : 'justify-start'}`}>
+    <div
+      className={`flex gap-2 sm:gap-3 group aria-msg-in ${isUser ? 'justify-end' : 'justify-start'}`}
+    >
+      {/* ARIA avatar — Aiscern logo */}
       {!isUser && (
-        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-br from-violet-600 to-blue-600 flex items-center justify-center shrink-0 mt-0.5 shadow-lg shadow-violet-500/20">
-          <Ico.Brain />
+        <div className="mt-0.5 shrink-0">
+          <AriaAvatar />
         </div>
       )}
 
@@ -313,8 +344,15 @@ function MessageBubble({ msg, onCopy }: { msg: Message; onCopy: (t:string)=>void
           <ToolCard key={i} tool={te.tool} result={te.result} />
         ))}
 
+        {/* Typing dots while waiting for first token */}
+        {showTypingDots && (
+          <div className="rounded-2xl rounded-bl-sm bg-[#131328] border border-white/8">
+            <TypingDots />
+          </div>
+        )}
+
         {/* Content bubble */}
-        {(msg.content || msg.isStreaming) && (
+        {(msg.content || (msg.isStreaming && msg.content)) && (
           <div className={`rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm ${
             isUser
               ? 'bg-gradient-to-br from-violet-600 to-blue-600 text-white rounded-br-sm shadow-lg shadow-violet-500/15'
@@ -324,7 +362,8 @@ function MessageBubble({ msg, onCopy }: { msg: Message; onCopy: (t:string)=>void
               ? <p className="leading-relaxed whitespace-pre-wrap text-white text-sm">{msg.content}</p>
               : <Markdown content={msg.content} />
             }
-            {msg.isStreaming && (
+            {/* Blinking cursor while streaming */}
+            {msg.isStreaming && msg.content && (
               <span className="inline-block w-0.5 h-4 bg-violet-400 animate-pulse ml-0.5 align-middle rounded-full" />
             )}
           </div>
@@ -332,7 +371,9 @@ function MessageBubble({ msg, onCopy }: { msg: Message; onCopy: (t:string)=>void
 
         {/* Timestamp + copy */}
         <div className={`flex items-center gap-1 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
-          <MsgTime ts={msg.timestamp} />
+          <span className="text-[10px] text-gray-700 mt-0.5 px-1 select-none">
+            {new Date(msg.timestamp).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' })}
+          </span>
           {!isUser && !msg.isStreaming && msg.content && (
             <button onClick={copy} className="opacity-0 group-hover:opacity-100 flex items-center gap-1.5 text-xs text-gray-700 hover:text-gray-400 transition-all px-2 py-1 rounded-lg hover:bg-white/5">
               {copied ? <Ico.Check /> : <Ico.Copy />}
@@ -342,10 +383,9 @@ function MessageBubble({ msg, onCopy }: { msg: Message; onCopy: (t:string)=>void
         </div>
       </div>
 
+      {/* User avatar — Clerk profile photo or initials */}
       {isUser && (
-        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-white/6 border border-white/10 flex items-center justify-center shrink-0 mt-0.5 text-gray-400 text-xs font-bold">
-          U
-        </div>
+        <UserAvatar imageUrl={userImageUrl} name={userName} />
       )}
     </div>
   )
@@ -353,52 +393,43 @@ function MessageBubble({ msg, onCopy }: { msg: Message; onCopy: (t:string)=>void
 
 // ── Welcome suggestions ────────────────────────────────────────────────────
 const SUGGESTIONS = [
-  { Ic: Ico.Image,    text: 'Upload an image to detect if it\'s AI-generated or a deepfake', cat: 'Image' },
-  { Ic: Ico.FileText, text: 'Paste text to check if it was written by AI',                   cat: 'Text'  },
-  { Ic: Ico.Music,    text: 'How does ensemble detection work for voice cloning?',                    cat: 'Audio' },
-  { Ic: Ico.Brain,    text: 'Explain GAN fingerprinting and diffusion model artifacts',        cat: 'Learn' },
-  { Ic: Ico.Shield,   text: 'What makes Aiscern different from GPTZero and Turnitin?',        cat: 'Compare'},
-  { Ic: Ico.DB,       text: 'Show me Aiscern\'s current detection statistics',                 cat: 'Data'  },
+  { Ic: Ico.Image,    text: "Upload an image to detect if it's AI-generated or a deepfake",  cat: 'Image'   },
+  { Ic: Ico.FileText, text: 'Paste text to check if it was written by AI',                    cat: 'Text'    },
+  { Ic: Ico.Music,    text: 'How does ensemble detection work for voice cloning?',             cat: 'Audio'   },
+  { Ic: Ico.Shield,   text: 'Who built Aiscern and what is it designed to do?',               cat: 'About'   },
+  { Ic: Ico.Globe,    text: 'What makes Aiscern different from GPTZero and Turnitin?',        cat: 'Compare' },
+  { Ic: Ico.DB,       text: "Show me Aiscern's current detection statistics",                 cat: 'Data'    },
 ]
 
 // ── Main ───────────────────────────────────────────────────────────────────
 export default function ChatPage() {
-  const [chats, setChats] = useState<Chat[]>([])
+  const { user } = useUser()
+  const [chats, setChats]               = useState<Chat[]>([])
   const [activeChatId, setActiveChatId] = useState<string|null>(null)
-  const [input, setInput] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [attachments, setAttachments] = useState<Attachment[]>([])
-  const [abort, setAbort] = useState<AbortController|null>(null)
-  const [hydrated, setHydrated] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [showSearch, setShowSearch] = useState(false)
-  const endRef = useRef<HTMLDivElement>(null)
-  const taRef = useRef<HTMLTextAreaElement>(null)
+  const [input, setInput]               = useState('')
+  const [loading, setLoading]           = useState(false)
+  const [sidebarOpen, setSidebarOpen]   = useState(false)
+  const [attachments, setAttachments]   = useState<Attachment[]>([])
+  const [abort, setAbort]               = useState<AbortController|null>(null)
+  const [hydrated, setHydrated]         = useState(false)
+  const [searchQuery, setSearchQuery]   = useState('')
+  const [showSearch, setShowSearch]     = useState(false)
+  const endRef  = useRef<HTMLDivElement>(null)
+  const taRef   = useRef<HTMLTextAreaElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const activeChat = chats.find(c=>c.id===activeChatId)
 
-  // ── Hydrate from localStorage on mount ──────────────────────────────────
   useEffect(() => {
     const saved = loadChats()
-    if (saved.length > 0) {
-      setChats(saved)
-      setActiveChatId(saved[0].id)
-    }
+    if (saved.length > 0) { setChats(saved); setActiveChatId(saved[0].id) }
     setHydrated(true)
   }, [])
 
-  // ── Persist chats to localStorage whenever they change ──────────────────
+  useEffect(() => { if (!hydrated) return; saveChats(chats) }, [chats, hydrated])
+  useEffect(() => { endRef.current?.scrollIntoView({behavior:'smooth'}) }, [activeChat?.messages.length, activeChat?.messages[activeChat?.messages.length-1]?.content?.length])
+
   useEffect(() => {
-    if (!hydrated) return
-    saveChats(chats)
-  }, [chats, hydrated])
-
-  useEffect(()=>{ endRef.current?.scrollIntoView({behavior:'smooth'}) }, [activeChat?.messages.length])
-
-  useEffect(()=>{
-    const ta = taRef.current
-    if (!ta) return
+    const ta = taRef.current; if (!ta) return
     ta.style.height = 'auto'
     ta.style.height = `${Math.min(ta.scrollHeight, 160)}px`
   }, [input])
@@ -422,8 +453,7 @@ export default function ChatPage() {
 
   const clearAll = useCallback(()=>{
     if (!confirm('Delete all conversations? This cannot be undone.')) return
-    setChats([]); setActiveChatId(null)
-    localStorage.removeItem(STORAGE_KEY)
+    setChats([]); setActiveChatId(null); localStorage.removeItem(STORAGE_KEY)
   },[])
 
   const exportChat = useCallback(()=>{
@@ -477,13 +507,9 @@ export default function ChatPage() {
     const ac = new AbortController(); setAbort(ac)
 
     try {
-      // Build history directly — don't read from stale chats state
-      // chats state may not yet include userMsg due to React batching
       const currentChat = chats.find(c=>c.id===chatId)
       const prevMessages = (currentChat?.messages||[]).filter(m=>m.id!==userMsg.id)
       const history = [...prevMessages, userMsg]
-
-      // Only send image attachments to API — audio/video not supported yet
       const imageAtts = userMsg.attachments?.filter(a=>a.type?.startsWith('image/'))
       const unsupportedAtts = userMsg.attachments?.filter(a=>!a.type?.startsWith('image/'))
 
@@ -495,11 +521,10 @@ export default function ChatPage() {
           attachments: imageAtts?.map(a=>({type:a.type, data:a.data, name:a.name})),
         }),
       })
-      // Warn about unsupported attachment types
       if (unsupportedAtts?.length) {
         setChats(p=>p.map(c=>c.id===chatId?{...c,messages:c.messages.map(m=>m.id===aid?{
           ...m,
-          content: `⚠️ Note: Audio/video files can't be analyzed directly in chat. Please use the dedicated [Audio](/detect/audio) or [Video](/detect/video) detection tools for those files.\n\n`,
+          content:`⚠️ Note: Audio/video files can't be analyzed directly in chat. Please use the dedicated [Audio](/detect/audio) or [Video](/detect/video) detection tools.\n\n`,
         }:m)}:c))
       }
       if (!res.ok) throw new Error(`Server error ${res.status}`)
@@ -523,10 +548,10 @@ export default function ChatPage() {
             if(!raw || raw==='[DONE]') continue
             try{
               const ev = JSON.parse(raw)
-              if(ev.type==='text') setChats(p=>p.map(c=>c.id===chatId?{...c,messages:c.messages.map(m=>m.id===aid?{...m,content:m.content+ev.text}:m)}:c))
+              if(ev.type==='text')        setChats(p=>p.map(c=>c.id===chatId?{...c,messages:c.messages.map(m=>m.id===aid?{...m,content:m.content+ev.text}:m)}:c))
               if(ev.type==='tool_result') setChats(p=>p.map(c=>c.id===chatId?{...c,messages:c.messages.map(m=>m.id===aid?{...m,toolEvents:[...(m.toolEvents||[]).filter(t=>t.tool!==ev.tool),{tool:ev.tool,status:'done',result:ev.result}]}:m)}:c))
-              if(ev.type==='done') setChats(p=>p.map(c=>c.id===chatId?{...c,messages:c.messages.map(m=>m.id===aid?{...m,isStreaming:false}:m),updatedAt:now()}:c))
-            }catch(_){/* skip malformed SSE line */}
+              if(ev.type==='done')        setChats(p=>p.map(c=>c.id===chatId?{...c,messages:c.messages.map(m=>m.id===aid?{...m,isStreaming:false}:m),updatedAt:now()}:c))
+            }catch(_){ /* skip malformed SSE */ }
           }
         }
       }
@@ -542,7 +567,6 @@ export default function ChatPage() {
     setChats(p=>p.map(c=>c.id===activeChatId?{...c,messages:c.messages.map(m=>m.isStreaming?{...m,isStreaming:false}:m)}:c))
   }
 
-  // Filter chats by search
   const filteredChats = searchQuery
     ? chats.filter(c =>
         c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -555,6 +579,9 @@ export default function ChatPage() {
       <div className="text-gray-700 text-sm">Loading conversations…</div>
     </div>
   )
+
+  const userImageUrl = user?.imageUrl
+  const userName     = user?.fullName || user?.firstName || user?.username
 
   return (
     <>
@@ -574,16 +601,13 @@ export default function ChatPage() {
           <button onClick={newChat} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-600 text-white text-sm font-semibold hover:opacity-90 active:scale-[0.97] transition-all shadow-lg shadow-violet-500/20">
             <Ico.Plus /><span>New conversation</span>
           </button>
-          {/* Search toggle */}
           <button onClick={()=>setShowSearch(s=>!s)} className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-gray-600 hover:text-gray-300 hover:bg-white/[0.04] text-xs transition-all">
             <Ico.Search /><span>Search conversations</span>
           </button>
           {showSearch && (
             <input
-              value={searchQuery}
-              onChange={e=>setSearchQuery(e.target.value)}
-              placeholder="Search…"
-              autoFocus
+              value={searchQuery} onChange={e=>setSearchQuery(e.target.value)}
+              placeholder="Search…" autoFocus
               className="w-full px-3 py-2 rounded-xl bg-white/[0.05] border border-white/10 text-xs text-gray-300 placeholder:text-gray-700 outline-none focus:border-violet-500/40"
             />
           )}
@@ -638,17 +662,19 @@ export default function ChatPage() {
           <button onClick={()=>setSidebarOpen(s=>!s)} className="lg:hidden p-2 rounded-lg hover:bg-white/8 text-gray-500 hover:text-white transition-colors shrink-0">
             <Ico.Menu />
           </button>
+          {/* ARIA header — Aiscern logo */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-br from-violet-600 to-blue-600 flex items-center justify-center shadow-lg shadow-violet-500/20 shrink-0">
-              <Ico.Brain />
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-violet-600 to-blue-600 flex items-center justify-center shadow-lg shadow-violet-500/20 shrink-0 overflow-hidden">
+              <Image src="/logo.png" alt="ARIA" width={22} height={22} className="object-contain drop-shadow-[0_0_6px_rgba(245,100,0,0.7)]" />
             </div>
             <div className="min-w-0">
-              <div className="text-sm font-bold text-white leading-none truncate">ARIA by Aiscern</div>
+              <div className="text-sm font-bold text-white leading-none truncate">ARIA <span className="text-gray-600 font-normal text-xs ml-1">by Aiscern</span></div>
               <div className="text-xs text-gray-600 mt-0.5 hidden sm:block">
-                {activeChat ? `${activeChat.messages.length} messages · ${activeChat.title.slice(0,40)}` : 'Multi-modal · Tool-enabled · General knowledge'}
+                {activeChat ? `${activeChat.messages.length} messages · ${activeChat.title.slice(0,40)}` : 'Multi-modal · Tool-enabled · AI detection specialist'}
               </div>
             </div>
           </div>
+
           <div className="ml-auto flex items-center gap-1">
             {activeChat && activeChat.messages.length > 0 && (
               <button onClick={exportChat} title="Export chat" className="p-2 rounded-lg hover:bg-white/8 text-gray-600 hover:text-gray-300 transition-colors">
@@ -657,7 +683,7 @@ export default function ChatPage() {
             )}
             <div className="hidden sm:flex items-center gap-1">
               {(['Text','Image','Audio','Video'] as const).map(l => {
-                const icons = { Text: Ico.FileText, Image: Ico.Image, Audio: Ico.Music, Video: Ico.Video }
+                const icons = { Text:Ico.FileText, Image:Ico.Image, Audio:Ico.Music, Video:Ico.Video }
                 const I = icons[l]
                 return (
                   <div key={l} className="flex items-center gap-1 text-xs px-2 py-1.5 rounded-lg bg-white/[0.04] text-gray-600 border border-white/[0.06]">
@@ -667,6 +693,12 @@ export default function ChatPage() {
                 )
               })}
             </div>
+            {/* User avatar in header */}
+            {user && (
+              <div className="ml-1">
+                <UserAvatar imageUrl={userImageUrl} name={userName} size="sm" />
+              </div>
+            )}
           </div>
         </header>
 
@@ -674,12 +706,20 @@ export default function ChatPage() {
         <div className="flex-1 overflow-y-auto">
           {!activeChat || activeChat.messages.length===0 ? (
             <div className="h-full flex flex-col items-center justify-center px-4 py-6 sm:py-8 max-w-2xl mx-auto w-full">
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-blue-600 flex items-center justify-center mb-5 shadow-2xl shadow-violet-500/25">
-                <Ico.Brain />
+              {/* Welcome logo — Aiscern logo inside glowing pill */}
+              <div className="relative mb-5">
+                <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-gradient-to-br from-violet-600 to-blue-600 flex items-center justify-center shadow-2xl shadow-violet-500/30 overflow-hidden">
+                  <Image src="/logo.png" alt="ARIA" width={36} height={36} className="object-contain drop-shadow-[0_0_10px_rgba(245,100,0,0.8)]" />
+                </div>
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-[#09090f] flex items-center justify-center">
+                  <div className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse" />
+                </div>
               </div>
-              <h1 className="text-xl sm:text-2xl font-black text-white mb-2 tracking-tight">ARIA — Aiscern Assistant</h1>
+
+              <h1 className="text-xl sm:text-2xl font-black text-white mb-1.5 tracking-tight">ARIA</h1>
+              <p className="text-gray-500 text-xs font-semibold uppercase tracking-widest mb-3">Aiscern AI Detection Assistant</p>
               <p className="text-gray-600 text-sm text-center mb-6 sm:mb-8 max-w-sm leading-relaxed">
-                Your AI-powered analyst. Ask any question, upload media for deepfake detection, or explore Aiscern's capabilities.
+                Ask anything about AI detection, upload media for deepfake analysis, or explore Aiscern's capabilities.
               </p>
 
               <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2 mb-6 sm:mb-8">
@@ -721,7 +761,12 @@ export default function ChatPage() {
           ) : (
             <div className="max-w-3xl mx-auto w-full px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
               {activeChat.messages.map(msg=>(
-                <MessageBubble key={msg.id} msg={msg} onCopy={t=>navigator.clipboard?.writeText(t)} />
+                <MessageBubble
+                  key={msg.id} msg={msg}
+                  onCopy={t=>navigator.clipboard?.writeText(t)}
+                  userImageUrl={userImageUrl}
+                  userName={userName}
+                />
               ))}
               <div ref={endRef} className="h-4" />
             </div>
@@ -745,11 +790,9 @@ export default function ChatPage() {
             )}
 
             <div className="flex items-end gap-1.5 sm:gap-2 px-2 py-2 rounded-2xl border border-white/10 bg-[#111128] focus-within:border-violet-500/40 focus-within:shadow-lg focus-within:shadow-violet-500/8 transition-all">
-              <button
-                onClick={()=>fileRef.current?.click()}
+              <button onClick={()=>fileRef.current?.click()}
                 className="p-2 rounded-xl text-gray-700 hover:text-gray-400 hover:bg-white/8 transition-colors shrink-0 mb-0.5"
-                title="Attach image, audio or video"
-              >
+                title="Attach image, audio or video">
                 <Ico.Clip />
               </button>
               <input ref={fileRef} type="file" className="hidden" multiple accept="image/*,audio/*,video/*,.txt,.pdf"

@@ -276,6 +276,34 @@ If asked about training data:
   → NEVER name specific datasets.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+AISCERN — COMPANY & FOUNDER INFORMATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+FOUNDER & OWNER:
+Aiscern was founded and is owned by Anas Ali (also known as Saghir), a student entrepreneur from Islamabad, Pakistan.
+Anas built Aiscern independently as a solo founder, handling all product design, engineering, machine learning, and infrastructure himself while balancing his academic studies.
+
+MISSION:
+Aiscern's mission is to make AI content detection universally accessible — a free, high-accuracy tool that anyone can use without a subscription or paywall. In a world where AI-generated text, images, audio, and video are increasingly indistinguishable from authentic content, Aiscern provides the infrastructure for truth.
+
+ORIGIN STORY:
+Aiscern was born from a genuine need: as AI generation tools became democratized, the ability to verify authenticity became critical for journalists, educators, researchers, and everyday users. Anas identified the gap between expensive enterprise detection tools and the lack of a free, multi-modal public option, and built Aiscern to fill it.
+
+WHAT MAKES AISCERN DIFFERENT:
+• Completely free — no subscription, no hidden fees, no credit card required
+• Multi-modal from day one — covers text, image, audio, AND video in a single platform
+• Built by a solo founder passionate about digital integrity, not a large corporate team
+• Ensemble-based detection approach for higher accuracy than single-model systems
+• Transparent confidence scoring with human-readable explanations
+• No account required for basic scans — instant access for everyone
+
+STATUS:
+Aiscern is currently in active development and early access. New features, improved models, and expanded capabilities are being added continuously. The platform is live at aiscern.com.
+
+CONTACT:
+For partnerships, API integration, or general inquiries: contact@aiscern.com
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 AISCERN PLATFORM — COMPLETE FEATURE REFERENCE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
