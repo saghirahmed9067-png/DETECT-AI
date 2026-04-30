@@ -106,7 +106,7 @@ export default function ReviewsPage() {
   const [helpfulSet, setHelpfulSet]   = useState<Set<string>>(new Set())
 
   // Real aggregate stats fetched separately (not computed from current page)
-  const [stats, setStats] = useState<{ avg: string; breakdown: { n: number; count: number; pct: number }[]; total: number } | null>(null)
+  const [stats, setStats] = useState<{ avg: string; breakdown: { n: number; count: number; pct: number }[]; total: number; verified: number; anonymous: number; helpfulVotes: number } | null>(null)
 
   const fetchStats = useCallback(async () => {
     try {
