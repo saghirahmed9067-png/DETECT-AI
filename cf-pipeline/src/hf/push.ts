@@ -112,7 +112,7 @@ async function getNextPartNumber(
 
 /**
  * BUG-FIX #2: Distributed push lock — only one worker can push at a time.
- * Uses a D1 row as a soft lock with a 55-second TTL (cron interval is 60s).
+ * Uses a D1 row as a soft lock with a 90-second TTL (generous for large batch pushes).
  * Returns true if the lock was acquired.
  */
 async function acquirePushLock(db: D1Database, workerId: string): Promise<boolean> {
@@ -124,18 +124,18 @@ async function acquirePushLock(db: D1Database, workerId: string): Promise<boolea
     )
   `).run().catch(() => {})
 
-  // Check if lock is held and still fresh (within 55s)
+  // Check if lock is held and still fresh (within 90s)
   const existing = await db.prepare(`
     SELECT locked_by, locked_at FROM push_lock WHERE id = 1
   `).first<{ locked_by: string; locked_at: string }>()
 
   if (existing) {
     const ageSeconds = (Date.now() - new Date(existing.locked_at).getTime()) / 1000
-    if (ageSeconds < 55) {
+    if (ageSeconds < 90) {
       // Lock is fresh — another worker is pushing
       return false
     }
-    // Lock is stale (> 55s) — previous worker crashed or timed out; take over
+    // Lock is stale (> 90s) — previous worker crashed or timed out; take over
   }
 
   await db.prepare(`
@@ -311,7 +311,7 @@ export async function pushToHF(
   db:       D1Database,
   token:    string,
   env:      { HF_REPO?: string; HF_IMAGE_REPO?: string; HF_AUDIO_REPO?: string; HF_VIDEO_REPO?: string },
-  batchSz = 5000,
+  batchSz = 8000,
   workerId = 'w20',
 ): Promise<PushResult> {
 

@@ -28,7 +28,7 @@ import { extractAudioRow } from './extractors/audio'
 import { extractVideoRow } from './extractors/video'
 import { log } from './types'
 
-const ROWS_PER_FETCH = 100
+const ROWS_PER_FETCH = 150
 
 /** Read current cursor offset WITHOUT advancing it */
 async function readCursor(db: D1Database, sourceName: string): Promise<number> {
@@ -204,14 +204,15 @@ export async function scrapeParallel(
 ): Promise<ScrapeResult[]> {
   if (!sources.length) return []
 
-  // Minor fix #7: 800ms stagger (was 1500ms) — W14 starts at 10.4s instead of 19.5s
-  const staggerMs = (workerNum - 1) * 800
+  // Stagger reduced from 800ms → 500ms — W14 starts at 6.5s instead of 10.4s
+  const staggerMs = (workerNum - 1) * 500
   if (staggerMs > 0) await new Promise(r => setTimeout(r, staggerMs))
 
-  const results: ScrapeResult[] = []
-  for (let i = 0; i < sources.length; i++) {
-    if (i > 0) await new Promise(r => setTimeout(r, 200))
-    results.push(await scrapeSource(db, sources[i], token, wid, 100))
-  }
-  return results
+  // Run all sources in parallel — no internal sequential loop
+  const settled = await Promise.allSettled(
+    sources.map(src => scrapeSource(db, src, token, wid, 100))
+  )
+  return settled
+    .filter((r): r is PromiseFulfilledResult<ScrapeResult> => r.status === 'fulfilled')
+    .map(r => r.value)
 }
