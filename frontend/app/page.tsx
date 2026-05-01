@@ -240,15 +240,20 @@ function RootNetworkSVG({ nodes, edges, color, side }: {
   color: string; side: 'ai' | 'real'
 }) {
   return (
-    <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: 0.3, zIndex: 1 }}>
+    <svg
+      className="absolute inset-0 w-full h-full pointer-events-none"
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+      style={{ opacity: 0.3, zIndex: 1 }}
+    >
       {edges.map(([a, b], i) => {
         const n1 = nodes[a], n2 = nodes[b]
         const cx = (n1.x + n2.x) / 2 + (side === 'ai' ? -3 : 3)
         const cy = (n1.y + n2.y) / 2
         return (
           <motion.path key={i}
-            d={`M ${n1.x}% ${n1.y}% Q ${cx}% ${cy}% ${n2.x}% ${n2.y}%`}
-            stroke={color} strokeWidth="1" fill="none" strokeLinecap="round"
+            d={`M ${n1.x} ${n1.y} Q ${cx} ${cy} ${n2.x} ${n2.y}`}
+            stroke={color} strokeWidth="0.5" fill="none" strokeLinecap="round"
             initial={{ pathLength: 0, opacity: 0 }}
             animate={{ pathLength: 1, opacity: 0.55 }}
             transition={{ delay: 0.4 + i * 0.07, duration: 1.4, ease: 'easeInOut' }}
@@ -256,7 +261,7 @@ function RootNetworkSVG({ nodes, edges, color, side }: {
         )
       })}
       {nodes.map((n, i) => (
-        <motion.circle key={i} cx={`${n.x}%`} cy={`${n.y}%`} r="2.5" fill={color}
+        <motion.circle key={i} cx={n.x} cy={n.y} r="1.2" fill={color}
           initial={{ opacity: 0 }}
           animate={{ opacity: [0.35, 0.75, 0.35] }}
           transition={{ delay: 0.7 + i * 0.08, duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
