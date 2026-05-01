@@ -1,47 +1,183 @@
-name: HuggingFace Model Warmup
+name: HuggingFace Model Warmup — Full Suite
 
 on:
   schedule:
-    # Every 15 minutes — keeps HF models warm, prevents cold starts
-    - cron: '*/15 * * * *'
-  workflow_dispatch: # Manual trigger for testing
+    - cron: '*/5 * * * *'   # Every 5 minutes (was 15)
+  workflow_dispatch:
 
 jobs:
   warmup:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: Ping Aiscern Health
-        run: |
-          curl -s --max-time 10 https://aiscern.com/api/health || true
+    timeout-minutes: 4
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      INTERNAL_SECRET: ${{ secrets.INTERNAL_API_SECRET }}
 
-      - name: Warm HF Text Model (RoBERTa)
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+    steps:
+      # ─── BUG 9 FIX: Verify fine-tuned models exist before warming ──────────
+      - name: Check fine-tuned model existence
         run: |
-          curl -s --max-time 15 \
-            -X POST \
+          check_model() {
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+              -H "Authorization: Bearer $HF_TOKEN" \
+              "https://huggingface.co/$1")
+            if [ "$STATUS" = "200" ]; then
+              echo "✅ $1 — EXISTS"
+            else
+              echo "⚠️  $1 — NOT FOUND (HTTP $STATUS). Run finetune notebook at /finetune/ directory."
+            fi
+          }
+          check_model "saghi776/aiscern-text-detector"
+          check_model "saghi776/aiscern-image-detector"
+          check_model "saghi776/aiscern-audio-detector"
+          check_model "saghi776/aiscern-video-detector"
+
+      # ─── TEXT MODELS ────────────────────────────────────────────────────────
+      - name: Warmup — aiscern-text-detector (fine-tuned PRIMARY)
+        run: |
+          curl -s --max-time 12 -X POST \
+            -H "Authorization: Bearer $HF_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"inputs":"Warmup ping for Aiscern fine-tuned text detector."}' \
+            "https://api-inference.huggingface.co/models/saghi776/aiscern-text-detector" || true
+
+      - name: Warmup — roberta-base-openai-detector
+        run: |
+          curl -s --max-time 12 -X POST \
             -H "Authorization: Bearer $HF_TOKEN" \
             -H "Content-Type: application/json" \
             -d '{"inputs":"Automated warmup ping for Aiscern AI detection platform."}' \
             "https://api-inference.huggingface.co/models/openai-community/roberta-base-openai-detector" || true
 
-      - name: Warm HF ChatGPT Detector
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      - name: Warmup — chatgpt-detector-roberta
         run: |
-          curl -s --max-time 15 \
-            -X POST \
+          curl -s --max-time 12 -X POST \
             -H "Authorization: Bearer $HF_TOKEN" \
             -H "Content-Type: application/json" \
             -d '{"inputs":"Warmup request for Aiscern detection ensemble."}' \
             "https://api-inference.huggingface.co/models/Hello-SimpleAI/chatgpt-detector-roberta" || true
 
-      - name: Warm Aiscern Text Endpoint
+      - name: Warmup — roberta-mixed-detector
         run: |
-          curl -s --max-time 20 \
+          curl -s --max-time 12 -X POST \
+            -H "Authorization: Bearer $HF_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"inputs":"Warmup ping for mixed content detector."}' \
+            "https://api-inference.huggingface.co/models/andreas122001/roberta-mixed-detector" || true
+
+      - name: Warmup — distilroberta-ai-text-detection
+        run: |
+          curl -s --max-time 12 -X POST \
+            -H "Authorization: Bearer $HF_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"inputs":"Warmup ping for Aiscern text detection platform."}' \
+            "https://api-inference.huggingface.co/models/valurank/distilroberta-ai-text-detection" || true
+
+      # ─── IMAGE MODELS ───────────────────────────────────────────────────────
+      - name: Warmup — aiscern-image-detector (fine-tuned PRIMARY)
+        run: |
+          python3 -c "
+import sys
+jpeg = bytes([
+  0xff,0xd8,0xff,0xe0,0x00,0x10,0x4a,0x46,0x49,0x46,0x00,0x01,
+  0x01,0x00,0x00,0x01,0x00,0x01,0x00,0x00,0xff,0xdb,0x00,0x43,
+  0x00,0x08,0x06,0x06,0x07,0x06,0x05,0x08,0x07,0x07,0x07,0x09,
+  0x09,0x08,0x0a,0x0c,0x14,0x0d,0x0c,0x0b,0x0b,0x0c,0x19,0x12,
+  0x13,0x0f,0x14,0x1d,0x1a,0x1f,0x1e,0x1d,0x1a,0x1c,0x1c,0x20,
+  0x24,0x2e,0x27,0x20,0x22,0x2c,0x23,0x1c,0x1c,0x28,0x37,0x29,
+  0x2c,0x30,0x31,0x34,0x34,0x34,0x1f,0x27,0x39,0x3d,0x38,0x32,
+  0x3c,0x2e,0x33,0x34,0x32,0xff,0xc0,0x00,0x0b,0x08,0x00,0x01,
+  0x00,0x01,0x01,0x01,0x11,0x00,0xff,0xc4,0x00,0x1f,0x00,0x00,
+  0x01,0x05,0x01,0x01,0x01,0x01,0x01,0x01,0x00,0x00,0x00,0x00,
+  0x00,0x00,0x00,0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,
+  0x09,0x0a,0x0b,0xff,0xda,0x00,0x08,0x01,0x01,0x00,0x00,0x3f,
+  0x00,0xf5,0x0a,0x28,0xa2,0x80,0xff,0xd9
+])
+sys.stdout.buffer.write(jpeg)
+" | curl -s --max-time 15 -X POST \
+            -H "Authorization: Bearer $HF_TOKEN" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary @- \
+            "https://api-inference.huggingface.co/models/saghi776/aiscern-image-detector" || true
+
+      - name: Warmup — sdxl-detector
+        run: |
+          python3 -c "
+import sys
+jpeg = bytes([0xff,0xd8,0xff,0xe0,0x00,0x10,0x4a,0x46,0x49,0x46,0x00,0x01,0x01,0x00,0x00,0x01,0x00,0x01,0x00,0x00,0xff,0xd9])
+sys.stdout.buffer.write(jpeg)
+" | curl -s --max-time 15 -X POST \
+            -H "Authorization: Bearer $HF_TOKEN" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary @- \
+            "https://api-inference.huggingface.co/models/Organika/sdxl-detector" || true
+
+      - name: Warmup — umm-maybe AI-image-detector
+        run: |
+          python3 -c "
+import sys
+jpeg = bytes([0xff,0xd8,0xff,0xe0,0x00,0x10,0x4a,0x46,0x49,0x46,0x00,0x01,0x01,0x00,0x00,0x01,0x00,0x01,0x00,0x00,0xff,0xd9])
+sys.stdout.buffer.write(jpeg)
+" | curl -s --max-time 15 -X POST \
+            -H "Authorization: Bearer $HF_TOKEN" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary @- \
+            "https://api-inference.huggingface.co/models/umm-maybe/AI-image-detector" || true
+
+      # ─── AUDIO MODELS ───────────────────────────────────────────────────────
+      - name: Warmup — aiscern-audio-detector (fine-tuned PRIMARY)
+        run: |
+          python3 -c "
+import sys
+wav = bytes([
+  0x52,0x49,0x46,0x46,0x24,0x00,0x00,0x00,0x57,0x41,0x56,0x45,
+  0x66,0x6d,0x74,0x20,0x10,0x00,0x00,0x00,0x01,0x00,0x01,0x00,
+  0x44,0xac,0x00,0x00,0x88,0x58,0x01,0x00,0x02,0x00,0x10,0x00,
+  0x64,0x61,0x74,0x61,0x00,0x00,0x00,0x00
+])
+sys.stdout.buffer.write(wav)
+" | curl -s --max-time 15 -X POST \
+            -H "Authorization: Bearer $HF_TOKEN" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary @- \
+            "https://api-inference.huggingface.co/models/saghi776/aiscern-audio-detector" || true
+
+      - name: Warmup — Deepfake-audio-detection
+        run: |
+          python3 -c "
+import sys
+wav = bytes([0x52,0x49,0x46,0x46,0x24,0x00,0x00,0x00,0x57,0x41,0x56,0x45,0x66,0x6d,0x74,0x20,0x10,0x00,0x00,0x00,0x01,0x00,0x01,0x00,0x44,0xac,0x00,0x00,0x88,0x58,0x01,0x00,0x02,0x00,0x10,0x00,0x64,0x61,0x74,0x61,0x00,0x00,0x00,0x00])
+sys.stdout.buffer.write(wav)
+" | curl -s --max-time 12 -X POST \
+            -H "Authorization: Bearer $HF_TOKEN" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary @- \
+            "https://api-inference.huggingface.co/models/mo-thecreator/Deepfake-audio-detection" || true
+
+      - name: Warmup — Deepfake-audio-detection-V2
+        run: |
+          python3 -c "
+import sys
+wav = bytes([0x52,0x49,0x46,0x46,0x24,0x00,0x00,0x00,0x57,0x41,0x56,0x45,0x66,0x6d,0x74,0x20,0x10,0x00,0x00,0x00,0x01,0x00,0x01,0x00,0x44,0xac,0x00,0x00,0x88,0x58,0x01,0x00,0x02,0x00,0x10,0x00,0x64,0x61,0x74,0x61,0x00,0x00,0x00,0x00])
+sys.stdout.buffer.write(wav)
+" | curl -s --max-time 12 -X POST \
+            -H "Authorization: Bearer $HF_TOKEN" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary @- \
+            "https://api-inference.huggingface.co/models/MelodyMachine/Deepfake-audio-detection-V2" || true
+
+      # ─── PLATFORM ENDPOINTS ─────────────────────────────────────────────────
+      - name: Warmup — Aiscern platform endpoints
+        run: |
+          curl -s --max-time 15 \
             -X POST \
             -H "Content-Type: application/json" \
-            -H "X-Internal-Secret: ${{ secrets.INTERNAL_API_SECRET }}" \
-            -d '{"text":"This is an automated warmup request from GitHub Actions to prevent Vercel cold starts on the Aiscern AI detection platform. Regular warmup pings ensure fast response times for all users."}' \
+            -H "X-Internal-Secret: $INTERNAL_SECRET" \
+            -d '{"text":"This is an automated platform warmup request from GitHub Actions CI. Aiscern AI detection platform warmup sequence initiated to prevent cold starts and ensure fast response times for all users worldwide."}' \
             "https://aiscern.com/api/detect/text" || true
+
+          curl -s --max-time 8 "https://aiscern.com/api/health" || true
+          curl -s --max-time 8 "https://aiscern.com/api/warmup" || true
+
+      - name: Log warmup completion
+        run: echo "✅ Full model warmup (10 models) completed at $(date -u)"

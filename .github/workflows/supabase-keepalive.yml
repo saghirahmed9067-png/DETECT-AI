@@ -1,0 +1,26 @@
+name: Supabase Database Keepalive
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'   # Every 5 minutes
+  workflow_dispatch:
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Ping Supabase via REST API
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        run: |
+          curl -s --max-time 10 \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            "${SUPABASE_URL}/rest/v1/profiles?select=id&limit=1" || true
+          echo "✅ Supabase keepalive ping at $(date -u)"
+
+      - name: Ping Aiscern health endpoint (secondary keepalive)
+        run: |
+          curl -s --max-time 10 "https://aiscern.com/api/health" || true
