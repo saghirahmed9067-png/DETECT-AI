@@ -49,8 +49,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: { code: 'NO_TEXT', message: 'No text provided' } }, { status: 400 })
     if (text.length < 50)
       return NextResponse.json({ success: false, error: { code: 'TOO_SHORT', message: 'Text must be at least 50 characters' } }, { status: 400 })
-    if (text.length > 10000)
-      return NextResponse.json({ success: false, error: { code: 'TOO_LONG', message: 'Text must be under 10,000 characters' } }, { status: 400 })
+    // Increased to 50,000 chars — supports full PDFs and long documents
+    if (text.length > 50000)
+      return NextResponse.json({ success: false, error: { code: 'TOO_LONG', message: 'Text must be under 50,000 characters (about 35 pages)' } }, { status: 400 })
 
     const sanitized = sanitizeText(text)
     const hash   = contentHash(sanitized)

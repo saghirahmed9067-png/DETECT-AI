@@ -36,6 +36,7 @@ export default function TextDetectionPage() {
   const [result, setResult] = useState<DetectionResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [graphContext, setGraphContext] = useState<string | null>(null)
   const [pasteLoading, setPasteLoading] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -47,8 +48,8 @@ export default function TextDetectionPage() {
 
   const wordCount = text.trim().split(/\s+/).filter(Boolean).length
   const charCount = text.length
-  const charLimit = 100_000
-  const charColor = charCount > 90_000 ? 'text-rose' : charCount > 70_000 ? 'text-amber' : 'text-text-muted'
+  const charLimit = 50_000
+  const charColor = charCount > 45_000 ? 'text-rose' : charCount > 70_000 ? 'text-amber' : 'text-text-muted'
   const sentenceCount = text.split(/[.!?]+/).filter(s => s.trim().length > 0).length
   const avgSentLen = avgSentenceLen(text)
 
@@ -86,7 +87,7 @@ export default function TextDetectionPage() {
       setError('Please enter at least 50 characters for accurate detection.')
       return
     }
-    setLoading(true); setError(null); setResult(null)
+    setLoading(true); setError(null); setResult(null); setGraphContext(null)
     try {
       const res = await fetch('/api/detect/text', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -96,6 +97,7 @@ export default function TextDetectionPage() {
       if (!data.success) throw new Error(toUserError(data.error?.code, data.error?.message))
       setResult(data.result)
       setScanId(data.scan_id ?? null)
+      if (data.graph_context) setGraphContext(data.graph_context)
       incrementGlobalScanCount()
       window.dispatchEvent(new Event('aiscern:scan'))
       window.dispatchEvent(new CustomEvent('aiscern:scan-saved'))
@@ -280,9 +282,9 @@ Analyzed: ${new Date().toLocaleString()}`
             {charCount > 70_000 && (
               <div className="mt-2">
                 <div className="h-1 bg-border rounded-full overflow-hidden">
-                  <div className={`h-full rounded-full transition-all ${charCount > 90_000 ? 'bg-rose' : 'bg-amber'}`} style={{ width: `${Math.min((charCount / 100_000) * 100, 100)}%` }} />
+                  <div className={`h-full rounded-full transition-all ${charCount > 45_000 ? 'bg-rose' : 'bg-amber'}`} style={{ width: `${Math.min((charCount / 100_000) * 100, 100)}%` }} />
                 </div>
-                <p className={`text-xs mt-1 ${charCount > 90_000 ? 'text-rose' : 'text-amber'}`}>{(100_000 - charCount).toLocaleString()} chars remaining (100k limit)</p>
+                <p className={`text-xs mt-1 ${charCount > 45_000 ? 'text-rose' : 'text-amber'}`}>{(50_000 - charCount).toLocaleString()} chars remaining (50k limit — supports full PDFs)</p>
               </div>
             )}
             {/* Progress to minimum */}
@@ -482,6 +484,23 @@ Analyzed: ${new Date().toLocaleString()}`
     </div>
     <div className="px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto pb-6">
       
+      {graphContext && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.4 }}
+          className="mx-4 mb-4 rounded-xl border border-cyan/20 bg-cyan/5 overflow-hidden"
+        >
+          <div className="flex items-center gap-2 px-4 py-2.5 border-b border-cyan/10 bg-cyan/5">
+            <span className="w-2 h-2 rounded-full bg-cyan animate-pulse" />
+            <span className="text-xs font-bold text-cyan tracking-wide uppercase">Web Verification</span>
+            <span className="ml-auto text-[10px] text-text-muted">Real-time Graph RAG</span>
+          </div>
+          <pre className="px-4 py-3 text-[11px] text-text-secondary leading-relaxed whitespace-pre-wrap font-mono max-h-60 overflow-y-auto">
+            {graphContext}
+          </pre>
+        </motion.div>
+      )}
+
       <ReviewSuggestion toolName="AI Text Detector" />
       {result && (
         <div className="px-4 pb-4 flex items-center justify-between flex-wrap gap-3">

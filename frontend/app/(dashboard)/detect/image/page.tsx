@@ -26,6 +26,7 @@ export default function ImageDetectionPage() {
   const [preview, setPreview] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<DetectionResult | null>(null)
+  const [graphContext, setGraphContext] = useState<string | null>(null)
   const [scanId, setScanId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [zoomed, setZoomed] = useState(false)
@@ -93,6 +94,7 @@ export default function ImageDetectionPage() {
       setScanStage('complete')
       setResult(data.result)
       setScanId(data.scan_id ?? null)
+      if (data.graph_context) setGraphContext(data.graph_context)
       // Notify dashboard/history pages to refresh scan list
       window.dispatchEvent(new CustomEvent('aiscern:scan-saved'))
     } catch (e: unknown) {
@@ -130,7 +132,7 @@ Analyzed: ${new Date().toLocaleString()}`
     } catch { alert('Could not copy link. Try again.') }
   }
 
-  const reset = () => { setFile(null); setPreview(null); setResult(null); setError(null); setImgDims(null); setZoomed(false); setUploadProgress(0); setScanStage('idle') }
+  const reset = () => { setFile(null); setPreview(null); setResult(null); setGraphContext(null); setError(null); setImgDims(null); setZoomed(false); setUploadProgress(0); setScanStage('idle') }
   const cfg = result ? verdictConfig[result.verdict as Verdict] : null
 
   return (
@@ -364,6 +366,23 @@ Analyzed: ${new Date().toLocaleString()}`
     </div>
     <div className="px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto pb-6">
       
+      {graphContext && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.4 }}
+          className="mb-4 rounded-xl border border-cyan/20 bg-cyan/5 overflow-hidden"
+        >
+          <div className="flex items-center gap-2 px-4 py-2.5 border-b border-cyan/10 bg-cyan/5">
+            <span className="w-2 h-2 rounded-full bg-cyan animate-pulse" />
+            <span className="text-xs font-bold text-cyan tracking-wide uppercase">Web Verification</span>
+            <span className="ml-auto text-[10px] text-text-muted">Real-time Graph RAG</span>
+          </div>
+          <pre className="px-4 py-3 text-[11px] text-text-secondary leading-relaxed whitespace-pre-wrap font-mono max-h-60 overflow-y-auto">
+            {graphContext}
+          </pre>
+        </motion.div>
+      )}
+
       <ReviewSuggestion toolName="Image Detector" />
       {result && (
         <div className="px-4 pb-4 flex items-center justify-between flex-wrap gap-3">
