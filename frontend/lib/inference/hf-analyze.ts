@@ -395,8 +395,8 @@ export async function analyzeImage(imageBuffer: Buffer, mimeType: string, _fileN
   const inferenceBuffer = preprocessed.buffer
   const inferenceMime   = preprocessed.mimeType
 
-  // ── IMAGE BRAIN (PRIMARY) — runs in parallel, instant, zero API calls ──────
-  const brainResult = analyzeImageWithBrain(imageBuffer, imageBuffer.length)
+  // ── IMAGE BRAIN (PRIMARY) — async with sharp pixel decode ──────────────────
+  const brainResult = await analyzeImageWithBrain(imageBuffer, imageBuffer.length, mimeType)
 
   // Gemini now supplementary (only when brain uncertain 0.42–0.58)
   const brainUncertain = brainResult.score > 0.42 && brainResult.score < 0.58
