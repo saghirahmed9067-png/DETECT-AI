@@ -1,11 +1,11 @@
 'use client'
 import { Suspense } from 'react'
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { SignUp, useAuth } from '@clerk/nextjs'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { Loader2, ShieldCheck, Zap, Lock } from 'lucide-react'
-import Link from 'next/link'
 
 const TRUST_PILLS = [
   { icon: ShieldCheck, label: 'Free forever' },
@@ -142,7 +142,12 @@ function SignUpContent() {
         ))}
       </div>
 
-      <p className="mt-5 text-[11.5px] text-slate-600 relative z-10">© 2026 Aiscern · Secured by Clerk</p>
+      <p className="mt-5 text-[11.5px] text-slate-600 relative z-10">
+        By signing up you confirm you are 13 years of age or older (16 in the EU/EEA) and agree to our{' '}
+        <Link href="/terms" className="underline underline-offset-2 hover:text-slate-400 transition-colors">Terms</Link> and{' '}
+        <Link href="/privacy" className="underline underline-offset-2 hover:text-slate-400 transition-colors">Privacy Policy</Link>.
+      </p>
+      <p className="mt-2 text-[11px] text-slate-700 relative z-10">© 2026 Aiscern · Secured by Clerk</p>
     </div>
   )
 }

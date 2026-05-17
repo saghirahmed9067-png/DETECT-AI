@@ -29,9 +29,11 @@ const COMPANY_LINKS = [
 ]
 
 const LEGAL_LINKS = [
-  { label: 'Privacy Policy',   href: '/privacy',  title: 'Privacy Policy — Aiscern' },
-  { label: 'Terms of Service', href: '/terms',    title: 'Terms of Service — Aiscern' },
-  { label: 'Security',         href: '/security', title: 'Aiscern Security' },
+  { label: 'Privacy Policy',   href: '/privacy',       title: 'Privacy Policy — Aiscern' },
+  { label: 'Terms of Service', href: '/terms',         title: 'Terms of Service — Aiscern' },
+  { label: 'DPA',              href: '/dpa',           title: 'Data Processing Agreement — Aiscern' },
+  { label: 'Accessibility',    href: '/accessibility', title: 'Accessibility Statement — Aiscern' },
+  { label: 'Security',         href: '/security',      title: 'Aiscern Security' },
 ]
 
 function FooterLink({ href, title, children }: { href: string; title: string; children: React.ReactNode }) {

@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description: 'Aiscern privacy policy. We do not sell your data, display ads, or require personal information to use our AI detection tools.',
 }
 
-const LAST_UPDATED = 'March 20, 2026'
+const LAST_UPDATED = 'May 17, 2026'
 
 export default function PrivacyPage() {
   return (
@@ -91,16 +91,20 @@ export default function PrivacyPage() {
           </Section>
 
           <Section title="5. Data Sharing & Third Parties">
-            <p>We use the following third-party services that may process your data:</p>
+            <p>We use the following third-party sub-processors that may process your data. Each is bound by their own privacy policy and data processing terms:</p>
             <ul>
-              <li><strong>Supabase:</strong> Database and authentication (EU/US infrastructure)</li>
-              <li><strong>Vercel:</strong> Hosting and edge functions</li>
-              <li><strong>Hugging Face:</strong> AI model inference</li>
-              <li><strong>AI Vision Services:</strong> Advanced vision model for image analysis</li>
-              <li><strong>Cloudflare:</strong> CDN, edge workers</li>
+              <li><strong>Clerk (clerk.com):</strong> User authentication, session management, and identity. Clerk never shares your data with third parties for advertising. <a href="https://clerk.com/privacy" className="text-primary hover:underline">Clerk Privacy Policy</a></li>
+              <li><strong>Supabase (supabase.com):</strong> Database storage and API. Data hosted on AWS infrastructure (EU/US). <a href="https://supabase.com/privacy" className="text-primary hover:underline">Supabase Privacy Policy</a></li>
+              <li><strong>Vercel (vercel.com):</strong> Application hosting, serverless functions, and edge delivery. <a href="https://vercel.com/legal/privacy-policy" className="text-primary hover:underline">Vercel Privacy Policy</a></li>
+              <li><strong>Hugging Face (huggingface.co):</strong> AI model inference for text and audio detection. Inference API requests are not used to train Hugging Face models. <a href="https://huggingface.co/privacy" className="text-primary hover:underline">Hugging Face Privacy Policy</a></li>
+              <li><strong>Google Gemini API (ai.google.dev):</strong> Gemini 2.0 Flash is used as an ensemble head for text and image detection. Google does not use Gemini API inputs to train its models. <a href="https://ai.google.dev/terms" className="text-primary hover:underline">Google AI Terms</a></li>
+              <li><strong>Cloudflare (cloudflare.com):</strong> CDN, edge workers, R2 file storage, and D1 database. <a href="https://www.cloudflare.com/privacypolicy/" className="text-primary hover:underline">Cloudflare Privacy Policy</a></li>
+              <li><strong>Upstash (upstash.com):</strong> Redis-based rate limiting. Only request counts and IP hashes are stored, not content. <a href="https://upstash.com/privacy" className="text-primary hover:underline">Upstash Privacy Policy</a></li>
             </ul>
             <p>
               We do not sell your personal data to third parties. We do not share your data with advertisers.
+              A full Data Processing Agreement (DPA) listing all sub-processors is available at{' '}
+              <a href="/dpa" className="text-primary hover:underline">aiscern.com/dpa</a>.
             </p>
           </Section>
 
@@ -147,23 +151,57 @@ export default function PrivacyPage() {
 
           <Section title="10. Children's Privacy">
             <p>
-              Aiscern is not intended for users under 13 years of age. We do not knowingly collect data from children.
-              If you believe a child has provided us with personal information, please contact us immediately.
+              Aiscern is intended for users aged <strong>13 and older</strong> (or 16 and older in the EU/EEA under GDPR).
+              We do not knowingly collect personal data from children under these ages.
+            </p>
+            <p>
+              By creating an account you confirm you meet the minimum age requirement for your jurisdiction.
+              If we discover that a child below the minimum age has provided personal data, we will delete it immediately.
+              If you believe a child has registered, contact us at{' '}
+              <a href="mailto:privacy@aiscern.com" className="text-primary hover:underline">privacy@aiscern.com</a>.
             </p>
           </Section>
 
-          <Section title="11. Changes to This Policy">
+          <Section title="11. GDPR & CCPA Rights">
+            <SubSection title="EU/EEA Users (GDPR)">
+              <p>If you are located in the EU or EEA, you have the following rights under the General Data Protection Regulation:</p>
+              <ul>
+                <li><strong>Right of access</strong> — obtain a copy of your personal data</li>
+                <li><strong>Right to rectification</strong> — correct inaccurate data</li>
+                <li><strong>Right to erasure</strong> — request deletion (&quot;right to be forgotten&quot;)</li>
+                <li><strong>Right to portability</strong> — receive your data in a machine-readable format</li>
+                <li><strong>Right to restrict processing</strong> — limit how we use your data</li>
+                <li><strong>Right to object</strong> — object to processing based on legitimate interests</li>
+                <li><strong>Right to withdraw consent</strong> — at any time, without affecting prior processing</li>
+              </ul>
+              <p>Legal basis for processing: contract performance (scan results), legitimate interest (fraud prevention), and consent (analytics cookies).</p>
+              <p>Data transfers to the US (Vercel, Supabase US regions) rely on Standard Contractual Clauses (SCCs). You may request a copy of the applicable SCCs at <a href="mailto:privacy@aiscern.com" className="text-primary hover:underline">privacy@aiscern.com</a>.</p>
+            </SubSection>
+            <SubSection title="California Users (CCPA/CPRA)">
+              <ul>
+                <li><strong>Right to know</strong> — what personal information we collect and how it is used</li>
+                <li><strong>Right to delete</strong> — request deletion of your personal information</li>
+                <li><strong>Right to opt-out</strong> — we do not sell personal information; no opt-out required</li>
+                <li><strong>Right to non-discrimination</strong> — exercising privacy rights will not affect service quality</li>
+                <li><strong>Right to correct</strong> — correct inaccurate personal information</li>
+              </ul>
+              <p>To exercise any California rights, contact <a href="mailto:privacy@aiscern.com" className="text-primary hover:underline">privacy@aiscern.com</a>. We will respond within 45 days.</p>
+            </SubSection>
+          </Section>
+
+          <Section title="12. Changes to This Policy">
             <p>
               We may update this Privacy Policy from time to time. We will notify users of significant changes via email
               or a prominent notice on the platform. Continued use of Aiscern after changes constitutes acceptance.
             </p>
           </Section>
 
-          <Section title="12. Contact Us">
+          <Section title="13. Contact Us">
             <p>
               For privacy-related questions or requests, contact:<br />
-              <strong>Anas Ali</strong> — Developer & Data Controller<br />
+              <strong>Aiscern</strong> — Data Controller<br />
               Email: <a href="mailto:privacy@aiscern.com" className="text-primary hover:underline">privacy@aiscern.com</a><br />
+              DPA requests: <a href="/dpa" className="text-primary hover:underline">aiscern.com/dpa</a><br />
               Website: <a href="https://aiscern.com" className="text-primary hover:underline">aiscern.com</a>
             </p>
           </Section>
