@@ -604,7 +604,7 @@ export default function HomePage() {
               aria-label="Navigation menu"
               initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.25, ease: 'easeInOut' }}
               className="md:hidden border-t border-white/5 bg-[#08080d] overflow-hidden"
-              onKeyDown={e => e.key === 'Escape' && setMobileNavOpen(false)}>
+              onKeyDown={(e: React.KeyboardEvent) => e.key === 'Escape' && setMobileNavOpen(false)}>
               <div className="px-4 py-4 flex flex-col gap-1">
                 {[
                   { href: '#tools', label: 'Tools', Icon: Cpu },

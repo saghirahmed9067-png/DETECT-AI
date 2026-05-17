@@ -12,15 +12,15 @@
  * <Container size="full">    // no max-width
  */
 
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/utils/helpers'
+import type { ElementType, ReactNode, HTMLAttributes } from 'react'
 
-interface ContainerProps {
-  children: React.ReactNode
-  className?: string
+interface ContainerProps extends HTMLAttributes<HTMLElement> {
+  children: ReactNode
   /** Size variant controlling max-width */
   size?: 'small' | 'default' | 'large' | 'full'
   /** HTML element to render as */
-  as?: keyof JSX.IntrinsicElements
+  as?: ElementType
 }
 
 export function Container({
@@ -28,9 +28,9 @@ export function Container({
   className,
   size = 'default',
   as: Tag = 'div',
+  ...rest
 }: ContainerProps) {
   return (
-    // @ts-expect-error — dynamic tag is valid but TS doesn't narrow JSX.IntrinsicElements
     <Tag
       className={cn(
         // Base: mobile-first horizontal padding
@@ -42,6 +42,7 @@ export function Container({
         size === 'full'    && 'max-w-none',
         className,
       )}
+      {...rest}
     >
       {children}
     </Tag>
