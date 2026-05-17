@@ -23,11 +23,35 @@ export async function GET() {
     }
 
     // Fallback: compute stats directly from scans table
-    const { data: scans } = await db
+    // Note: .or() accepts rows where status='complete' OR status IS NULL
+    // (null-status rows exist on installs where the column was added after data was inserted)
+    const { data: scans, error: scansErr } = await db
       .from('scans')
-      .select('verdict, media_type, confidence_score')
+      .select('verdict, media_type, confidence_score, status')
       .eq('user_id', userId)
-      .eq('status', 'complete')
+      .or('status.eq.complete,status.is.null')
+
+    if (scansErr) {
+      // status column may not exist yet — fall back to no status filter
+      const { data: allScans } = await db
+        .from('scans')
+        .select('verdict, media_type, confidence_score')
+        .eq('user_id', userId)
+      const rows2 = allScans ?? []
+      return NextResponse.json({
+        total_scans:    rows2.length,
+        ai_detected:    rows2.filter(r => r.verdict === 'AI').length,
+        human_detected: rows2.filter(r => r.verdict === 'HUMAN').length,
+        uncertain:      rows2.filter(r => r.verdict === 'UNCERTAIN').length,
+        text_scans:     rows2.filter(r => r.media_type === 'text').length,
+        image_scans:    rows2.filter(r => r.media_type === 'image').length,
+        audio_scans:    rows2.filter(r => r.media_type === 'audio').length,
+        video_scans:    rows2.filter(r => r.media_type === 'video').length,
+        avg_confidence: rows2.length
+          ? Math.round(rows2.reduce((s, r) => s + (r.confidence_score ?? 0), 0) / rows2.length * 100)
+          : 0,
+      })
+    }
 
     const rows = scans ?? []
     return NextResponse.json({

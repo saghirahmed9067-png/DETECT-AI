@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
     let scanId: string | null = null
     if (userId !== 'internal' && !userId.startsWith('anon_')) {
       try {
-        const { data: scanRow } = await getSupabaseAdmin().from('scans').insert({
+        const { data: scanRow, error: insertErr } = await getSupabaseAdmin().from('scans').insert({
           user_id:          userId,
           media_type:       'text',
           content_preview:  sanitized.substring(0, 500),
@@ -83,8 +83,9 @@ export async function POST(req: NextRequest) {
           status:           'complete',
           metadata:         { char_count: sanitized.length, word_count: sanitized.split(/\s+/).length },
         }).select('id').single()
+        if (insertErr) console.error('[detect/text] scan insert error:', insertErr.message, insertErr.code)
         scanId = scanRow?.id ?? null
-      } catch { /* non-fatal */ }
+      } catch (e) { console.error('[detect/text] scan insert threw:', e) }
     } else if (userId.startsWith('anon_')) {
       // Save anonymous scans for analytics (anon_id column now exists)
       try {

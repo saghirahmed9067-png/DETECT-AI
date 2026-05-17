@@ -31,7 +31,9 @@ export async function GET(req: NextRequest) {
       .from('scans')
       .select('id,media_type,verdict,confidence_score,created_at,file_name,file_size,content_preview,model_used,processing_time,signals', { count: 'exact' })
       .eq('user_id', userId)
-      .eq('status', 'complete')
+      // Accept status='complete' OR status IS NULL (handles installs where
+      // the column was added after data was already inserted)
+      .or('status.eq.complete,status.is.null')
 
     if (media   !== 'all') query = query.eq('media_type', media)
     if (verdict !== 'all') query = query.eq('verdict',    verdict)
@@ -42,7 +44,29 @@ export async function GET(req: NextRequest) {
 
     query = query.range(offset, offset + limit - 1)
 
-    const { data, error, count } = await query
+    let { data, error, count } = await query
+
+    // If status column doesn't exist yet, retry without status filter
+    if (error && error.message?.includes('status')) {
+      console.warn('[user/scans] status column missing — retrying without filter')
+      let fallbackQuery = db
+        .from('scans')
+        .select('id,media_type,verdict,confidence_score,created_at,file_name,file_size,content_preview,model_used,processing_time,signals', { count: 'exact' })
+        .eq('user_id', userId)
+
+      if (media   !== 'all') fallbackQuery = fallbackQuery.eq('media_type', media)
+      if (verdict !== 'all') fallbackQuery = fallbackQuery.eq('verdict',    verdict)
+      if      (sort === 'oldest')     fallbackQuery = fallbackQuery.order('created_at',      { ascending: true  })
+      else if (sort === 'confidence') fallbackQuery = fallbackQuery.order('confidence_score', { ascending: false })
+      else                            fallbackQuery = fallbackQuery.order('created_at',       { ascending: false })
+      fallbackQuery = fallbackQuery.range(offset, offset + limit - 1)
+
+      const fb = await fallbackQuery
+      data  = fb.data
+      error = fb.error
+      count = fb.count
+    }
+
     if (error) throw error
 
     return NextResponse.json({ data: data ?? [], total: count ?? 0 })
